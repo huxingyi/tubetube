@@ -23,6 +23,7 @@
 #ifndef DUST3D_GLES_VERTEX_BUFFER_UTILS_H_
 #define DUST3D_GLES_VERTEX_BUFFER_UTILS_H_
 
+#include <set>
 #include <dust3d/gles/vertex_buffer.h>
 #include <dust3d/base/vector3.h>
 
@@ -82,6 +83,25 @@ public:
                 vertexBufferVertices->push_back((GLfloat)vertices[face[n]].y());
                 vertexBufferVertices->push_back((GLfloat)vertices[face[n]].z());
             }
+        }
+        size_t vertexCount = vertexBufferVertices->size() / numbersPerVertex;
+        vertexBuffer.update(std::move(vertexBufferVertices), numbersPerVertex, vertexCount);
+    }
+    
+    static void loadMeshProfileEdges(VertexBuffer &vertexBuffer, 
+        const std::vector<Vector3> &vertices,
+        const std::set<std::pair<size_t, size_t>> &profileEdges)
+    {
+        auto vertexBufferVertices = std::make_unique<std::vector<GLfloat>>();
+        size_t numbersPerVertex = 3;
+        size_t targetIndex = 0;
+        for (const auto &it: profileEdges) {
+            vertexBufferVertices->push_back((GLfloat)vertices[it.first].x());
+            vertexBufferVertices->push_back((GLfloat)vertices[it.first].y());
+            vertexBufferVertices->push_back((GLfloat)vertices[it.first].z());
+            vertexBufferVertices->push_back((GLfloat)vertices[it.second].x());
+            vertexBufferVertices->push_back((GLfloat)vertices[it.second].y());
+            vertexBufferVertices->push_back((GLfloat)vertices[it.second].z());
         }
         size_t vertexCount = vertexBufferVertices->size() / numbersPerVertex;
         vertexBuffer.update(std::move(vertexBufferVertices), numbersPerVertex, vertexCount);

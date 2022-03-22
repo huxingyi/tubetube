@@ -25,6 +25,7 @@
 
 #include <memory>
 #include <algorithm>
+#include <set>
 #include <dust3d/base/debug.h>
 #include <dust3d/base/vector2.h>
 
@@ -47,6 +48,7 @@ public:
         Vector3 normal;
         Vector3 bitangent;
         std::vector<Vector2> polygon;
+        std::vector<int> profilePoints;
     };
     
     TubeMeshBuilder(std::unique_ptr<std::vector<Section>> sections)
@@ -83,6 +85,8 @@ public:
             }
         }
         
+        m_meshProfileEdges = std::make_unique<std::set<std::pair<size_t, size_t>>>();
+        
         m_meshQuads = std::make_unique<std::vector<std::vector<size_t>>>();
         for (size_t j = 1; j < sectionPolygons.size(); ++j) {
             size_t i = j - 1;
@@ -92,6 +96,8 @@ public:
                 dust3dDebug << "Edge loop have unmatched size [" << i << "]:" << edgeLoopI.size() << "[" << j << "]:" << edgeLoopJ.size() << ".";
                 return false;
             }
+            for (const auto &it: m_sections->at(i).profilePoints)
+                m_meshProfileEdges->insert({edgeLoopI[it % edgeLoopI.size()], edgeLoopJ[it % edgeLoopJ.size()]});
             for (size_t m = 0; m < edgeLoopI.size(); ++m) {
                 size_t n = (m + 1) % edgeLoopI.size();
                 m_meshQuads->push_back({
@@ -107,8 +113,12 @@ public:
             auto indices = meshVertexIndices.front();
             std::reverse(indices.begin(), indices.end());
             fillSection(indices);
+            for (size_t i = 0; i < meshVertexIndices.front().size(); ++i)
+                m_meshProfileEdges->insert({meshVertexIndices.front()[i], meshVertexIndices.front()[(i + 1) % meshVertexIndices.front().size()]});
         }
         fillSection(meshVertexIndices.back());
+        for (size_t i = 0; i < meshVertexIndices.back().size(); ++i)
+            m_meshProfileEdges->insert({meshVertexIndices.back()[i], meshVertexIndices.back()[(i + 1) % meshVertexIndices.back().size()]});
         
         return true;
     }
@@ -121,6 +131,11 @@ public:
     std::unique_ptr<std::vector<std::vector<size_t>>> takeMeshQuads()
     {
         return std::move(m_meshQuads);
+    }
+    
+    std::unique_ptr<std::set<std::pair<size_t, size_t>>> takeMeshProfileEdges()
+    {
+        return std::move(m_meshProfileEdges);
     }
     
     void getMeshTriangles(std::vector<std::vector<size_t>> &triangles)
@@ -140,6 +155,7 @@ private:
     std::unique_ptr<std::vector<Section>> m_sections;
     std::unique_ptr<std::vector<Vector3>> m_meshVertices;
     std::unique_ptr<std::vector<std::vector<size_t>>> m_meshQuads;
+    std::unique_ptr<std::set<std::pair<size_t, size_t>>> m_meshProfileEdges;
     
     bool fillSection(const std::vector<size_t> &polygon)
     {

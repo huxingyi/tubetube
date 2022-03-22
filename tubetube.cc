@@ -242,8 +242,9 @@ void initScene() {
         std::vector<std::vector<size_t>> meshTriangles;
         tubeMeshBuilder.getMeshTriangles(meshTriangles);
         auto meshQuads = tubeMeshBuilder.takeMeshQuads();
+        auto meshProfileEdges = tubeMeshBuilder.takeMeshProfileEdges();
         VertexBufferUtils::loadTrangulatedMesh(modelBuffer, *meshVertices, meshTriangles);
-        VertexBufferUtils::loadMeshBorders(modelBorderBuffer, *meshVertices, *meshQuads);
+        VertexBufferUtils::loadMeshProfileEdges(modelBorderBuffer, *meshVertices, *meshProfileEdges);
     }
     
     modelRotation = Vector3(15.0, 45.0, 0.0);
@@ -590,7 +591,7 @@ void renderScene(double timeFactor) {
             projectionMatrix.getData(matrixData);
             glUniformMatrix4fv(singleColorShader.getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
         }
-        glUniform4f(singleColorShader.getUniformLocation("objectColor"), 1.0, 1.0, 1.0, 1.0);
+        glUniform4f(singleColorShader.getUniformLocation("objectColor"), 0.0, 0.0, 0.0, 1.0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, &rayCoords[0]);
         glEnableVertexAttribArray(0);
         glDrawArrays(GL_LINES, 0, 4);
@@ -600,6 +601,7 @@ void renderScene(double timeFactor) {
     }
     
     // Draw outline
+    /*
     glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
     glStencilMask(0x00); 
     glDisable(GL_DEPTH_TEST);
@@ -622,7 +624,8 @@ void renderScene(double timeFactor) {
     }
     glStencilMask(0xFF);
     glStencilFunc(GL_ALWAYS, 1, 0xFF);   
-    glEnable(GL_DEPTH_TEST);  
+    glEnable(GL_DEPTH_TEST); 
+    */
     
     // Draw particles
     /*

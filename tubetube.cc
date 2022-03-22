@@ -186,7 +186,6 @@ static HWND createWindow(int width, int height) {
 void initScene() {
     QueryPerformanceCounter((LARGE_INTEGER*)&qpcFrequency);
 	glClearColor(0.145f, 0.145f, 0.145f, 1.0f);
-    //glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     
     {
         const GLchar *vertexShaderSource =

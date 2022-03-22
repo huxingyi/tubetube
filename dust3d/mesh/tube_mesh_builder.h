@@ -200,8 +200,10 @@ private:
                 Vector3(section.polygon[i]), 
                 Vector3(0.0, 0.0, 1.0) // Out
             );
+            auto tangent = Vector3::crossProduct(section.bitangent, section.normal);
+            auto recalculatedBitangent = Vector3::crossProduct(section.normal, tangent).normalized();
             polygon3d[i] = section.origin + 
-                section.bitangent.rotated(section.normal, angle2d) * radiusList[i] * section.radius;
+                recalculatedBitangent.rotated(section.normal, angle2d) * radiusList[i] * section.radius;
         }
         
         return true;

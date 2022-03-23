@@ -35,7 +35,8 @@ class VertexBufferUtils
 public:
     static void loadTrangulatedMesh(VertexBuffer &vertexBuffer, 
         const std::vector<Vector3> &vertices,
-        const std::vector<std::vector<size_t>> &triangles)
+        const std::vector<std::vector<size_t>> &triangles,
+        uint32_t drawHint)
     {
         auto vertexBufferVertices = std::make_unique<std::vector<GLfloat>>();
         size_t numbersPerVertex = 6;
@@ -63,12 +64,13 @@ public:
             vertexBufferVertices->at(targetIndex++) = (GLfloat)triangleNormal.z();
         }
         size_t vertexCount = vertexBufferVertices->size() / numbersPerVertex;
-        vertexBuffer.update(std::move(vertexBufferVertices), numbersPerVertex, vertexCount);
+        vertexBuffer.update(std::move(vertexBufferVertices), numbersPerVertex, vertexCount, drawHint);
     }
     
     static void loadMeshBorders(VertexBuffer &vertexBuffer, 
         const std::vector<Vector3> &vertices,
-        const std::vector<std::vector<size_t>> &faces)
+        const std::vector<std::vector<size_t>> &faces,
+        uint32_t drawHint)
     {
         auto vertexBufferVertices = std::make_unique<std::vector<GLfloat>>();
         size_t numbersPerVertex = 3;
@@ -85,12 +87,13 @@ public:
             }
         }
         size_t vertexCount = vertexBufferVertices->size() / numbersPerVertex;
-        vertexBuffer.update(std::move(vertexBufferVertices), numbersPerVertex, vertexCount);
+        vertexBuffer.update(std::move(vertexBufferVertices), numbersPerVertex, vertexCount, drawHint);
     }
     
     static void loadMeshProfileEdges(VertexBuffer &vertexBuffer, 
         const std::vector<Vector3> &vertices,
-        const std::set<std::pair<size_t, size_t>> &profileEdges)
+        const std::set<std::pair<size_t, size_t>> &profileEdges,
+        uint32_t drawHint)
     {
         auto vertexBufferVertices = std::make_unique<std::vector<GLfloat>>();
         size_t numbersPerVertex = 3;
@@ -104,7 +107,7 @@ public:
             vertexBufferVertices->push_back((GLfloat)vertices[it.second].z());
         }
         size_t vertexCount = vertexBufferVertices->size() / numbersPerVertex;
-        vertexBuffer.update(std::move(vertexBufferVertices), numbersPerVertex, vertexCount);
+        vertexBuffer.update(std::move(vertexBufferVertices), numbersPerVertex, vertexCount, drawHint);
     }
 };
     

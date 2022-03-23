@@ -32,6 +32,13 @@ namespace dust3d
 class VertexBuffer
 {
 public:
+    VertexBuffer() = default;
+    
+    VertexBuffer(std::unique_ptr<std::vector<GLfloat>> vertices, size_t numbersPerVertex, size_t vertexCount, uint32_t drawHint=0)
+    {
+        update(std::move(vertices), numbersPerVertex, vertexCount, drawHint);
+    }
+    
     bool begin()
     {
         if (nullptr != m_vertices) {
@@ -52,11 +59,17 @@ public:
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
     
-    void update(std::unique_ptr<std::vector<GLfloat>> vertices, size_t numbersPerVertex, size_t vertexCount)
+    void update(std::unique_ptr<std::vector<GLfloat>> vertices, size_t numbersPerVertex, size_t vertexCount, uint32_t drawHint)
     {
         m_vertices = std::move(vertices);
         m_numbersPerVertex = numbersPerVertex;
         m_vertexCount = vertexCount;
+        m_drawHint = drawHint;
+    }
+    
+    size_t numbersPerVertex() const
+    {
+        return m_numbersPerVertex;
     }
     
     size_t vertexCount() const
@@ -70,10 +83,16 @@ public:
         m_vertexBufferId = 0;
     }
     
+    uint32_t drawHint() const
+    {
+        return m_drawHint;
+    }
+    
 private:
     GLuint m_vertexBufferId = 0;
     size_t m_vertexCount = 0;
     size_t m_numbersPerVertex = 0;
+    uint32_t m_drawHint = 0;
     std::unique_ptr<std::vector<GLfloat>> m_vertices;
 };
 

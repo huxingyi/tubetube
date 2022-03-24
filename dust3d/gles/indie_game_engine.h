@@ -31,7 +31,7 @@
 #include <dust3d/gles/vertex_buffer.h>
 #include <dust3d/gles/vertex_buffer_utils.h>
 #include <dust3d/gles/shadow_map.h>
-#include <dust3d/mesh/tube_mesh_builder.h>
+#include <dust3d/gles/font_map.h>
 
 namespace dust3d
 {
@@ -235,9 +235,47 @@ public:
             m_singleColorShader = Shader(vertexShaderSource, fragmentShaderSource);
         }
         
+        std::unique_ptr<std::vector<GLfloat>> quadVertices = std::unique_ptr<std::vector<GLfloat>>(new std::vector<GLfloat> {
+            -1.0f, -1.0f,  0.0f,  0.0f,  0.0f,
+             1.0f, -1.0f,  0.0f,  1.0f,  0.0f,
+             1.0f,  1.0f,  0.0f,  1.0f,  1.0f,
+             1.0f,  1.0f,  0.0f,  1.0f,  1.0f,
+            -1.0f,  1.0f,  0.0f,  0.0f,  1.0f,
+            -1.0f, -1.0f,  0.0f,  0.0f,  0.0f,
+        });
+        size_t quadVertexCount = quadVertices->size() / 5;
+        m_quadBuffer.update(std::move(quadVertices), 5, quadVertexCount, DrawHint::Triangles);
+        
         m_shadowMap.initialize();
+        m_fontMap.initialize();
         
         m_initialized = true;
+    }
+    
+    void debugShowMap(GLuint textureId)
+    {
+        glViewport(0, 0, m_windowWidth, m_windowHeight);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        
+        m_debugQuadShader.use();
+        
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, textureId);
+
+        glUniform1i(m_debugQuadShader.getUniformLocation("debugMap"), 0);
+   
+        if (m_quadBuffer.begin()) {
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 5, nullptr);
+            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 5, (const void *)(sizeof(GLfloat) * 3));
+            glEnableVertexAttribArray(0);
+            glEnableVertexAttribArray(1);
+            glDrawArrays(GL_TRIANGLES, 0, m_quadBuffer.vertexCount());
+            glDisableVertexAttribArray(0);
+            glDisableVertexAttribArray(1);
+            m_quadBuffer.end();
+        }
+        
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
     
     void update()
@@ -334,7 +372,7 @@ public:
         glUniform1f(m_modelShader.getUniformLocation("directionLight.ambient"), 0.05);
         glUniform1f(m_modelShader.getUniformLocation("directionLight.diffuse"), 0.4);
         glUniform1f(m_modelShader.getUniformLocation("directionLight.specular"), 0.5);
-        glUniform4f(m_modelShader.getUniformLocation("pointLights[0].color"), 1.0, 0.0, 0.0, 1.0);
+        glUniform4f(m_modelShader.getUniformLocation("pointLights[0].color"), 0xfc / 255.0, 0x66 / 255.0, 0x21 / 255.0, 1.0);
         glUniform4f(m_modelShader.getUniformLocation("pointLights[0].position"), m_lightPosition.x(), m_lightPosition.y(), m_lightPosition.z(), 1.0);
         glUniform1f(m_modelShader.getUniformLocation("pointLights[0].constant"), 1.0f);
         glUniform1f(m_modelShader.getUniformLocation("pointLights[0].linear"), 0.09f);
@@ -342,6 +380,14 @@ public:
         glUniform1f(m_modelShader.getUniformLocation("pointLights[0].ambient"), 0.05);
         glUniform1f(m_modelShader.getUniformLocation("pointLights[0].diffuse"), 0.8);
         glUniform1f(m_modelShader.getUniformLocation("pointLights[0].specular"), 1.0);
+        glUniform4f(m_modelShader.getUniformLocation("pointLights[1].color"), 0.0, 0.0, 0.0, 1.0);
+        glUniform4f(m_modelShader.getUniformLocation("pointLights[1].position"), m_lightPosition.x(), m_lightPosition.y(), m_lightPosition.z(), 1.0);
+        glUniform1f(m_modelShader.getUniformLocation("pointLights[1].constant"), 1.0f);
+        glUniform1f(m_modelShader.getUniformLocation("pointLights[1].linear"), 0.09f);
+        glUniform1f(m_modelShader.getUniformLocation("pointLights[1].quadratic"), 0.032f);
+        glUniform1f(m_modelShader.getUniformLocation("pointLights[1].ambient"), 0.05);
+        glUniform1f(m_modelShader.getUniformLocation("pointLights[1].diffuse"), 0.8);
+        glUniform1f(m_modelShader.getUniformLocation("pointLights[1].specular"), 1.0);
         glUniform4f(m_modelShader.getUniformLocation("cameraPosition"), m_cameraPosition.x(), m_cameraPosition.y(), m_cameraPosition.z(), 1.0);
         glStencilFunc(GL_ALWAYS, 1, 0xFF); 
         glStencilMask(0xFF);
@@ -370,6 +416,29 @@ public:
         }
         glUniform4f(m_singleColorShader.getUniformLocation("objectColor"), 0.0, 0.0, 0.0, 1.0);
         renderObjects(m_singleColorShader, RenderType::Default, DrawHint::Lines);
+        
+        // Render text
+        
+        m_fontMap.shader().use();
+        glDisable(GL_DEPTH_TEST);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, m_fontMap.textureId());
+        glUniform1i(m_fontMap.shader().getUniformLocation("fontMap"), 0);
+        {
+            Matrix4x4 projectionMatrix;
+            projectionMatrix.orthographicProject(0.0, m_windowWidth, 0.0, m_windowHeight, 0.0, 1.0);
+            {
+                GLfloat matrixData[16];
+                projectionMatrix.getData(matrixData);
+                glUniformMatrix4fv(m_fontMap.shader().getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
+            }
+        }
+        glUniform4f(m_fontMap.shader().getUniformLocation("objectColor"), 1.0, 1.0, 1.0, 1.0);
+        m_fontMap.renderString("Hello IndieGameEngine!", m_windowWidth / 2.0, m_windowHeight / 2.0);
+        glBindTexture(GL_TEXTURE_2D, 0);
         
         GLuint glError = glGetError();
         if (glError != GL_NO_ERROR)
@@ -418,7 +487,7 @@ private:
     std::function<std::unique_ptr<std::vector<VertexBuffer>> (const std::string &resourceName)> m_vertexBufferListLoadHander = nullptr;
     std::function<bool (char key)> m_keyPressedQueryHander = nullptr;
     bool m_initialized = false;
-    Vector3 m_cameraPosition = Vector3(0.0, 0.0, 3.0);
+    Vector3 m_cameraPosition = Vector3(0.0, 0.5, 3.0);
     Vector3 m_cameraFront = Vector3(0.0, 0.0, -1.0);
     Vector3 m_cameraUp = Vector3(0.0, 1.0, 0.0);
     Vector3 m_lightPosition = Vector3(0.2, 1.0, 2.0);
@@ -429,7 +498,9 @@ private:
     Shader m_singleColorShader;
     Shader m_lightShader;
     Shader m_debugQuadShader;
+    VertexBuffer m_quadBuffer;
     ShadowMap m_shadowMap;
+    FontMap m_fontMap;
     std::map<std::string, std::pair<std::unique_ptr<std::vector<VertexBuffer>>, int64_t/*referencingCount*/>> m_vertexBufferListMap;
     std::map<std::string, std::unique_ptr<Object>> m_objectMap;
 };

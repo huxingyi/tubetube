@@ -13,6 +13,8 @@ static int windowWidth = 640;
 static int windowHeight = 360;
 static HWND windowHandle = nullptr;
 static bool quit = false;
+EGLDisplay eglDisplay = EGL_NO_DISPLAY;
+EGLSurface eglSurface = EGL_NO_SURFACE;
 
 using namespace dust3d;
 
@@ -86,23 +88,10 @@ static HWND createWindow(int width, int height) {
     return hwnd;
 }
 
-std::vector<Vector3> modelPositions = {
-    Vector3( 0.0f, 0.0f, 0.0f),
-    Vector3( 2.0f, 5.0f, -15.0f),
-    Vector3(-1.5f, -2.2f, -2.5f),
-    Vector3(-3.8f, -2.0f, -12.3f),
-    Vector3( 2.4f, -0.4f, -3.5f),
-    Vector3(-1.7f, 3.0f, -7.5f),
-    Vector3( 1.3f, -2.0f, -2.5f),
-    Vector3( 1.5f, 2.0f, -2.5f),
-    Vector3( 1.5f, 0.2f, -1.5f),
-    Vector3(-1.3f, 1.0f, -1.5f)
-};
-
-static EGLint getContextRenderableType ( EGLDisplay eglDisplay )
+static EGLint getContextRenderableType(EGLDisplay eglDisplay)
 {
 #ifdef EGL_KHR_create_context
-    const char *extensions = eglQueryString (eglDisplay, EGL_EXTENSIONS);
+    const char *extensions = eglQueryString(eglDisplay, EGL_EXTENSIONS);
     if (extensions != NULL && strstr(extensions, "EGL_KHR_create_context")) {
         return EGL_OPENGL_ES3_BIT_KHR;
     }
@@ -110,16 +99,35 @@ static EGLint getContextRenderableType ( EGLDisplay eglDisplay )
    return EGL_OPENGL_ES2_BIT;
 }
 
+static std::unique_ptr<std::vector<VertexBuffer>> buildVertexBufferListFromSections(std::unique_ptr<std::vector<TubeMeshBuilder::Section>> sections)
+{
+    TubeMeshBuilder tubeMeshBuilder(std::move(sections));
+    tubeMeshBuilder.build();
+    auto meshVertices = tubeMeshBuilder.takeMeshVertices();
+    std::vector<std::vector<size_t>> meshTriangles;
+    tubeMeshBuilder.getMeshTriangles(meshTriangles);
+    auto meshQuads = tubeMeshBuilder.takeMeshQuads();
+    auto meshProfileEdges = tubeMeshBuilder.takeMeshProfileEdges();
+    VertexBuffer modelBuffer;
+    VertexBuffer modelBorderBuffer;
+    VertexBufferUtils::loadTrangulatedMesh(modelBuffer, *meshVertices, meshTriangles, IndieGameEngine::DrawHint::Triangles);
+    VertexBufferUtils::loadMeshProfileEdges(modelBorderBuffer, *meshVertices, *meshProfileEdges, IndieGameEngine::DrawHint::Lines);
+    auto vertexBufferList = std::make_unique<std::vector<VertexBuffer>>();
+    vertexBufferList->push_back(std::move(modelBuffer));
+    vertexBufferList->push_back(std::move(modelBorderBuffer));
+    return std::move(vertexBufferList);
+}
+
 static std::unique_ptr<std::vector<VertexBuffer>> loadResouceVertexBufferList(const std::string &resourceName)
 {
     if ("Ground" == resourceName) {
         VertexBuffer vertexBuffer(std::make_unique<std::vector<GLfloat>>(std::vector<GLfloat> {
-            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, // top-left
-             0.5f,  0.5f , 0.5f,  0.0f,  1.0f,  0.0f, // bottom-right
-             0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, // top-right     
-             0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f, // bottom-right
-            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, // top-left
-            -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f  // bottom-left
+            -0.5f,  0.0f, -0.5f,  0.0f,  1.0f,  0.0f, // top-left
+             0.5f,  0.0f , 0.5f,  0.0f,  1.0f,  0.0f, // bottom-right
+             0.5f,  0.0f, -0.5f,  0.0f,  1.0f,  0.0f, // top-right     
+             0.5f,  0.0f,  0.5f,  0.0f,  1.0f,  0.0f, // bottom-right
+            -0.5f,  0.0f, -0.5f,  0.0f,  1.0f,  0.0f, // top-left
+            -0.5f,  0.0f,  0.5f,  0.0f,  1.0f,  0.0f  // bottom-left
         }), 6, 6, IndieGameEngine::DrawHint::Triangles);
         auto vertexBufferList = std::make_unique<std::vector<VertexBuffer>>();
         vertexBufferList->push_back(std::move(vertexBuffer));
@@ -128,21 +136,12 @@ static std::unique_ptr<std::vector<VertexBuffer>> loadResouceVertexBufferList(co
         auto sections = std::make_unique<std::vector<TubeMeshBuilder::Section>>(std::vector<TubeMeshBuilder::Section> {
             #include <dust3d/samples/make_plane/plane.sections>
         });
-        TubeMeshBuilder tubeMeshBuilder(std::move(sections));
-        tubeMeshBuilder.build();
-        auto meshVertices = tubeMeshBuilder.takeMeshVertices();
-        std::vector<std::vector<size_t>> meshTriangles;
-        tubeMeshBuilder.getMeshTriangles(meshTriangles);
-        auto meshQuads = tubeMeshBuilder.takeMeshQuads();
-        auto meshProfileEdges = tubeMeshBuilder.takeMeshProfileEdges();
-        VertexBuffer modelBuffer;
-        VertexBuffer modelBorderBuffer;
-        VertexBufferUtils::loadTrangulatedMesh(modelBuffer, *meshVertices, meshTriangles, IndieGameEngine::DrawHint::Triangles);
-        VertexBufferUtils::loadMeshProfileEdges(modelBorderBuffer, *meshVertices, *meshProfileEdges, IndieGameEngine::DrawHint::Lines);
-        auto vertexBufferList = std::make_unique<std::vector<VertexBuffer>>();
-        vertexBufferList->push_back(std::move(modelBuffer));
-        vertexBufferList->push_back(std::move(modelBorderBuffer));
-        return std::move(vertexBufferList);
+        return buildVertexBufferListFromSections(std::move(sections));
+    } else if ("Artillery" == resourceName) {
+        auto sections = std::make_unique<std::vector<TubeMeshBuilder::Section>>(std::vector<TubeMeshBuilder::Section> {
+            #include <dust3d/samples/make_artillery/artillery.sections>
+        });
+        return buildVertexBufferListFromSections(std::move(sections));
     }
     return nullptr;
 }
@@ -152,12 +151,23 @@ static bool queryKeyPressed(char key)
     return GetKeyState(key) & 0x8000;
 }
 
+static void updateTimer(HWND hwnd, UINT msg, UINT_PTR timerId, DWORD time)
+{
+    IndieGameEngine::indie()->update();
+}
+
+static void renderTimer(HWND hwnd, UINT msg, UINT_PTR timerId, DWORD time)
+{
+    IndieGameEngine::indie()->renderScene();
+    eglSwapBuffers(eglDisplay, eglSurface);
+}
+
 int main(int argc, char* argv[])
 {
     windowHandle = createWindow(windowWidth, windowHeight);
     HDC hdc = GetDC(windowHandle);
 
-    EGLDisplay eglDisplay = eglGetDisplay(hdc);
+    eglDisplay = eglGetDisplay(hdc);
     if (eglDisplay == EGL_NO_DISPLAY) {
         std::cout << "Could not get egl display!" << std::endl;
         return 1;
@@ -184,7 +194,7 @@ int main(int argc, char* argv[])
     EGLint nrOfConfigs;
     EGLConfig windowConfig;
     eglChooseConfig(eglDisplay, configAttributes, &windowConfig, 1, &nrOfConfigs);
-    EGLSurface eglSurface = eglCreateWindowSurface(eglDisplay, windowConfig, windowHandle, NULL);
+    eglSurface = eglCreateWindowSurface(eglDisplay, windowConfig, windowHandle, NULL);
     if (eglSurface == EGL_NO_SURFACE) {
         std::cerr << "Could not create EGL surface : " << eglGetError() << std::endl;
         return 1;
@@ -204,27 +214,45 @@ int main(int argc, char* argv[])
     IndieGameEngine::indie()->setKeyPressedQueryHandler(queryKeyPressed);
     {
         Matrix4x4 modelMatrix;
-        modelMatrix.translate(Vector3(0.0, -3.1, 0.0));
         modelMatrix.scale(Vector3(20.0, 0.0, 20.0));
         IndieGameEngine::indie()->addObject("defaultGround", "Ground", modelMatrix, IndieGameEngine::RenderType::Ground);
     }
-    for (size_t i = 0; i < modelPositions.size(); ++i) {
-        Matrix4x4 modelMatrix;
-        modelMatrix.translate(modelPositions[i]);
-        IndieGameEngine::indie()->addObject("plane" + ('1' + i), "Plane", modelMatrix, IndieGameEngine::RenderType::Default);
+    {
+        std::vector<Vector3> modelPositions = {
+            Vector3( 0.0f, 0.0f, 0.0f),
+            Vector3( 2.0f, 5.0f, -15.0f),
+            Vector3(-1.5f, -2.2f, -2.5f),
+            Vector3(-3.8f, -2.0f, -12.3f),
+            Vector3( 2.4f, -0.4f, -3.5f),
+            Vector3(-1.7f, 3.0f, -7.5f),
+            Vector3( 1.3f, -2.0f, -2.5f),
+            Vector3( 1.5f, 2.0f, -2.5f),
+            Vector3( 1.5f, 0.2f, -1.5f),
+            Vector3(-1.3f, 1.0f, -1.5f)
+        };
+        for (size_t i = 0; i < modelPositions.size(); ++i) {
+            Matrix4x4 modelMatrix;
+            modelMatrix.translate(modelPositions[i]);
+            IndieGameEngine::indie()->addObject("plane" + std::to_string(i), "Plane", modelMatrix, IndieGameEngine::RenderType::Default);
+        }
     }
-
-    MSG uMsg;
-    PeekMessage(&uMsg, NULL, 0, 0, PM_REMOVE);
-
+    {
+        Matrix4x4 modelMatrix;
+        modelMatrix.translate(Vector3(0.0, 0.2, 1.0));
+        //modelMatrix.rotate(Vector3(1.0, 0.0, 0.0), Math::radiansFromDegrees(60));
+        IndieGameEngine::indie()->addObject("defaultArtillery", "Artillery", modelMatrix, IndieGameEngine::RenderType::Default);
+    }
+    
+    SetTimer(windowHandle, 1, 1000 / 120, updateTimer);
+    SetTimer(windowHandle, 2, 1000 / 60, renderTimer);
     while (!quit)  {
         IndieGameEngine::indie()->update();
         IndieGameEngine::indie()->renderScene();
-        while (PeekMessage(&uMsg, NULL, 0, 0, PM_REMOVE) > 0) {
-            TranslateMessage(&uMsg);
-            DispatchMessage(&uMsg);
+        MSG msg;
+        while (GetMessage(&msg, NULL, 0, 0)) {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
         }
-        eglSwapBuffers(eglDisplay, eglSurface);
     }
     
     return 0;

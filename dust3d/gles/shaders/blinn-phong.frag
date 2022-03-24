@@ -12,7 +12,7 @@ struct PointLight
     float diffuse;
     float specular;
 };
-#define POINT_LIGHT_COUNT         1
+#define POINT_LIGHT_COUNT         2
 uniform PointLight pointLights[POINT_LIGHT_COUNT];
 struct DirectionLight
 {

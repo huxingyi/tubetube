@@ -32,6 +32,7 @@
 #include <dust3d/gles/vertex_buffer_utils.h>
 #include <dust3d/gles/shadow_map.h>
 #include <dust3d/gles/font_map.h>
+#include <dust3d/gles/screen_map.h>
 
 namespace dust3d
 {
@@ -234,6 +235,15 @@ public:
                 ;
             m_singleColorShader = Shader(vertexShaderSource, fragmentShaderSource);
         }
+        {
+            const GLchar *vertexShaderSource =
+                #include <dust3d/gles/shaders/quad.vert>
+                ;
+            const GLchar *fragmentShaderSource = 
+                #include <dust3d/gles/shaders/screen.frag>
+                ;
+            m_screenShader = Shader(vertexShaderSource, fragmentShaderSource);
+        }
         
         std::unique_ptr<std::vector<GLfloat>> quadVertices = std::unique_ptr<std::vector<GLfloat>>(new std::vector<GLfloat> {
             -1.0f, -1.0f,  0.0f,  0.0f,  0.0f,
@@ -248,6 +258,7 @@ public:
         
         m_shadowMap.initialize();
         m_fontMap.initialize();
+        m_screenMap.initialize();
         
         m_initialized = true;
     }
@@ -278,19 +289,49 @@ public:
         glBindTexture(GL_TEXTURE_2D, 0);
     }
     
+    void flushScreen()
+    {
+        glViewport(0, 0, m_windowWidth, m_windowHeight);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        
+        m_screenShader.use();
+        
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, m_screenMap.textureId());
+
+        glUniform1i(m_screenShader.getUniformLocation("screenMap"), 0);
+   
+        if (m_quadBuffer.begin()) {
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 5, nullptr);
+            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 5, (const void *)(sizeof(GLfloat) * 3));
+            glEnableVertexAttribArray(0);
+            glEnableVertexAttribArray(1);
+            glDrawArrays(GL_TRIANGLES, 0, m_quadBuffer.vertexCount());
+            glDisableVertexAttribArray(0);
+            glDisableVertexAttribArray(1);
+            m_quadBuffer.end();
+        }
+        
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+    
     void update()
     {
         if (nullptr != m_keyPressedQueryHander) {
             const double cameraSpeed = 0.05;
             if (m_keyPressedQueryHander('A')) {
                 m_cameraPosition -= Vector3::crossProduct(m_cameraFront, m_cameraUp) * cameraSpeed;
+                dirty();
             } else if (m_keyPressedQueryHander('D')) {
                 m_cameraPosition += Vector3::crossProduct(m_cameraFront, m_cameraUp) * cameraSpeed;
+                dirty();
             }
             if (m_keyPressedQueryHander('W')) {
                 m_cameraPosition += m_cameraFront * cameraSpeed;
+                dirty();
             } else if (m_keyPressedQueryHander('S')) {
                 m_cameraPosition -= m_cameraFront * cameraSpeed;
+                dirty();
             }
         }
     }
@@ -300,149 +341,160 @@ public:
         if (!m_initialized)
             initializeScene();
         
-        // Render shadow
+        if (m_screenIsDirty) {
+            
+            m_screenIsDirty = false;
         
-        Matrix4x4 lightViewProjectionMatrix;
-        {
-            Matrix4x4 viewMatrix;
-            viewMatrix.lookAt(m_lightPosition, Vector3(0.0, 0.0, 0.0), Vector3(0.0, 1.0, 0.0));
+            // Render shadow
             
-            Matrix4x4 projectionMatrix;
-            projectionMatrix.orthographicProject(-10.0, 10.0, -10.0, 10.0, 1.0, 7.5);
-            
-            lightViewProjectionMatrix = projectionMatrix * viewMatrix;
-            
-            if (m_shadowMap.begin()) {
+            Matrix4x4 lightViewProjectionMatrix;
+            {
+                Matrix4x4 viewMatrix;
+                viewMatrix.lookAt(m_lightPosition, Vector3(0.0, 0.0, 0.0), Vector3(0.0, 1.0, 0.0));
+                
+                Matrix4x4 projectionMatrix;
+                projectionMatrix.orthographicProject(-10.0, 10.0, -10.0, 10.0, 1.0, 7.5);
+                
+                lightViewProjectionMatrix = projectionMatrix * viewMatrix;
+                
+                if (m_shadowMap.begin()) {
+                    glEnable(GL_DEPTH_TEST);
+                    glDisable(GL_CULL_FACE); // Disable fulling face, unless there will be hole in shadow
+                    {
+                        GLfloat matrixData[16];
+                        viewMatrix.getData(matrixData);
+                        glUniformMatrix4fv(m_shadowMap.shader().getUniformLocation("viewMatrix"), 1, GL_FALSE, &matrixData[0]);
+                    }
+                    {
+                        GLfloat matrixData[16];
+                        projectionMatrix.getData(matrixData);
+                        glUniformMatrix4fv(m_shadowMap.shader().getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
+                    }
+                    renderObjects(m_shadowMap.shader(), RenderType::AllButLight, DrawHint::Triangles);
+                    m_shadowMap.end();
+                }
+            }
+
+            if (m_screenMap.begin()) {
+                
+                // Render triangles
+                
+                glEnable(GL_STENCIL_TEST);
                 glEnable(GL_DEPTH_TEST);
-                glDisable(GL_CULL_FACE); // Disable fulling face, unless there will be hole in shadow
+                glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);  
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+                glEnable(GL_CULL_FACE);  
+                glEnable(GL_BLEND);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                
+                Matrix4x4 viewMatrix;
+                viewMatrix.lookAt(m_cameraPosition, m_cameraPosition + m_cameraFront, m_cameraUp);
+                
+                Matrix4x4 projectionMatrix;
+                projectionMatrix.perspectiveProject(Math::radiansFromDegrees(m_fov), (float)m_windowWidth / (float)m_windowHeight, 0.1, 100.0);
+                
+                m_modelShader.use();
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, m_shadowMap.textureId());
+                glUniform1i(m_modelShader.getUniformLocation("shadowMap"), 0);
                 {
                     GLfloat matrixData[16];
                     viewMatrix.getData(matrixData);
-                    glUniformMatrix4fv(m_shadowMap.shader().getUniformLocation("viewMatrix"), 1, GL_FALSE, &matrixData[0]);
+                    glUniformMatrix4fv(m_modelShader.getUniformLocation("viewMatrix"), 1, GL_FALSE, &matrixData[0]);
                 }
                 {
                     GLfloat matrixData[16];
                     projectionMatrix.getData(matrixData);
-                    glUniformMatrix4fv(m_shadowMap.shader().getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
+                    glUniformMatrix4fv(m_modelShader.getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
                 }
-                renderObjects(m_shadowMap.shader(), RenderType::AllButLight, DrawHint::Triangles);
-                m_shadowMap.end();
+                {
+                    GLfloat matrixData[16];
+                    lightViewProjectionMatrix.getData(matrixData);
+                    glUniformMatrix4fv(m_modelShader.getUniformLocation("lightViewProjectionMatrix"), 1, GL_FALSE, &matrixData[0]);
+                }
+                glUniform4f(m_modelShader.getUniformLocation("objectColor"), 1.0, 1.0, 1.0, 1.0);
+                glUniform4f(m_modelShader.getUniformLocation("directionLight.color"), 1.0, 1.0, 1.0, 1.0);
+                glUniform4f(m_modelShader.getUniformLocation("directionLight.direction"), -0.2, -1.0, -0.3, 1.0);
+                glUniform1f(m_modelShader.getUniformLocation("directionLight.ambient"), 0.05);
+                glUniform1f(m_modelShader.getUniformLocation("directionLight.diffuse"), 0.4);
+                glUniform1f(m_modelShader.getUniformLocation("directionLight.specular"), 0.5);
+                glUniform4f(m_modelShader.getUniformLocation("pointLights[0].color"), 0xfc / 255.0, 0x66 / 255.0, 0x21 / 255.0, 1.0);
+                glUniform4f(m_modelShader.getUniformLocation("pointLights[0].position"), m_lightPosition.x(), m_lightPosition.y(), m_lightPosition.z(), 1.0);
+                glUniform1f(m_modelShader.getUniformLocation("pointLights[0].constant"), 1.0f);
+                glUniform1f(m_modelShader.getUniformLocation("pointLights[0].linear"), 0.09f);
+                glUniform1f(m_modelShader.getUniformLocation("pointLights[0].quadratic"), 0.032f);
+                glUniform1f(m_modelShader.getUniformLocation("pointLights[0].ambient"), 0.05);
+                glUniform1f(m_modelShader.getUniformLocation("pointLights[0].diffuse"), 0.8);
+                glUniform1f(m_modelShader.getUniformLocation("pointLights[0].specular"), 1.0);
+                glUniform4f(m_modelShader.getUniformLocation("pointLights[1].color"), 0.0, 0.0, 0.0, 1.0);
+                glUniform4f(m_modelShader.getUniformLocation("pointLights[1].position"), m_lightPosition.x(), m_lightPosition.y(), m_lightPosition.z(), 1.0);
+                glUniform1f(m_modelShader.getUniformLocation("pointLights[1].constant"), 1.0f);
+                glUniform1f(m_modelShader.getUniformLocation("pointLights[1].linear"), 0.09f);
+                glUniform1f(m_modelShader.getUniformLocation("pointLights[1].quadratic"), 0.032f);
+                glUniform1f(m_modelShader.getUniformLocation("pointLights[1].ambient"), 0.05);
+                glUniform1f(m_modelShader.getUniformLocation("pointLights[1].diffuse"), 0.8);
+                glUniform1f(m_modelShader.getUniformLocation("pointLights[1].specular"), 1.0);
+                glUniform4f(m_modelShader.getUniformLocation("cameraPosition"), m_cameraPosition.x(), m_cameraPosition.y(), m_cameraPosition.z(), 1.0);
+                glStencilFunc(GL_ALWAYS, 1, 0xFF); 
+                glStencilMask(0xFF);
+                renderObjects(m_modelShader, RenderType::Default, DrawHint::Triangles);
+                glStencilMask(0x00);
+                renderObjects(m_modelShader, RenderType::Ground, DrawHint::Triangles);
+                
+                // Render lines
+                
+                m_singleColorShader.use();
+                Matrix4x4 rayModelMatrix;
+                {
+                    GLfloat matrixData[16];
+                    rayModelMatrix.getData(matrixData);
+                    glUniformMatrix4fv(m_singleColorShader.getUniformLocation("modelMatrix"), 1, GL_FALSE, &matrixData[0]);
+                }
+                {
+                    GLfloat matrixData[16];
+                    viewMatrix.getData(matrixData);
+                    glUniformMatrix4fv(m_singleColorShader.getUniformLocation("viewMatrix"), 1, GL_FALSE, &matrixData[0]);
+                }
+                {
+                    GLfloat matrixData[16];
+                    projectionMatrix.getData(matrixData);
+                    glUniformMatrix4fv(m_singleColorShader.getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
+                }
+                glUniform4f(m_singleColorShader.getUniformLocation("objectColor"), 0.0, 0.0, 0.0, 1.0);
+                renderObjects(m_singleColorShader, RenderType::Default, DrawHint::Lines);
+                
+                // Render text
+                
+                m_fontMap.shader().use();
+                glDisable(GL_DEPTH_TEST);
+                glEnable(GL_BLEND);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, m_fontMap.textureId());
+                glUniform1i(m_fontMap.shader().getUniformLocation("fontMap"), 0);
+                {
+                    Matrix4x4 projectionMatrix;
+                    projectionMatrix.orthographicProject(0.0, m_windowWidth, 0.0, m_windowHeight);
+                    {
+                        GLfloat matrixData[16];
+                        projectionMatrix.getData(matrixData);
+                        glUniformMatrix4fv(m_fontMap.shader().getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
+                    }
+                }
+                glUniform4f(m_fontMap.shader().getUniformLocation("objectColor"), 1.0, 1.0, 1.0, 1.0);
+                m_fontMap.renderString("Hello IndieGameEngine!", m_windowWidth / 2.0, m_windowHeight / 2.0);
+                glBindTexture(GL_TEXTURE_2D, 0);
+                
+                m_screenMap.end();
             }
         }
         
-        // Render triangles
-        
-        glViewport(0, 0, m_windowWidth, m_windowHeight);
-        glEnable(GL_STENCIL_TEST);
-        glEnable(GL_DEPTH_TEST);
-        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);  
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        glEnable(GL_CULL_FACE);  
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        
-        Matrix4x4 viewMatrix;
-        viewMatrix.lookAt(m_cameraPosition, m_cameraPosition + m_cameraFront, m_cameraUp);
-        
-        Matrix4x4 projectionMatrix;
-        projectionMatrix.perspectiveProject(Math::radiansFromDegrees(m_fov), (float)m_windowWidth / (float)m_windowHeight, 0.1, 100.0);
-        
-        m_modelShader.use();
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, m_shadowMap.textureId());
-        glUniform1i(m_modelShader.getUniformLocation("shadowMap"), 0);
-        {
-            GLfloat matrixData[16];
-            viewMatrix.getData(matrixData);
-            glUniformMatrix4fv(m_modelShader.getUniformLocation("viewMatrix"), 1, GL_FALSE, &matrixData[0]);
-        }
-        {
-            GLfloat matrixData[16];
-            projectionMatrix.getData(matrixData);
-            glUniformMatrix4fv(m_modelShader.getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
-        }
-        {
-            GLfloat matrixData[16];
-            lightViewProjectionMatrix.getData(matrixData);
-            glUniformMatrix4fv(m_modelShader.getUniformLocation("lightViewProjectionMatrix"), 1, GL_FALSE, &matrixData[0]);
-        }
-        glUniform4f(m_modelShader.getUniformLocation("objectColor"), 1.0, 1.0, 1.0, 1.0);
-        glUniform4f(m_modelShader.getUniformLocation("directionLight.color"), 1.0, 1.0, 1.0, 1.0);
-        glUniform4f(m_modelShader.getUniformLocation("directionLight.direction"), -0.2, -1.0, -0.3, 1.0);
-        glUniform1f(m_modelShader.getUniformLocation("directionLight.ambient"), 0.05);
-        glUniform1f(m_modelShader.getUniformLocation("directionLight.diffuse"), 0.4);
-        glUniform1f(m_modelShader.getUniformLocation("directionLight.specular"), 0.5);
-        glUniform4f(m_modelShader.getUniformLocation("pointLights[0].color"), 0xfc / 255.0, 0x66 / 255.0, 0x21 / 255.0, 1.0);
-        glUniform4f(m_modelShader.getUniformLocation("pointLights[0].position"), m_lightPosition.x(), m_lightPosition.y(), m_lightPosition.z(), 1.0);
-        glUniform1f(m_modelShader.getUniformLocation("pointLights[0].constant"), 1.0f);
-        glUniform1f(m_modelShader.getUniformLocation("pointLights[0].linear"), 0.09f);
-        glUniform1f(m_modelShader.getUniformLocation("pointLights[0].quadratic"), 0.032f);
-        glUniform1f(m_modelShader.getUniformLocation("pointLights[0].ambient"), 0.05);
-        glUniform1f(m_modelShader.getUniformLocation("pointLights[0].diffuse"), 0.8);
-        glUniform1f(m_modelShader.getUniformLocation("pointLights[0].specular"), 1.0);
-        glUniform4f(m_modelShader.getUniformLocation("pointLights[1].color"), 0.0, 0.0, 0.0, 1.0);
-        glUniform4f(m_modelShader.getUniformLocation("pointLights[1].position"), m_lightPosition.x(), m_lightPosition.y(), m_lightPosition.z(), 1.0);
-        glUniform1f(m_modelShader.getUniformLocation("pointLights[1].constant"), 1.0f);
-        glUniform1f(m_modelShader.getUniformLocation("pointLights[1].linear"), 0.09f);
-        glUniform1f(m_modelShader.getUniformLocation("pointLights[1].quadratic"), 0.032f);
-        glUniform1f(m_modelShader.getUniformLocation("pointLights[1].ambient"), 0.05);
-        glUniform1f(m_modelShader.getUniformLocation("pointLights[1].diffuse"), 0.8);
-        glUniform1f(m_modelShader.getUniformLocation("pointLights[1].specular"), 1.0);
-        glUniform4f(m_modelShader.getUniformLocation("cameraPosition"), m_cameraPosition.x(), m_cameraPosition.y(), m_cameraPosition.z(), 1.0);
-        glStencilFunc(GL_ALWAYS, 1, 0xFF); 
-        glStencilMask(0xFF);
-        renderObjects(m_modelShader, RenderType::Default, DrawHint::Triangles);
-        glStencilMask(0x00);
-        renderObjects(m_modelShader, RenderType::Ground, DrawHint::Triangles);
-        
-        // Render lines
-        
-        m_singleColorShader.use();
-        Matrix4x4 rayModelMatrix;
-        {
-            GLfloat matrixData[16];
-            rayModelMatrix.getData(matrixData);
-            glUniformMatrix4fv(m_singleColorShader.getUniformLocation("modelMatrix"), 1, GL_FALSE, &matrixData[0]);
-        }
-        {
-            GLfloat matrixData[16];
-            viewMatrix.getData(matrixData);
-            glUniformMatrix4fv(m_singleColorShader.getUniformLocation("viewMatrix"), 1, GL_FALSE, &matrixData[0]);
-        }
-        {
-            GLfloat matrixData[16];
-            projectionMatrix.getData(matrixData);
-            glUniformMatrix4fv(m_singleColorShader.getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
-        }
-        glUniform4f(m_singleColorShader.getUniformLocation("objectColor"), 0.0, 0.0, 0.0, 1.0);
-        renderObjects(m_singleColorShader, RenderType::Default, DrawHint::Lines);
-        
-        // Render text
-        
-        m_fontMap.shader().use();
-        glDisable(GL_DEPTH_TEST);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, m_fontMap.textureId());
-        glUniform1i(m_fontMap.shader().getUniformLocation("fontMap"), 0);
-        {
-            Matrix4x4 projectionMatrix;
-            projectionMatrix.orthographicProject(0.0, m_windowWidth, 0.0, m_windowHeight, 0.0, 1.0);
-            {
-                GLfloat matrixData[16];
-                projectionMatrix.getData(matrixData);
-                glUniformMatrix4fv(m_fontMap.shader().getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
-            }
-        }
-        glUniform4f(m_fontMap.shader().getUniformLocation("objectColor"), 1.0, 1.0, 1.0, 1.0);
-        m_fontMap.renderString("Hello IndieGameEngine!", m_windowWidth / 2.0, m_windowHeight / 2.0);
-        glBindTexture(GL_TEXTURE_2D, 0);
+        flushScreen();
         
         GLuint glError = glGetError();
         if (glError != GL_NO_ERROR)
-            std::cerr << "OpenGL Error : " << glError << "\n";
+            std::cerr << "OpenGL Error : " << glError << std::endl;
     }
     
     void handleMouseMove(double x, double y)
@@ -459,9 +511,11 @@ public:
         int offsetY = y - s_lastY;
         if (0 != offsetX) {
             m_cameraFront = m_cameraFront.rotated(Vector3(0.0, 1.0, 0.0), Math::radiansFromDegrees(45.0 * -offsetX / m_windowWidth));
+            dirty();
         }
         if (0 != offsetY) {
             m_cameraFront = m_cameraFront.rotated(Vector3(1.0, 0.0, 0.0), Math::radiansFromDegrees(45.0 * -offsetY / m_windowHeight));
+            dirty();
         }
         s_lastX = x;
         s_lastY = y;
@@ -476,11 +530,17 @@ public:
     {
         m_windowWidth = width;
         m_windowHeight = height;
+        m_screenMap.setSize(m_windowWidth, m_windowHeight);
     }
     
     void setKeyPressedQueryHandler(std::function<bool (char key)> keyPressedQueryHander)
     {
         m_keyPressedQueryHander = keyPressedQueryHander;
+    }
+    
+    void dirty()
+    {
+        m_screenIsDirty = true;
     }
     
 private:
@@ -498,9 +558,12 @@ private:
     Shader m_singleColorShader;
     Shader m_lightShader;
     Shader m_debugQuadShader;
+    Shader m_screenShader;
     VertexBuffer m_quadBuffer;
     ShadowMap m_shadowMap;
     FontMap m_fontMap;
+    ScreenMap m_screenMap;
+    bool m_screenIsDirty = true;
     std::map<std::string, std::pair<std::unique_ptr<std::vector<VertexBuffer>>, int64_t/*referencingCount*/>> m_vertexBufferListMap;
     std::map<std::string, std::unique_ptr<Object>> m_objectMap;
 };

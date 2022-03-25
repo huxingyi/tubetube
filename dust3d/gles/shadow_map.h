@@ -27,6 +27,7 @@
 #include <GLES2/gl2ext.h>
 #include <EGL/egl.h>
 #include <EGL/eglplatform.h>
+#include <dust3d/base/debug.h>
 #include <dust3d/gles/shader.h>
 
 namespace dust3d
@@ -76,6 +77,10 @@ public:
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, m_textureId);
+        
+        auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+        if (GL_FRAMEBUFFER_COMPLETE != status)
+            std::cerr << "glCheckFramebufferStatus return:" << status << std::endl;
 
         glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebuffer);
         

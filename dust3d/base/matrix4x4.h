@@ -175,7 +175,7 @@ public:
         *this *= tmp;
     }
     
-    inline void orthographicProject(double left, double right, double bottom, double top, double nearPlane, double farPlane)
+    inline void orthographicProject(double left, double right, double bottom, double top, double nearPlane=-1.0, double farPlane=1.0)
     {
         Matrix4x4 tmp;
         double *tmpData = tmp.data();

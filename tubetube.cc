@@ -246,8 +246,6 @@ int main(int argc, char* argv[])
     SetTimer(windowHandle, 1, 1000 / 120, updateTimer);
     SetTimer(windowHandle, 2, 1000 / 60, renderTimer);
     while (!quit)  {
-        IndieGameEngine::indie()->update();
-        IndieGameEngine::indie()->renderScene();
         MSG msg;
         while (GetMessage(&msg, NULL, 0, 0)) {
             TranslateMessage(&msg);

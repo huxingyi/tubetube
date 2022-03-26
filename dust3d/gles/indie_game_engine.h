@@ -633,12 +633,20 @@ public:
     {
         return m_elapsedSeconds;
     }
+    
+    const uint64_t &millisecondsSinceStart() const
+    {
+        return m_millisecondsSinceStart;
+    }
 
     void update()
     {
         uint64_t milliseconds = m_millisecondsQueryHandler();
         if (m_lastMilliseconds > 0)
             m_elapsedSeconds = (double)(milliseconds - m_lastMilliseconds) / 1000.0;
+        else
+            m_startMilliseconds = milliseconds - 1; // Make m_millisecondsSinceStart no zero
+        m_millisecondsSinceStart = milliseconds - m_startMilliseconds;
         m_lastMilliseconds = milliseconds;
         m_time = (double)milliseconds / 1000.0;
 
@@ -744,6 +752,8 @@ private:
     DepthMap m_cameraSpaceDepthMap;
     FontMap m_fontMap;
     ColorMap m_cameraSpaceColorMap;
+    uint64_t m_startMilliseconds = 0;
+    uint64_t m_millisecondsSinceStart = 0;
     uint64_t m_lastMilliseconds = 0;
     double m_time = 0.0;
     double m_elapsedSeconds = 0.0;

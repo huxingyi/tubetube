@@ -176,9 +176,18 @@ public:
             return false;
         
         worldLocation += velocity() * IndieGameEngine::indie()->elapsedSecondsSinceLastUpdate();
-        IndieGameEngine::indie()->addParticle(5.5, 0.05, worldLocation - forwardDirection * 0.2, velocity() * 0.75, Vector3(1.0, 1.0, 0.0));
+        const double tailFlameRadius = 0.05;
+        double tailFlameSpeed = speed * 0.1;
+        uint64_t emitInterval = (tailFlameRadius * 0.5 / speed) * 1000;
+        if (m_lastEmitTime + emitInterval < IndieGameEngine::indie()->millisecondsSinceStart()) {
+            IndieGameEngine::indie()->addParticle(5.5, tailFlameRadius, worldLocation - forwardDirection * 0.2, forwardDirection * tailFlameSpeed, Vector3(1.0, 1.0, 0.0));
+            m_lastEmitTime = IndieGameEngine::indie()->millisecondsSinceStart();
+        }
         return true;
     }
+
+private:
+    uint64_t m_lastEmitTime = 0;
 };
 
 class WorldState: public IndieGameEngine::State
@@ -186,11 +195,11 @@ class WorldState: public IndieGameEngine::State
 public:
     bool update()
     {
-        if (IndieGameEngine::indie()->objectCount() < 10) {
+        if (IndieGameEngine::indie()->objectCount() < 50) {
             auto objectId = "plane" + std::to_string(IndieGameEngine::indie()->objectCount());
             IndieGameEngine::indie()->addObject(objectId, "Plane", Matrix4x4(), IndieGameEngine::RenderType::Default);
             auto dummyPlaneState = std::make_unique<DummyPlaneLocationState>();
-            dummyPlaneState->worldLocation = Vector3(randomSpawn(randomEngine), randomSpawn(randomEngine), randomSpawn(randomEngine));
+            dummyPlaneState->worldLocation = Vector3(randomSpawn(randomEngine), randomSpawn(randomEngine) + 3.0, randomSpawn(randomEngine));
             dummyPlaneState->forwardDirection = Vector3(0.0, 0.0, -1.0);
             dummyPlaneState->speed = randomSpawn(randomEngine) * 0.15;
             IndieGameEngine::indie()->addLocationState(objectId, std::move(dummyPlaneState));

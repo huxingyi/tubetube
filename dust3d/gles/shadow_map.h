@@ -98,7 +98,7 @@ public:
         if (0 == m_textureId)
             return false;
         
-        glGetIntegerv(GL_FRAMEBUFFER_BINDING, &m_lastFramebuffer);
+        glGetIntegerv(GL_FRAMEBUFFER_BINDING, &m_lastFramebufferId);
         glBindFramebuffer(GL_FRAMEBUFFER, m_frameBufferId);
         glViewport(0, 0, m_textureWidth, m_textureHeight);
         glClear(GL_DEPTH_BUFFER_BIT);
@@ -112,8 +112,8 @@ public:
     void end()
     {
         glDisable(GL_POLYGON_OFFSET_FILL);
-        glBindFramebuffer(GL_FRAMEBUFFER, m_lastFramebuffer);
-        m_lastFramebuffer = 0;
+        glBindFramebuffer(GL_FRAMEBUFFER, m_lastFramebufferId);
+        m_lastFramebufferId = 0;
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     }
     
@@ -141,7 +141,7 @@ private:
     GLuint m_textureId = 0;
     GLuint m_frameBufferId = 0;
     PFNGLDRAWBUFFERSEXTPROC m_drawBuffers = nullptr;
-    GLint m_lastFramebuffer = 0;
+    GLint m_lastFramebufferId = 0;
     std::unique_ptr<Shader> m_shader;
 };
 

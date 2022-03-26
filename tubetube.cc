@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include <dust3d/base/matrix4x4.h>
 #include <dust3d/gles/vertex_buffer.h>
 #include <dust3d/gles/vertex_buffer_utils.h>
@@ -183,8 +184,7 @@ int main(int argc, char* argv[])
         EGL_ALPHA_SIZE,     8,
         EGL_DEPTH_SIZE,     24,
         EGL_STENCIL_SIZE,   8,
-        EGL_SAMPLE_BUFFERS, 1,
-        EGL_SAMPLES,        4,
+        EGL_SAMPLE_BUFFERS, 0,  // Multisamples is enabled in framebuffer see dust3d/gles/screen_map.h
         EGL_RENDERABLE_TYPE, getContextRenderableType(eglDisplay),
         EGL_NONE
     };

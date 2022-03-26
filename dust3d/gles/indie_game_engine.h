@@ -27,12 +27,12 @@
 #include <functional>
 #include <dust3d/base/debug.h>
 #include <dust3d/base/matrix4x4.h>
+#include <dust3d/gles/screen_map.h>
 #include <dust3d/gles/shader.h>
 #include <dust3d/gles/vertex_buffer.h>
 #include <dust3d/gles/vertex_buffer_utils.h>
 #include <dust3d/gles/shadow_map.h>
 #include <dust3d/gles/font_map.h>
-#include <dust3d/gles/screen_map.h>
 
 namespace dust3d
 {

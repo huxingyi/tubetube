@@ -61,7 +61,27 @@ public:
         Lines = 0x00000002,
         Texture = 0x00000004
     };
-
+    
+    class State
+    {
+    public:
+        virtual bool update()
+        {
+            return false;
+        }
+    };
+    
+    class LocationState: public State
+    {
+    public:
+        Vector3 worldLocation;
+        Vector3 velocity;
+        virtual bool update() override
+        {
+            return false;
+        }
+    };
+    
     class Object
     {
     public:
@@ -71,7 +91,8 @@ public:
         Object(const std::string &id, const std::string &resourceName, const Matrix4x4 &modelMatrix, RenderType renderType=RenderType::Default) :
             m_id(id), 
             m_resourceName(resourceName),
-            m_modelMatrix(modelMatrix),
+            m_localMatrix(modelMatrix),
+            m_worldMatrix(modelMatrix),
             m_renderType(renderType)
         {
             m_vertexBufferList = indie()->createObjectVertexBufferList(resourceName);
@@ -82,9 +103,19 @@ public:
             indie()->deleteObjectVertexBufferList(m_resourceName);
         }
         
-        const Matrix4x4 &modelMatrix() const
+        const Matrix4x4 &worldMatrix() const
         {
-            return m_modelMatrix;
+            return m_worldMatrix;
+        }
+        
+        const Matrix4x4 &localMatrix() const
+        {
+            return m_localMatrix;
+        }
+        
+        void updateWorldMatrix(const Matrix4x4 &matrix)
+        {
+            m_worldMatrix = matrix;
         }
         
         std::vector<VertexBuffer> *vertexBufferList() const
@@ -99,7 +130,8 @@ public:
         
     private:
         RenderType m_renderType = RenderType::Default;
-        Matrix4x4 m_modelMatrix;
+        Matrix4x4 m_localMatrix;
+        Matrix4x4 m_worldMatrix;
         std::string m_id;
         std::string m_resourceName;
         std::vector<VertexBuffer> *m_vertexBufferList = nullptr;
@@ -107,12 +139,20 @@ public:
     
     bool addObject(const std::string &id, const std::string &resourceName, const Matrix4x4 &modelMatrix, RenderType renderType=RenderType::Default)
     {
-        if (m_objectMap.end() != m_objectMap.find(id)) {
+        if (m_objects.end() != m_objects.find(id)) {
             dust3dDebug << "Add object failed, id already existed:" << id;
             return false;
         }
-        m_objectMap.insert({id, std::make_unique<Object>(id, resourceName, modelMatrix, renderType)});
+        m_objects.insert({id, std::make_unique<Object>(id, resourceName, modelMatrix, renderType)});
         return true;
+    }
+    
+    Object *findObject(const std::string &id)
+    {
+        auto it = m_objects.find(id);
+        if (m_objects.end() == it)
+            return nullptr;
+        return it->second.get();
     }
     
     std::vector<VertexBuffer> *createObjectVertexBufferList(const std::string &resourceName)
@@ -184,7 +224,7 @@ public:
     
     void renderObjects(Shader &shader, RenderType renderType, DrawHint drawHint, const Matrix4x4 *modelModifyMatrix=nullptr)
     {
-        for (const auto &objectIt: m_objectMap) {
+        for (const auto &objectIt: m_objects) {
             const Object &object = *objectIt.second;
             if (!(object.renderType() & renderType))
                 continue;
@@ -193,10 +233,10 @@ public:
                 continue;
             GLfloat matrixData[16];
             if (nullptr != modelModifyMatrix) {
-                Matrix4x4 matrix = object.modelMatrix() * (*modelModifyMatrix);
+                Matrix4x4 matrix = object.worldMatrix() * (*modelModifyMatrix);
                 matrix.getData(matrixData);
             } else {
-                object.modelMatrix().getData(matrixData);
+                object.worldMatrix().getData(matrixData);
             }
             glUniformMatrix4fv(shader.getUniformLocation("modelMatrix"), 1, GL_FALSE, &matrixData[0]);
             for (auto &vertexBuffer: *vertexBufferList) {
@@ -289,27 +329,6 @@ public:
         glUniform1i(m_debugQuadShader.getUniformLocation("debugMap"), 0);
         drawVertexBuffer(m_quadBuffer);
         glBindTexture(GL_TEXTURE_2D, 0);
-    }
-    
-    void update()
-    {
-        if (nullptr != m_keyPressedQueryHander) {
-            const double cameraSpeed = 0.05;
-            if (m_keyPressedQueryHander('A')) {
-                m_cameraPosition -= Vector3::crossProduct(m_cameraFront, m_cameraUp) * cameraSpeed;
-                dirty();
-            } else if (m_keyPressedQueryHander('D')) {
-                m_cameraPosition += Vector3::crossProduct(m_cameraFront, m_cameraUp) * cameraSpeed;
-                dirty();
-            }
-            if (m_keyPressedQueryHander('W')) {
-                m_cameraPosition += m_cameraFront * cameraSpeed;
-                dirty();
-            } else if (m_keyPressedQueryHander('S')) {
-                m_cameraPosition -= m_cameraFront * cameraSpeed;
-                dirty();
-            }
-        }
     }
     
     void flushScreen()
@@ -541,6 +560,11 @@ public:
         m_vertexBufferListLoadHander = vertexBufferListLoadHander;
     }
     
+    void setMillisecondsQueryHandler(std::function<uint64_t ()> millisecondsQueryHandler)
+    {
+        m_millisecondsQueryHandler = millisecondsQueryHandler;
+    }
+    
     void setWindowSize(double width, double height)
     {
         m_windowWidth = width;
@@ -559,8 +583,73 @@ public:
         m_screenIsDirty = true;
     }
     
+    const double &elapsedSecondsSinceLastUpdate() const
+    {
+        return m_elapsedSeconds;
+    }
+
+    void update()
+    {
+        uint64_t milliseconds = m_millisecondsQueryHandler();
+        if (m_lastMilliseconds > 0)
+            m_elapsedSeconds = (double)(milliseconds - m_lastMilliseconds) / 1000.0;
+        m_lastMilliseconds = milliseconds;
+
+        if (nullptr != m_keyPressedQueryHander) {
+            const double cameraSpeed = 0.05;
+            if (m_keyPressedQueryHander('A')) {
+                m_cameraPosition -= Vector3::crossProduct(m_cameraFront, m_cameraUp) * cameraSpeed;
+                dirty();
+            } else if (m_keyPressedQueryHander('D')) {
+                m_cameraPosition += Vector3::crossProduct(m_cameraFront, m_cameraUp) * cameraSpeed;
+                dirty();
+            }
+            if (m_keyPressedQueryHander('W')) {
+                m_cameraPosition += m_cameraFront * cameraSpeed;
+                dirty();
+            } else if (m_keyPressedQueryHander('S')) {
+                m_cameraPosition -= m_cameraFront * cameraSpeed;
+                dirty();
+            }
+        }
+        
+        for (auto &stateIt: m_generalStates) {
+            if (stateIt.second->update())
+                dirty();
+        }
+        for (auto &stateIt: m_locationStates) {
+            if (stateIt.second->update()) {
+                Object *object = findObject(stateIt.first);
+                if (nullptr == object)
+                    continue;
+                Matrix4x4 translationMatrix;
+                translationMatrix.translate(stateIt.second->worldLocation);
+                object->updateWorldMatrix(translationMatrix * object->localMatrix());
+                dirty();
+            }
+        }
+        
+        m_lastMilliseconds = milliseconds;
+    }
+    
+    void addLocationState(const std::string &objectId, std::unique_ptr<LocationState> state)
+    {
+        m_locationStates[objectId] = std::move(state);
+    }
+    
+    void addGeneralState(const std::string &objectId, std::unique_ptr<State> state)
+    {
+        m_generalStates[objectId] = std::move(state);
+    }
+    
+    size_t objectCount()
+    {
+        return m_objects.size();
+    }
+    
 private:
     std::function<std::unique_ptr<std::vector<VertexBuffer>> (const std::string &resourceName)> m_vertexBufferListLoadHander = nullptr;
+    std::function<uint64_t ()> m_millisecondsQueryHandler = nullptr;
     std::function<bool (char key)> m_keyPressedQueryHander = nullptr;
     bool m_initialized = false;
     Vector3 m_cameraPosition = Vector3(0.0, 0.5, 3.0);
@@ -580,9 +669,13 @@ private:
     DepthMap m_cameraSpaceDepthMap;
     FontMap m_fontMap;
     ColorMap m_cameraSpaceColorMap;
+    uint64_t m_lastMilliseconds = 0;
+    double m_elapsedSeconds = 0.0;
     bool m_screenIsDirty = true;
     std::map<std::string, std::pair<std::unique_ptr<std::vector<VertexBuffer>>, int64_t/*referencingCount*/>> m_vertexBufferListMap;
-    std::map<std::string, std::unique_ptr<Object>> m_objectMap;
+    std::map<std::string, std::unique_ptr<Object>> m_objects;
+    std::map<std::string, std::unique_ptr<LocationState>> m_locationStates;
+    std::map<std::string, std::unique_ptr<State>> m_generalStates;
 };
     
 };

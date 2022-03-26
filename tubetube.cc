@@ -9,6 +9,7 @@
 #include <EGL/egl.h>
 #include <EGL/eglplatform.h>
 #include <GLES2/gl2.h>
+#include <random>
 
 static int windowWidth = 640;
 static int windowHeight = 360;
@@ -16,6 +17,9 @@ static HWND windowHandle = nullptr;
 static bool quit = false;
 EGLDisplay eglDisplay = EGL_NO_DISPLAY;
 EGLSurface eglSurface = EGL_NO_SURFACE;
+std::random_device randomSeeder;
+std::mt19937 randomEngine(randomSeeder());
+std::uniform_real_distribution<double> randomSpawn(-3.0, 3.0);
 
 using namespace dust3d;
 
@@ -163,6 +167,37 @@ static void renderTimer(HWND hwnd, UINT msg, UINT_PTR timerId, DWORD time)
     eglSwapBuffers(eglDisplay, eglSurface);
 }
 
+class DummyPlaneLocationState: public IndieGameEngine::LocationState
+{
+public:
+    bool update()
+    {
+        if (velocity.isZero())
+            return false;
+        
+        worldLocation += velocity * IndieGameEngine::indie()->elapsedSecondsSinceLastUpdate();
+        return true;
+    }
+};
+
+class WorldState: public IndieGameEngine::State
+{
+public:
+    bool update()
+    {
+        if (IndieGameEngine::indie()->objectCount() < 50) {
+            auto objectId = "plane" + std::to_string(IndieGameEngine::indie()->objectCount());
+            IndieGameEngine::indie()->addObject(objectId, "Plane", Matrix4x4(), IndieGameEngine::RenderType::Default);
+            auto dummyPlaneState = std::make_unique<DummyPlaneLocationState>();
+            dummyPlaneState->worldLocation = Vector3(randomSpawn(randomEngine), randomSpawn(randomEngine), randomSpawn(randomEngine));
+            dummyPlaneState->velocity = Vector3(0.0, 0.0, -1.0) * randomSpawn(randomEngine) * 0.05;
+            IndieGameEngine::indie()->addLocationState(objectId, std::move(dummyPlaneState));
+            return true;
+        }
+        return false;
+    }
+};
+
 int main(int argc, char* argv[])
 {
     windowHandle = createWindow(windowWidth, windowHeight);
@@ -209,39 +244,24 @@ int main(int argc, char* argv[])
     
     eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext);
     
+    LARGE_INTEGER frequency;
+    QueryPerformanceFrequency(&frequency);
+    uint64_t numPerMilliseconds = frequency.QuadPart / 1000;
+    IndieGameEngine::indie()->setMillisecondsQueryHandler([=]() {
+        LARGE_INTEGER ticks;
+        QueryPerformanceCounter(&ticks);
+        return (uint64_t)ticks.QuadPart / numPerMilliseconds;
+    });
     IndieGameEngine::indie()->setWindowSize(static_cast<double>(windowWidth), static_cast<double>(windowHeight));
     IndieGameEngine::indie()->setVertexBufferListLoadHandler(loadResouceVertexBufferList);
     IndieGameEngine::indie()->setKeyPressedQueryHandler(queryKeyPressed);
     {
         Matrix4x4 modelMatrix;
-        modelMatrix.scale(Vector3(20.0, 0.0, 20.0));
+        modelMatrix.scale(Vector3(10000.0, 0.0, 10000.0));
         IndieGameEngine::indie()->addObject("defaultGround", "Ground", modelMatrix, IndieGameEngine::RenderType::Ground);
     }
-    {
-        std::vector<Vector3> modelPositions = {
-            Vector3( 0.0f, 0.0f, 0.0f),
-            Vector3( 2.0f, 5.0f, -15.0f),
-            Vector3(-1.5f, -2.2f, -2.5f),
-            Vector3(-3.8f, -2.0f, -12.3f),
-            Vector3( 2.4f, -0.4f, -3.5f),
-            Vector3(-1.7f, 3.0f, -7.5f),
-            Vector3( 1.3f, -2.0f, -2.5f),
-            Vector3( 1.5f, 2.0f, -2.5f),
-            Vector3( 1.5f, 0.2f, -1.5f),
-            Vector3(-1.3f, 1.0f, -1.5f)
-        };
-        for (size_t i = 0; i < modelPositions.size(); ++i) {
-            Matrix4x4 modelMatrix;
-            modelMatrix.translate(modelPositions[i]);
-            IndieGameEngine::indie()->addObject("plane" + std::to_string(i), "Plane", modelMatrix, IndieGameEngine::RenderType::Default);
-        }
-    }
-    {
-        Matrix4x4 modelMatrix;
-        modelMatrix.translate(Vector3(0.0, 0.2, 1.0));
-        //modelMatrix.rotate(Vector3(1.0, 0.0, 0.0), Math::radiansFromDegrees(60));
-        IndieGameEngine::indie()->addObject("defaultArtillery", "Artillery", modelMatrix, IndieGameEngine::RenderType::Default);
-    }
+    
+    IndieGameEngine::indie()->addGeneralState("", std::make_unique<WorldState>());
     
     SetTimer(windowHandle, 1, 1000 / 120, updateTimer);
     SetTimer(windowHandle, 2, 1000 / 60, renderTimer);

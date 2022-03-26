@@ -27,7 +27,7 @@
 #include <functional>
 #include <dust3d/base/debug.h>
 #include <dust3d/base/matrix4x4.h>
-#include <dust3d/gles/screen_map.h>
+#include <dust3d/gles/color_map.h>
 #include <dust3d/gles/shader.h>
 #include <dust3d/gles/vertex_buffer.h>
 #include <dust3d/gles/vertex_buffer_utils.h>
@@ -255,9 +255,9 @@ public:
                 #include <dust3d/gles/shaders/quad.vert>
                 ;
             const GLchar *fragmentShaderSource = 
-                #include <dust3d/gles/shaders/screen.frag>
+                #include <dust3d/gles/shaders/post-processing.frag>
                 ;
-            m_screenShader = Shader(vertexShaderSource, fragmentShaderSource);
+            m_postProcessingShader = Shader(vertexShaderSource, fragmentShaderSource);
         }
         
         std::unique_ptr<std::vector<GLfloat>> quadVertices = std::unique_ptr<std::vector<GLfloat>>(new std::vector<GLfloat> {
@@ -272,8 +272,8 @@ public:
         m_shadowMap.setSize(1024, 1024);
         m_shadowMap.initialize();
         m_fontMap.initialize();
-        m_screenMap.initialize();
-        m_cameraDepthMap.initialize();
+        m_cameraSpaceColorMap.initialize();
+        m_cameraSpaceDepthMap.initialize();
         
         m_initialized = true;
     }
@@ -286,7 +286,7 @@ public:
         m_debugQuadShader.use();
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textureId);
-        glUniform1i(m_screenShader.getUniformLocation("debugMap"), 0);
+        glUniform1i(m_debugQuadShader.getUniformLocation("debugMap"), 0);
         drawVertexBuffer(m_quadBuffer);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
@@ -314,16 +314,19 @@ public:
     
     void flushScreen()
     {
-        //renderDebugMap(m_cameraDepthMap.textureId());
+        //renderDebugMap(m_cameraSpaceDepthMap.textureId());
         //return;
         
         glViewport(0, 0, m_windowWidth, m_windowHeight);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        m_screenShader.use();
+        m_postProcessingShader.use();
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, m_screenMap.textureId());
-        glUniform1i(m_screenShader.getUniformLocation("screenMap"), 0);
+        glBindTexture(GL_TEXTURE_2D, m_cameraSpaceColorMap.textureId());
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, m_cameraSpaceDepthMap.textureId());
+        glUniform1i(m_postProcessingShader.getUniformLocation("colorMap"), 0);
+        glUniform1i(m_postProcessingShader.getUniformLocation("depthMap"), 1);
         drawVertexBuffer(m_quadBuffer);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
@@ -375,25 +378,25 @@ public:
             
             // Render depth
             {
-                if (m_cameraDepthMap.begin()) {
+                if (m_cameraSpaceDepthMap.begin()) {
                     glEnable(GL_DEPTH_TEST);
                     glDisable(GL_CULL_FACE);
                     {
                         GLfloat matrixData[16];
                         viewMatrix.getData(matrixData);
-                        glUniformMatrix4fv(m_cameraDepthMap.shader().getUniformLocation("viewMatrix"), 1, GL_FALSE, &matrixData[0]);
+                        glUniformMatrix4fv(m_cameraSpaceDepthMap.shader().getUniformLocation("viewMatrix"), 1, GL_FALSE, &matrixData[0]);
                     }
                     {
                         GLfloat matrixData[16];
                         projectionMatrix.getData(matrixData);
-                        glUniformMatrix4fv(m_cameraDepthMap.shader().getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
+                        glUniformMatrix4fv(m_cameraSpaceDepthMap.shader().getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
                     }
-                    renderObjects(m_cameraDepthMap.shader(), RenderType::AllButLight, DrawHint::Triangles);
-                    m_cameraDepthMap.end();
+                    renderObjects(m_cameraSpaceDepthMap.shader(), RenderType::AllButLight, DrawHint::Triangles);
+                    m_cameraSpaceDepthMap.end();
                 }
             }
 
-            if (m_screenMap.begin()) {
+            if (m_cameraSpaceColorMap.begin()) {
                 
                 // Render triangles
                 
@@ -498,7 +501,7 @@ public:
                 m_fontMap.renderString("Hello IndieGameEngine!", m_windowWidth / 2.0, m_windowHeight / 2.0);
                 glBindTexture(GL_TEXTURE_2D, 0);
                 
-                m_screenMap.end();
+                m_cameraSpaceColorMap.end();
             }
         }
         
@@ -542,8 +545,8 @@ public:
     {
         m_windowWidth = width;
         m_windowHeight = height;
-        m_screenMap.setSize(m_windowWidth, m_windowHeight);
-        m_cameraDepthMap.setSize(m_windowWidth, m_windowHeight);
+        m_cameraSpaceColorMap.setSize(m_windowWidth, m_windowHeight);
+        m_cameraSpaceDepthMap.setSize(m_windowWidth, m_windowHeight);
     }
     
     void setKeyPressedQueryHandler(std::function<bool (char key)> keyPressedQueryHander)
@@ -571,12 +574,12 @@ private:
     Shader m_singleColorShader;
     Shader m_lightShader;
     Shader m_debugQuadShader;
-    Shader m_screenShader;
+    Shader m_postProcessingShader;
     VertexBuffer m_quadBuffer;
     DepthMap m_shadowMap;
-    DepthMap m_cameraDepthMap;
+    DepthMap m_cameraSpaceDepthMap;
     FontMap m_fontMap;
-    ScreenMap m_screenMap;
+    ColorMap m_cameraSpaceColorMap;
     bool m_screenIsDirty = true;
     std::map<std::string, std::pair<std::unique_ptr<std::vector<VertexBuffer>>, int64_t/*referencingCount*/>> m_vertexBufferListMap;
     std::map<std::string, std::unique_ptr<Object>> m_objectMap;

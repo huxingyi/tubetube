@@ -20,8 +20,8 @@
  *  SOFTWARE.
  */
 
-#ifndef DUST3D_GLES_SCREEN_MAP_H_
-#define DUST3D_GLES_SCREEN_MAP_H_
+#ifndef DUST3D_GLES_COLOR_MAP_H_
+#define DUST3D_GLES_COLOR_MAP_H_
 
 #include <algorithm>
 #include <GLES2/gl2.h>
@@ -32,7 +32,7 @@
 namespace dust3d
 {
     
-class ScreenMap
+class ColorMap
 {
 public:
     void initialize()

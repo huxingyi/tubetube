@@ -93,20 +93,20 @@ public:
             const auto &clip = findImageClip->second;
             
             std::pair<GLfloat, GLfloat> leftBottom = {
-                left + clip.bitmapLeft, 
-                top - clip.bitmapBottomMove
+                (GLfloat)left + clip.bitmapLeft, 
+                (GLfloat)top - clip.bitmapBottomMove
             };
             std::pair<GLfloat, GLfloat> rightBottom = {
-                left + clip.bitmapLeft + clip.bitmapWidth, 
-                top - clip.bitmapBottomMove
+                (GLfloat)left + clip.bitmapLeft + clip.bitmapWidth, 
+                (GLfloat)top - clip.bitmapBottomMove
             };
             std::pair<GLfloat, GLfloat> rightTop = {
-                left + clip.bitmapLeft + clip.bitmapWidth, 
-                top - clip.bitmapBottomMove + clip.bitmapHeight
+                (GLfloat)left + clip.bitmapLeft + clip.bitmapWidth, 
+                (GLfloat)top - clip.bitmapBottomMove + clip.bitmapHeight
             };
             std::pair<GLfloat, GLfloat> leftTop = {
-                left + clip.bitmapLeft, 
-                top - clip.bitmapBottomMove + clip.bitmapHeight
+                (GLfloat)left + clip.bitmapLeft, 
+                (GLfloat)top - clip.bitmapBottomMove + clip.bitmapHeight
             };
             
             std::pair<GLfloat, GLfloat> leftBottomUv = {

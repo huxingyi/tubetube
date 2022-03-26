@@ -31,7 +31,7 @@
 #include <dust3d/gles/shader.h>
 #include <dust3d/gles/vertex_buffer.h>
 #include <dust3d/gles/vertex_buffer_utils.h>
-#include <dust3d/gles/shadow_map.h>
+#include <dust3d/gles/depth_map.h>
 #include <dust3d/gles/font_map.h>
 
 namespace dust3d
@@ -58,7 +58,8 @@ public:
     enum DrawHint
     {
         Triangles = 0x00000001,
-        Lines = 0x00000002
+        Lines = 0x00000002,
+        Texture = 0x00000004
     };
 
     class Object
@@ -148,6 +149,39 @@ public:
         }
     }
     
+    void drawVertexBuffer(VertexBuffer &vertexBuffer)
+    {
+        if (vertexBuffer.begin()) {
+            switch (vertexBuffer.drawHint()) {
+                case DrawHint::Triangles:
+                    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * vertexBuffer.numbersPerVertex(), nullptr);
+                    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * vertexBuffer.numbersPerVertex(), (const void *)(sizeof(GLfloat) * 3));
+                    glEnableVertexAttribArray(0);
+                    glEnableVertexAttribArray(1);
+                    glDrawArrays(GL_TRIANGLES, 0, vertexBuffer.vertexCount());
+                    glDisableVertexAttribArray(0);
+                    glDisableVertexAttribArray(1);
+                    break;
+                case DrawHint::Lines:
+                    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * vertexBuffer.numbersPerVertex(), nullptr);
+                    glEnableVertexAttribArray(0);
+                    glDrawArrays(GL_LINES, 0, vertexBuffer.vertexCount());
+                    glDisableVertexAttribArray(0);
+                    break;
+                case DrawHint::Texture:
+                    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 5, nullptr);
+                    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 5, (const void *)(sizeof(GLfloat) * 3));
+                    glEnableVertexAttribArray(0);
+                    glEnableVertexAttribArray(1);
+                    glDrawArrays(GL_TRIANGLE_FAN, 0, vertexBuffer.vertexCount());
+                    glDisableVertexAttribArray(0);
+                    glDisableVertexAttribArray(1);
+                    break;
+            }
+            vertexBuffer.end();
+        }
+    }
+    
     void renderObjects(Shader &shader, RenderType renderType, DrawHint drawHint, const Matrix4x4 *modelModifyMatrix=nullptr)
     {
         for (const auto &objectIt: m_objectMap) {
@@ -168,26 +202,7 @@ public:
             for (auto &vertexBuffer: *vertexBufferList) {
                 if (!(vertexBuffer.drawHint() & drawHint))
                     continue;
-                if (vertexBuffer.begin()) {
-                    switch (vertexBuffer.drawHint()) {
-                        case DrawHint::Triangles:
-                            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * vertexBuffer.numbersPerVertex(), nullptr);
-                            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * vertexBuffer.numbersPerVertex(), (const void *)(sizeof(GLfloat) * 3));
-                            glEnableVertexAttribArray(0);
-                            glEnableVertexAttribArray(1);
-                            glDrawArrays(GL_TRIANGLES, 0, vertexBuffer.vertexCount());
-                            glDisableVertexAttribArray(0);
-                            glDisableVertexAttribArray(1);
-                            break;
-                        case DrawHint::Lines:
-                            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * vertexBuffer.numbersPerVertex(), nullptr);
-                            glEnableVertexAttribArray(0);
-                            glDrawArrays(GL_LINES, 0, vertexBuffer.vertexCount());
-                            glDisableVertexAttribArray(0);
-                            break;
-                    }
-                    vertexBuffer.end();
-                }
+                drawVertexBuffer(vertexBuffer);
             }
         }
     }
@@ -249,69 +264,30 @@ public:
             -1.0f, -1.0f,  0.0f,  0.0f,  0.0f,
              1.0f, -1.0f,  0.0f,  1.0f,  0.0f,
              1.0f,  1.0f,  0.0f,  1.0f,  1.0f,
-             1.0f,  1.0f,  0.0f,  1.0f,  1.0f,
             -1.0f,  1.0f,  0.0f,  0.0f,  1.0f,
-            -1.0f, -1.0f,  0.0f,  0.0f,  0.0f,
         });
         size_t quadVertexCount = quadVertices->size() / 5;
-        m_quadBuffer.update(std::move(quadVertices), 5, quadVertexCount, DrawHint::Triangles);
+        m_quadBuffer.update(std::move(quadVertices), 5, quadVertexCount, DrawHint::Texture);
         
+        m_shadowMap.setSize(1024, 1024);
         m_shadowMap.initialize();
         m_fontMap.initialize();
         m_screenMap.initialize();
+        m_cameraDepthMap.initialize();
         
         m_initialized = true;
     }
     
-    void debugShowMap(GLuint textureId)
+    void renderDebugMap(GLuint textureId)
     {
         glViewport(0, 0, m_windowWidth, m_windowHeight);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         m_debugQuadShader.use();
-        
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textureId);
-
-        glUniform1i(m_debugQuadShader.getUniformLocation("debugMap"), 0);
-   
-        if (m_quadBuffer.begin()) {
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 5, nullptr);
-            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 5, (const void *)(sizeof(GLfloat) * 3));
-            glEnableVertexAttribArray(0);
-            glEnableVertexAttribArray(1);
-            glDrawArrays(GL_TRIANGLES, 0, m_quadBuffer.vertexCount());
-            glDisableVertexAttribArray(0);
-            glDisableVertexAttribArray(1);
-            m_quadBuffer.end();
-        }
-        
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }
-    
-    void flushScreen()
-    {
-        glViewport(0, 0, m_windowWidth, m_windowHeight);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        
-        m_screenShader.use();
-        
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, m_screenMap.textureId());
-
-        glUniform1i(m_screenShader.getUniformLocation("screenMap"), 0);
-   
-        if (m_quadBuffer.begin()) {
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 5, nullptr);
-            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 5, (const void *)(sizeof(GLfloat) * 3));
-            glEnableVertexAttribArray(0);
-            glEnableVertexAttribArray(1);
-            glDrawArrays(GL_TRIANGLES, 0, m_quadBuffer.vertexCount());
-            glDisableVertexAttribArray(0);
-            glDisableVertexAttribArray(1);
-            m_quadBuffer.end();
-        }
-        
+        glUniform1i(m_screenShader.getUniformLocation("debugMap"), 0);
+        drawVertexBuffer(m_quadBuffer);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
     
@@ -336,6 +312,22 @@ public:
         }
     }
     
+    void flushScreen()
+    {
+        //renderDebugMap(m_cameraDepthMap.textureId());
+        //return;
+        
+        glViewport(0, 0, m_windowWidth, m_windowHeight);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        
+        m_screenShader.use();
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, m_screenMap.textureId());
+        glUniform1i(m_screenShader.getUniformLocation("screenMap"), 0);
+        drawVertexBuffer(m_quadBuffer);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+    
     void renderScene()
     {
         if (!m_initialized)
@@ -353,7 +345,7 @@ public:
                 viewMatrix.lookAt(m_lightPosition, Vector3(0.0, 0.0, 0.0), Vector3(0.0, 1.0, 0.0));
                 
                 Matrix4x4 projectionMatrix;
-                projectionMatrix.orthographicProject(-10.0, 10.0, -10.0, 10.0, 1.0, 7.5);
+                projectionMatrix.orthographicProject(-10.0, 10.0, -10.0, 10.0, -10.0, 20.0);
                 
                 lightViewProjectionMatrix = projectionMatrix * viewMatrix;
                 
@@ -374,6 +366,32 @@ public:
                     m_shadowMap.end();
                 }
             }
+            
+            Matrix4x4 viewMatrix;
+            viewMatrix.lookAt(m_cameraPosition, m_cameraPosition + m_cameraFront, m_cameraUp);
+            
+            Matrix4x4 projectionMatrix;
+            projectionMatrix.perspectiveProject(Math::radiansFromDegrees(m_fov), (float)m_windowWidth / (float)m_windowHeight, 0.1, 100.0);
+            
+            // Render depth
+            {
+                if (m_cameraDepthMap.begin()) {
+                    glEnable(GL_DEPTH_TEST);
+                    glDisable(GL_CULL_FACE);
+                    {
+                        GLfloat matrixData[16];
+                        viewMatrix.getData(matrixData);
+                        glUniformMatrix4fv(m_cameraDepthMap.shader().getUniformLocation("viewMatrix"), 1, GL_FALSE, &matrixData[0]);
+                    }
+                    {
+                        GLfloat matrixData[16];
+                        projectionMatrix.getData(matrixData);
+                        glUniformMatrix4fv(m_cameraDepthMap.shader().getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
+                    }
+                    renderObjects(m_cameraDepthMap.shader(), RenderType::AllButLight, DrawHint::Triangles);
+                    m_cameraDepthMap.end();
+                }
+            }
 
             if (m_screenMap.begin()) {
                 
@@ -386,13 +404,7 @@ public:
                 glEnable(GL_CULL_FACE);  
                 glEnable(GL_BLEND);
                 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-                
-                Matrix4x4 viewMatrix;
-                viewMatrix.lookAt(m_cameraPosition, m_cameraPosition + m_cameraFront, m_cameraUp);
-                
-                Matrix4x4 projectionMatrix;
-                projectionMatrix.perspectiveProject(Math::radiansFromDegrees(m_fov), (float)m_windowWidth / (float)m_windowHeight, 0.1, 100.0);
-                
+
                 m_modelShader.use();
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, m_shadowMap.textureId());
@@ -531,6 +543,7 @@ public:
         m_windowWidth = width;
         m_windowHeight = height;
         m_screenMap.setSize(m_windowWidth, m_windowHeight);
+        m_cameraDepthMap.setSize(m_windowWidth, m_windowHeight);
     }
     
     void setKeyPressedQueryHandler(std::function<bool (char key)> keyPressedQueryHander)
@@ -560,7 +573,8 @@ private:
     Shader m_debugQuadShader;
     Shader m_screenShader;
     VertexBuffer m_quadBuffer;
-    ShadowMap m_shadowMap;
+    DepthMap m_shadowMap;
+    DepthMap m_cameraDepthMap;
     FontMap m_fontMap;
     ScreenMap m_screenMap;
     bool m_screenIsDirty = true;

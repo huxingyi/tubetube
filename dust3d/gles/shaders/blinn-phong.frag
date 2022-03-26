@@ -91,8 +91,8 @@ float shadow()
     // 3x3 kernel with 4 taps per sample, effectively 6x6 PCF
     float sum = 0.0;
     float x, y;
-    for ( x = -2.0; x <= 2.0; x += 2.0 )
-        for ( y = -2.0; y <= 2.0; y += 2.0 )
+    for (x = -2.0; x <= 2.0; x += 2.0)
+        for (y = -2.0; y <= 2.0; y += 2.0)
             sum += shadowLookup(x, y);
 
     // divide sum by 9.0

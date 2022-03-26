@@ -39,7 +39,7 @@ public:
     {
         if (0 != m_resultFrameBufferId)
             return;
-        if (Math::isZero(m_height) || Math::isZero(m_width))
+        if (Math::isZero(m_textureHeight) || Math::isZero(m_textureWidth))
             return;
         
         if (nullptr == m_renderbufferStorageMultisample) {
@@ -61,7 +61,7 @@ public:
 
         glGenRenderbuffers(1, &m_sampleColorRenderBufferId);
         glBindRenderbuffer(GL_RENDERBUFFER, m_sampleColorRenderBufferId);
-        m_renderbufferStorageMultisample(GL_RENDERBUFFER, numSamples, GL_RGBA8_OES, m_width, m_height);
+        m_renderbufferStorageMultisample(GL_RENDERBUFFER, numSamples, GL_RGBA8_OES, m_textureWidth, m_textureHeight);
         
         glGenFramebuffers(1, &m_sampleFrameBufferId);
         glBindFramebuffer(GL_FRAMEBUFFER, m_sampleFrameBufferId);
@@ -69,7 +69,7 @@ public:
 
         glGenRenderbuffers(1, &m_sampleDepthStencilRenderBufferId);
         glBindRenderbuffer(GL_RENDERBUFFER, m_sampleDepthStencilRenderBufferId);
-        m_renderbufferStorageMultisample(GL_RENDERBUFFER, numSamples, GL_DEPTH24_STENCIL8_OES, m_width, m_height);
+        m_renderbufferStorageMultisample(GL_RENDERBUFFER, numSamples, GL_DEPTH24_STENCIL8_OES, m_textureWidth, m_textureHeight);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_sampleDepthStencilRenderBufferId);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_sampleDepthStencilRenderBufferId);
         
@@ -86,7 +86,7 @@ public:
 
         glGenTextures(1, &m_textureId);
         glBindTexture(GL_TEXTURE_2D, m_textureId);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_width, m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_textureWidth, m_textureHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_textureId, 0);
@@ -102,10 +102,10 @@ public:
     
     void setSize(double width, double height)
     {
-        if (Math::isEqual(width, m_width) && Math::isEqual(height, m_height))
+        if (Math::isEqual(width, m_textureWidth) && Math::isEqual(height, m_textureHeight))
             return;
-        m_width = width;
-        m_height = height;
+        m_textureWidth = width;
+        m_textureHeight = height;
         if (0 != m_resultFrameBufferId)
             m_sizeChanged = true;
     }
@@ -146,7 +146,7 @@ public:
             return false;
         glGetIntegerv(GL_FRAMEBUFFER_BINDING, &m_lastFramebufferId);
         glBindFramebuffer(GL_FRAMEBUFFER, m_sampleFrameBufferId);
-        glViewport(0, 0, m_width, m_height);
+        glViewport(0, 0, m_textureWidth, m_textureHeight);
         return true;
     }
     
@@ -154,14 +154,14 @@ public:
     {
         glBindFramebuffer(GL_READ_FRAMEBUFFER_ANGLE, m_sampleFrameBufferId);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER_ANGLE, m_resultFrameBufferId);
-        m_blitFramebuffer(0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+        m_blitFramebuffer(0, 0, m_textureWidth, m_textureHeight, 0, 0, m_textureWidth, m_textureHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
         glBindFramebuffer(GL_FRAMEBUFFER, m_lastFramebufferId);
         m_lastFramebufferId = 0;
     }
     
 private:
-    double m_width = 0.0;
-    double m_height = 0.0;
+    double m_textureWidth = 0.0;
+    double m_textureHeight = 0.0;
     bool m_sizeChanged = false;
     GLuint m_resultFrameBufferId = 0;
     GLuint m_textureId = 0;

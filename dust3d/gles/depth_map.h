@@ -20,8 +20,8 @@
  *  SOFTWARE.
  */
 
-#ifndef DUST3D_GLES_SHADOW_MAP_H_
-#define DUST3D_GLES_SHADOW_MAP_H_
+#ifndef DUST3D_GLES_DEPTH_MAP_H_
+#define DUST3D_GLES_DEPTH_MAP_H_
 
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
@@ -33,12 +33,14 @@
 namespace dust3d
 {
 
-class ShadowMap
+class DepthMap
 {
 public:
     void initialize()
     {
         if (0 != m_textureId)
+            return;
+        if (Math::isZero(m_textureHeight) || Math::isZero(m_textureWidth))
             return;
         
         if (nullptr == m_drawBuffers) {
@@ -85,16 +87,23 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebuffer);
         
         const GLchar *vertexShaderSource =
-            #include <dust3d/gles/shaders/shadow.vert>
+            #include <dust3d/gles/shaders/depth.vert>
             ;
         const GLchar *fragmentShaderSource = 
-            #include <dust3d/gles/shaders/shadow.frag>
+            #include <dust3d/gles/shaders/depth.frag>
             ;
         m_shader = std::unique_ptr<Shader>(new Shader(vertexShaderSource, fragmentShaderSource));
     }
     
     bool begin()
     {
+        if (m_sizeChanged) {
+            m_sizeChanged = false;
+            release();
+        }
+        if (0 == m_textureId) {
+            initialize();
+        }
         if (0 == m_textureId)
             return false;
         
@@ -125,6 +134,16 @@ public:
         m_frameBufferId = 0;
     }
     
+    void setSize(double width, double height)
+    {
+        if (Math::isEqual(width, m_textureWidth) && Math::isEqual(height, m_textureHeight))
+            return;
+        m_textureWidth = width;
+        m_textureHeight = height;
+        if (0 != m_frameBufferId)
+            m_sizeChanged = true;
+    }
+    
     GLuint textureId() const
     {
         return m_textureId;
@@ -138,6 +157,7 @@ public:
 private:
     GLuint m_textureWidth = 1024;
     GLuint m_textureHeight = 1024;
+    bool m_sizeChanged = false;
     GLuint m_textureId = 0;
     GLuint m_frameBufferId = 0;
     PFNGLDRAWBUFFERSEXTPROC m_drawBuffers = nullptr;

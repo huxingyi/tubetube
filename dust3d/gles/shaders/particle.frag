@@ -1,16 +1,17 @@
 R"################(#version 300 es
 
 precision lowp float;
-uniform vec4 particleColor;
-uniform sampler2D particleMap;
-in float pointLifetime;
+in vec4 pointColor;
+in vec2 pointCenter;
+in float pointRadius;
 out vec4 fragColor;
 void main()
 {
-    vec4 texColor;
-    texColor = texture(particleMap, gl_PointCoord);
-    fragColor = vec4(particleColor) * texColor;
-    fragColor.a *= pointLifetime;
+    vec2 coord = (gl_FragCoord.xy - pointCenter) / pointRadius;
+    float l = length(coord);
+    if (l > 1.0)
+        discard;
+    fragColor = pointColor;
 }
 
 )################"

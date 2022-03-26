@@ -17,8 +17,8 @@ static HWND windowHandle = nullptr;
 static bool quit = false;
 EGLDisplay eglDisplay = EGL_NO_DISPLAY;
 EGLSurface eglSurface = EGL_NO_SURFACE;
-std::random_device randomSeeder;
-std::mt19937 randomEngine(randomSeeder());
+//std::random_device randomSeeder;
+std::mt19937 randomEngine(0); //std::mt19937 randomEngine(randomSeeder());
 std::uniform_real_distribution<double> randomSpawn(-3.0, 3.0);
 
 using namespace dust3d;
@@ -172,10 +172,11 @@ class DummyPlaneLocationState: public IndieGameEngine::LocationState
 public:
     bool update()
     {
-        if (velocity.isZero())
+        if (Math::isZero(speed))
             return false;
         
-        worldLocation += velocity * IndieGameEngine::indie()->elapsedSecondsSinceLastUpdate();
+        worldLocation += velocity() * IndieGameEngine::indie()->elapsedSecondsSinceLastUpdate();
+        IndieGameEngine::indie()->addParticle(5.5, 0.05, worldLocation - forwardDirection * 0.2, velocity() * 0.75, Vector3(1.0, 1.0, 0.0));
         return true;
     }
 };
@@ -185,12 +186,13 @@ class WorldState: public IndieGameEngine::State
 public:
     bool update()
     {
-        if (IndieGameEngine::indie()->objectCount() < 50) {
+        if (IndieGameEngine::indie()->objectCount() < 10) {
             auto objectId = "plane" + std::to_string(IndieGameEngine::indie()->objectCount());
             IndieGameEngine::indie()->addObject(objectId, "Plane", Matrix4x4(), IndieGameEngine::RenderType::Default);
             auto dummyPlaneState = std::make_unique<DummyPlaneLocationState>();
             dummyPlaneState->worldLocation = Vector3(randomSpawn(randomEngine), randomSpawn(randomEngine), randomSpawn(randomEngine));
-            dummyPlaneState->velocity = Vector3(0.0, 0.0, -1.0) * randomSpawn(randomEngine) * 0.05;
+            dummyPlaneState->forwardDirection = Vector3(0.0, 0.0, -1.0);
+            dummyPlaneState->speed = randomSpawn(randomEngine) * 0.15;
             IndieGameEngine::indie()->addLocationState(objectId, std::move(dummyPlaneState));
             return true;
         }

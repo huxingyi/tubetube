@@ -1,26 +1,31 @@
 R"################(#version 300 es
 
 uniform float time;
-uniform vec3 centerPosition;
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
-layout(location = 0) in float vertexLifetime;
+uniform vec2 windowSize;
+layout(location = 0) in vec3 vertexTimeRangeAndRadius;
 layout(location = 1) in vec3 vertexStartPosition;
-layout(location = 2) in vec3 vertexEndPosition;
-out float pointLifetime;
+layout(location = 2) in vec3 vertexVelocity;
+layout(location = 3) in vec3 vertexColor;
+out vec4 pointColor;
+out vec2 pointCenter;
+out float pointRadius;
 void main()
 {
-    if (time <= vertexLifetime) {
-        gl_Position.xyz = vertexStartPosition + (time * vertexEndPosition);
-        gl_Position.xyz += centerPosition;
+    if (time <= vertexTimeRangeAndRadius.y) {
+        gl_Position.xyz = vertexStartPosition + ((time - vertexTimeRangeAndRadius.x) * vertexVelocity);
         gl_Position.w = 1.0;
         gl_Position = projectionMatrix * viewMatrix * gl_Position;
     } else {
-        gl_Position = vec4(-1000, -1000, 0, 0);
+        gl_Position = vec4(-10000, -10000, 0, 1.0);
     }
-    pointLifetime = 1.0 - (time / vertexLifetime);
-    pointLifetime = clamp(pointLifetime, 0.0, 1.0);
-    gl_PointSize = (pointLifetime * pointLifetime) * 40.0;
+    pointCenter = (0.5 * gl_Position.xy / gl_Position.w + 0.5) * windowSize;
+    float pointAlpha = 1.0 - (time - vertexTimeRangeAndRadius.x) / (vertexTimeRangeAndRadius.y - vertexTimeRangeAndRadius.x);
+    pointColor = vec4(vertexColor, pointAlpha);
+    // https://gamedev.stackexchange.com/questions/54391/scaling-point-sprites-with-distance
+    gl_PointSize = pointAlpha * windowSize.y * projectionMatrix[1][1] * vertexTimeRangeAndRadius.z / gl_Position.w;
+    pointRadius = gl_PointSize / 2.0;
 }
 
 )################"

@@ -33,6 +33,7 @@
 #include <dust3d/gles/vertex_buffer_utils.h>
 #include <dust3d/gles/depth_map.h>
 #include <dust3d/gles/font_map.h>
+#include <dust3d/gles/particles.h>
 
 namespace dust3d
 {
@@ -75,7 +76,14 @@ public:
     {
     public:
         Vector3 worldLocation;
-        Vector3 velocity;
+        Vector3 forwardDirection;
+        double speed;
+        
+        Vector3 velocity() const
+        {
+            return forwardDirection * speed;
+        }
+        
         virtual bool update() override
         {
             return false;
@@ -312,6 +320,7 @@ public:
         m_shadowMap.setSize(1024, 1024);
         m_shadowMap.initialize();
         m_fontMap.initialize();
+        m_particles.initialize();
         m_cameraSpaceColorMap.initialize();
         m_cameraSpaceDepthMap.initialize();
         
@@ -354,6 +363,12 @@ public:
     {
         if (!m_initialized)
             initializeScene();
+        
+        bool particlesIsDirty = false;
+        if (m_particles.aliveElementCount() > 0) {
+            particlesIsDirty = true;
+            m_screenIsDirty = true;
+        }
         
         if (m_screenIsDirty) {
             
@@ -475,6 +490,37 @@ public:
                 glStencilMask(0x00);
                 renderObjects(m_modelShader, RenderType::Ground, DrawHint::Triangles);
                 
+                // Render partices
+                
+                if (particlesIsDirty) {
+                    m_particles.shader().use();
+                    {
+                        GLfloat matrixData[16];
+                        viewMatrix.getData(matrixData);
+                        glUniformMatrix4fv(m_particles.shader().getUniformLocation("viewMatrix"), 1, GL_FALSE, &matrixData[0]);
+                    }
+                    {
+                        GLfloat matrixData[16];
+                        projectionMatrix.getData(matrixData);
+                        glUniformMatrix4fv(m_particles.shader().getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
+                    }
+                    glUniform1f(m_particles.shader().getUniformLocation("time"), (float)m_time);
+                    glUniform2f(m_particles.shader().getUniformLocation("windowSize"), (float)m_windowWidth, (float)m_windowHeight);
+                    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Particles::Element), &m_particles.elements()[0].timeRangeAndRadius[0]);
+                    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Particles::Element), &m_particles.elements()[0].startPosition[0]);
+                    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Particles::Element), &m_particles.elements()[0].velocity[0]);
+                    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Particles::Element), &m_particles.elements()[0].color[0]);
+                    glEnableVertexAttribArray(0);
+                    glEnableVertexAttribArray(1);
+                    glEnableVertexAttribArray(2);
+                    glEnableVertexAttribArray(3);
+                    glDrawArrays(GL_POINTS, 0, m_particles.elements().size());
+                    glDisableVertexAttribArray(0);
+                    glDisableVertexAttribArray(1);
+                    glDisableVertexAttribArray(2);
+                    glDisableVertexAttribArray(3);
+                }
+                
                 // Render lines
                 
                 m_singleColorShader.use();
@@ -517,9 +563,9 @@ public:
                     }
                 }
                 glUniform4f(m_fontMap.shader().getUniformLocation("objectColor"), 1.0, 1.0, 1.0, 1.0);
-                m_fontMap.renderString("Hello IndieGameEngine!", m_windowWidth / 2.0, m_windowHeight / 2.0);
+                m_fontMap.renderString(particlesIsDirty ? "Partices rendered:[" + std::to_string(m_particles.aliveElementCount()) + "]" : "Partices NOT rendered", m_windowWidth / 2.0, m_windowHeight / 2.0);
                 glBindTexture(GL_TEXTURE_2D, 0);
-                
+
                 m_cameraSpaceColorMap.end();
             }
         }
@@ -594,6 +640,7 @@ public:
         if (m_lastMilliseconds > 0)
             m_elapsedSeconds = (double)(milliseconds - m_lastMilliseconds) / 1000.0;
         m_lastMilliseconds = milliseconds;
+        m_time = (double)milliseconds / 1000.0;
 
         if (nullptr != m_keyPressedQueryHander) {
             const double cameraSpeed = 0.05;
@@ -620,8 +667,15 @@ public:
         for (auto &stateIt: m_locationStates) {
             if (stateIt.second->update()) {
                 Object *object = findObject(stateIt.first);
-                if (nullptr == object)
+                if (nullptr == object) {
+                    if ("camera" == stateIt.first) {
+                        m_cameraPosition = stateIt.second->worldLocation;
+                        m_cameraFront = stateIt.second->forwardDirection;
+                        m_cameraUp = Vector3(0.0, 1.0, 0.0);
+                        dirty();
+                    }
                     continue;
+                }
                 Matrix4x4 translationMatrix;
                 translationMatrix.translate(stateIt.second->worldLocation);
                 object->updateWorldMatrix(translationMatrix * object->localMatrix());
@@ -629,7 +683,27 @@ public:
             }
         }
         
+        m_particles.update((float)m_time);
+        
         m_lastMilliseconds = milliseconds;
+    }
+    
+    void addParticle(double durationInSeconds, double radius, const Vector3 &position, const Vector3 &velocity, const Vector3 &color)
+    {
+        m_particles.addElement(Particles::Element {
+            (float)m_time, 
+            (float)(m_time + durationInSeconds),
+            (float)radius,
+            (float)position.x(),
+            (float)position.y(),
+            (float)position.z(),
+            (float)velocity.x(),
+            (float)velocity.y(),
+            (float)velocity.z(),
+            (float)color.x(),
+            (float)color.y(),
+            (float)color.z()
+        });
     }
     
     void addLocationState(const std::string &objectId, std::unique_ptr<LocationState> state)
@@ -664,12 +738,14 @@ private:
     Shader m_lightShader;
     Shader m_debugQuadShader;
     Shader m_postProcessingShader;
+    Particles m_particles;
     VertexBuffer m_quadBuffer;
     DepthMap m_shadowMap;
     DepthMap m_cameraSpaceDepthMap;
     FontMap m_fontMap;
     ColorMap m_cameraSpaceColorMap;
     uint64_t m_lastMilliseconds = 0;
+    double m_time = 0.0;
     double m_elapsedSeconds = 0.0;
     bool m_screenIsDirty = true;
     std::map<std::string, std::pair<std::unique_ptr<std::vector<VertexBuffer>>, int64_t/*referencingCount*/>> m_vertexBufferListMap;

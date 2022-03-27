@@ -34,6 +34,8 @@
 #include <dust3d/gles/depth_map.h>
 #include <dust3d/gles/font_map.h>
 #include <dust3d/gles/particles.h>
+#include <dust3d/gles/terrain_generator.h>
+#include <third_party/tga_utils/tga_utils.h>
 
 namespace dust3d
 {
@@ -77,7 +79,7 @@ public:
     public:
         Vector3 worldLocation;
         Vector3 forwardDirection;
-        double speed;
+        double speed = 0.0;
         
         Vector3 velocity() const
         {
@@ -324,6 +326,11 @@ public:
         m_cameraSpaceColorMap.initialize();
         m_cameraSpaceDepthMap.initialize();
         
+        std::unique_ptr<TGAImage> terrainImage = m_terrainGenerator.generate();
+        m_terrainTextureId = LoadTextureFromTGAImage(*terrainImage);
+        
+        std::cout << "m_terrainTextureId:" << m_terrainTextureId << std::endl;
+        
         m_initialized = true;
     }
     
@@ -342,7 +349,7 @@ public:
     
     void flushScreen()
     {
-        //renderDebugMap(m_cameraSpaceDepthMap.textureId());
+        //renderDebugMap(m_terrainTextureId);
         //return;
         
         glViewport(0, 0, m_windowWidth, m_windowHeight);
@@ -679,12 +686,12 @@ public:
             if (stateIt.second->update()) {
                 Object *object = findObject(stateIt.first);
                 if (nullptr == object) {
-                    if ("camera" == stateIt.first) {
-                        m_cameraPosition = stateIt.second->worldLocation;
-                        m_cameraFront = stateIt.second->forwardDirection;
-                        m_cameraUp = Vector3(0.0, 1.0, 0.0);
-                        dirty();
-                    }
+                    //if ("camera" == stateIt.first) {
+                    //    m_cameraPosition = stateIt.second->worldLocation;
+                    //    m_cameraFront = stateIt.second->forwardDirection;
+                    //    m_cameraUp = Vector3(0.0, 1.0, 0.0);
+                    //    dirty();
+                    //}
                     continue;
                 }
                 Matrix4x4 translationMatrix;
@@ -752,6 +759,7 @@ private:
     Shader m_lightShader;
     Shader m_debugQuadShader;
     Shader m_postProcessingShader;
+    GLuint m_terrainTextureId = 0;
     Particles m_particles;
     VertexBuffer m_quadBuffer;
     DepthMap m_shadowMap;
@@ -768,6 +776,7 @@ private:
     std::map<std::string, std::unique_ptr<Object>> m_objects;
     std::map<std::string, std::unique_ptr<LocationState>> m_locationStates;
     std::map<std::string, std::unique_ptr<State>> m_generalStates;
+    TerrainGenerator m_terrainGenerator;
 };
     
 };

@@ -20,6 +20,9 @@ EGLSurface eglSurface = EGL_NO_SURFACE;
 //std::random_device randomSeeder;
 std::mt19937 randomEngine(0); //std::mt19937 randomEngine(randomSeeder());
 std::uniform_real_distribution<double> randomSpawn(-3.0, 3.0);
+std::uniform_real_distribution<double> randomReal(0.0, 1.0);
+auto spawn = std::bind(randomSpawn, randomEngine);
+auto rand01 = std::bind(randomReal, randomEngine);
 
 using namespace dust3d;
 
@@ -175,6 +178,12 @@ public:
         if (Math::isZero(speed))
             return false;
         
+        if (m_forwardAcceleration > 0)
+            m_forwardAcceleration -= 0.01;
+        
+        if (m_forwardAcceleration > 0)
+            speed += m_forwardAcceleration * IndieGameEngine::indie()->elapsedSecondsSinceLastUpdate();
+
         worldLocation += velocity() * IndieGameEngine::indie()->elapsedSecondsSinceLastUpdate();
         const double tailFlameRadius = 0.03;
         double tailFlameSpeed = speed * 0.1;
@@ -188,6 +197,7 @@ public:
 
 private:
     uint64_t m_lastEmitTime = 0;
+    double m_forwardAcceleration = rand01();
 };
 
 class WorldState: public IndieGameEngine::State
@@ -199,9 +209,9 @@ public:
             auto objectId = "plane" + std::to_string(IndieGameEngine::indie()->objectCount());
             IndieGameEngine::indie()->addObject(objectId, "Plane", Matrix4x4(), IndieGameEngine::RenderType::Default);
             auto dummyPlaneState = std::make_unique<DummyPlaneLocationState>();
-            dummyPlaneState->worldLocation = Vector3(randomSpawn(randomEngine), randomSpawn(randomEngine) + 3.0, randomSpawn(randomEngine));
+            dummyPlaneState->worldLocation = Vector3(spawn(), spawn() + 3.0, spawn());
             dummyPlaneState->forwardDirection = Vector3(0.0, 0.0, -1.0);
-            dummyPlaneState->speed = randomSpawn(randomEngine) * 0.15;
+            dummyPlaneState->speed = spawn() * 0.15;
             IndieGameEngine::indie()->addLocationState(objectId, std::move(dummyPlaneState));
             return true;
         }

@@ -40,7 +40,8 @@ public:
         float timeRangeAndRadius[3];
         float startPosition[3];
         float velocity[3];
-        float color[3];
+        float startColor[3];
+        float stopColor[3];
     };
     
     struct Node

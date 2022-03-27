@@ -176,11 +176,11 @@ public:
             return false;
         
         worldLocation += velocity() * IndieGameEngine::indie()->elapsedSecondsSinceLastUpdate();
-        const double tailFlameRadius = 0.05;
+        const double tailFlameRadius = 0.03;
         double tailFlameSpeed = speed * 0.1;
         uint64_t emitInterval = (tailFlameRadius * 0.5 / speed) * 1000;
         if (m_lastEmitTime + emitInterval < IndieGameEngine::indie()->millisecondsSinceStart()) {
-            IndieGameEngine::indie()->addParticle(5.5, tailFlameRadius, worldLocation - forwardDirection * 0.2, forwardDirection * tailFlameSpeed, Vector3(1.0, 1.0, 0.0));
+            IndieGameEngine::indie()->addParticle(1.5, tailFlameRadius, worldLocation - forwardDirection * 0.2 + Vector3(0.0, 0.02, 0.0), forwardDirection * tailFlameSpeed, Vector3(0.95, 0.9, 0.27), Vector3(0.58, 0.31, 0.22));
             m_lastEmitTime = IndieGameEngine::indie()->millisecondsSinceStart();
         }
         return true;

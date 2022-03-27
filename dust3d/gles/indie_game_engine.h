@@ -509,16 +509,19 @@ public:
                     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Particles::Element), &m_particles.elements()[0].timeRangeAndRadius[0]);
                     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Particles::Element), &m_particles.elements()[0].startPosition[0]);
                     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Particles::Element), &m_particles.elements()[0].velocity[0]);
-                    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Particles::Element), &m_particles.elements()[0].color[0]);
+                    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Particles::Element), &m_particles.elements()[0].startColor[0]);
+                    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Particles::Element), &m_particles.elements()[0].stopColor[0]);
                     glEnableVertexAttribArray(0);
                     glEnableVertexAttribArray(1);
                     glEnableVertexAttribArray(2);
                     glEnableVertexAttribArray(3);
+                    glEnableVertexAttribArray(4);
                     glDrawArrays(GL_POINTS, 0, m_particles.elements().size());
                     glDisableVertexAttribArray(0);
                     glDisableVertexAttribArray(1);
                     glDisableVertexAttribArray(2);
                     glDisableVertexAttribArray(3);
+                    glDisableVertexAttribArray(4);
                 }
                 
                 // Render lines
@@ -696,7 +699,7 @@ public:
         m_lastMilliseconds = milliseconds;
     }
     
-    void addParticle(double durationInSeconds, double radius, const Vector3 &position, const Vector3 &velocity, const Vector3 &color)
+    void addParticle(double durationInSeconds, double radius, const Vector3 &position, const Vector3 &velocity, const Vector3 &startColor, const Vector3 &stopColor)
     {
         m_particles.addElement(Particles::Element {
             (float)m_time, 
@@ -708,9 +711,12 @@ public:
             (float)velocity.x(),
             (float)velocity.y(),
             (float)velocity.z(),
-            (float)color.x(),
-            (float)color.y(),
-            (float)color.z()
+            (float)startColor.x(),
+            (float)startColor.y(),
+            (float)startColor.z(),
+            (float)stopColor.x(),
+            (float)stopColor.y(),
+            (float)stopColor.z()
         });
     }
     

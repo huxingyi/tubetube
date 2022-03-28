@@ -3,6 +3,7 @@
 #include <dust3d/gles/vertex_buffer.h>
 #include <dust3d/gles/vertex_buffer_utils.h>
 #include <dust3d/gles/indie_game_engine.h>
+#include <dust3d/gles/terrain_generator.h>
 #include <dust3d/mesh/tube_mesh_builder.h>
 #include <Windows.h>
 #include <Windowsx.h>
@@ -129,14 +130,14 @@ static std::unique_ptr<std::vector<VertexBuffer>> buildVertexBufferListFromSecti
 static std::unique_ptr<std::vector<VertexBuffer>> loadResouceVertexBufferList(const std::string &resourceName)
 {
     if ("Ground" == resourceName) {
-        VertexBuffer vertexBuffer(std::make_unique<std::vector<GLfloat>>(std::vector<GLfloat> {
-            -0.5f,  0.0f, -0.5f,  0.0f,  1.0f,  0.0f, // top-left
-             0.5f,  0.0f , 0.5f,  0.0f,  1.0f,  0.0f, // bottom-right
-             0.5f,  0.0f, -0.5f,  0.0f,  1.0f,  0.0f, // top-right     
-             0.5f,  0.0f,  0.5f,  0.0f,  1.0f,  0.0f, // bottom-right
-            -0.5f,  0.0f, -0.5f,  0.0f,  1.0f,  0.0f, // top-left
-            -0.5f,  0.0f,  0.5f,  0.0f,  1.0f,  0.0f  // bottom-left
-        }), 6, 6, IndieGameEngine::DrawHint::Triangles);
+        TerrainGenerator terrainGenerator;
+        double frequency = 9.0;
+        terrainGenerator.generate(frequency);
+        std::vector<Vector3> vertices;
+        std::vector<std::vector<size_t>> quads;
+        terrainGenerator.getMesh(vertices, quads);
+        VertexBuffer vertexBuffer;
+        VertexBufferUtils::loadMeshBorders(vertexBuffer, vertices, quads, IndieGameEngine::DrawHint::Lines);
         auto vertexBufferList = std::make_unique<std::vector<VertexBuffer>>();
         vertexBufferList->push_back(std::move(vertexBuffer));
         return std::move(vertexBufferList);
@@ -278,7 +279,7 @@ int main(int argc, char* argv[])
     IndieGameEngine::indie()->setKeyPressedQueryHandler(queryKeyPressed);
     {
         Matrix4x4 modelMatrix;
-        modelMatrix.scale(Vector3(10000.0, 0.0, 10000.0));
+        //modelMatrix.scale(Vector3(10000.0, 0.0, 10000.0));
         IndieGameEngine::indie()->addObject("defaultGround", "Ground", modelMatrix, IndieGameEngine::RenderType::Ground);
     }
     

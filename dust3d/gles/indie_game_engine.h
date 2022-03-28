@@ -34,8 +34,8 @@
 #include <dust3d/gles/depth_map.h>
 #include <dust3d/gles/font_map.h>
 #include <dust3d/gles/particles.h>
-#include <dust3d/gles/terrain_generator.h>
-#include <third_party/tga_utils/tga_utils.h>
+//#include <dust3d/gles/terrain_generator.h>
+//#include <third_party/tga_utils/tga_utils.h>
 
 namespace dust3d
 {
@@ -325,11 +325,12 @@ public:
         m_uiMap.initialize();
         m_cameraSpaceDepthMap.initialize();
         
-        regenerateTerrain();
+        //regenerateTerrain();
 
         m_initialized = true;
     }
     
+    /*
     void regenerateTerrain()
     {
         glDeleteTextures(1, &m_terrainTextureId);
@@ -340,6 +341,7 @@ public:
         std::unique_ptr<TGAImage> terrainImage = m_terrainGenerator.generate(m_terrainFrequency);
         m_terrainTextureId = LoadTextureFromTGAImage(*terrainImage);
     }
+    */
     
     void renderDebugMap(GLuint textureId)
     {
@@ -356,8 +358,8 @@ public:
     
     void flushScreen()
     {
-        renderDebugMap(m_terrainTextureId);
-        return;
+        //renderDebugMap(m_terrainTextureId);
+        //return;
         
         glViewport(0, 0, m_windowWidth, m_windowHeight);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -564,6 +566,7 @@ public:
                 }
                 glUniform4f(m_singleColorShader.getUniformLocation("objectColor"), 0.0, 0.0, 0.0, 1.0);
                 renderObjects(m_singleColorShader, RenderType::Default, DrawHint::Lines);
+                renderObjects(m_singleColorShader, RenderType::Ground, DrawHint::Lines);
 
                 m_cameraSpaceColorMap.end();
             }
@@ -700,13 +703,13 @@ public:
             }
             
             // Test TerrainGenerator
-            if (m_keyPressedQueryHander('9')) {
-                m_terrainFrequency -= 0.5;
-                regenerateTerrain();
-            } else if (m_keyPressedQueryHander('0')) {
-                m_terrainFrequency += 0.5;
-                regenerateTerrain();
-            }
+            //if (m_keyPressedQueryHander('9')) {
+            //    m_terrainFrequency -= 0.5;
+            //    regenerateTerrain();
+            //} else if (m_keyPressedQueryHander('0')) {
+            //    m_terrainFrequency += 0.5;
+            //    regenerateTerrain();
+            //}
         }
         
         for (auto &stateIt: m_generalStates) {
@@ -790,7 +793,7 @@ private:
     Shader m_lightShader;
     Shader m_debugQuadShader;
     Shader m_postProcessingShader;
-    GLuint m_terrainTextureId = 0;
+    //GLuint m_terrainTextureId = 0;
     Particles m_particles;
     VertexBuffer m_quadBuffer;
     DepthMap m_shadowMap;
@@ -808,8 +811,8 @@ private:
     std::map<std::string, std::unique_ptr<Object>> m_objects;
     std::map<std::string, std::unique_ptr<LocationState>> m_locationStates;
     std::map<std::string, std::unique_ptr<State>> m_generalStates;
-    TerrainGenerator m_terrainGenerator;
-    double m_terrainFrequency = 3.0;
+    //TerrainGenerator m_terrainGenerator;
+    //double m_terrainFrequency = 3.0;
 };
     
 };

@@ -23,7 +23,6 @@
 #ifndef DUST3D_GLES_TERRAIN_GENERATOR_H_
 #define DUST3D_GLES_TERRAIN_GENERATOR_H_
 
-#include <random>
 #include <dust3d/gles/perlin_noise.h>
 #include <third_party/tga_utils/tga_utils.h>
 
@@ -130,41 +129,17 @@ public:
         }
     }
     
-    std::unique_ptr<TGAImage> generate(double frequency)
+    std::unique_ptr<TGAImage> getImage()
     {
-        if (0 == m_worldWidth || 0 == m_worldHeight)
+        if (nullptr == m_heights)
             return nullptr;
         
-        auto layer1 = generateRealLayer(-0.5, -0.5, frequency);
-        auto layer2 = generateRealLayer(-0.5, -0.5, frequency * 2.0);
-        auto layer3 = generateRealLayer(-0.5, -0.5, frequency * 4.0);
-        auto layer4 = sumLayers({
-            &multiplyLayer(*layer1, 1.0), 
-            &multiplyLayer(*layer1, 0.4),
-            &multiplyLayer(*layer1, 0.1)
-        });
-        sqrtLayer(multiplyLayer(*layer4, 0.8));
-        auto layer5 = generateRealLayer(0.0, 0.0, frequency * 3.0);
-        auto layer6 = sumLayers({
-            &multiplyLayer(*layer4, 0.9), 
-            &multiplyLayer(*layer5, 0.1)
-        });
-        raiseLayerCenter(*layer6);
-        normalizeLayer(*layer6);
-        multiplyLayer(*layer6, 2.0, [](double n) {
-            return n > 0.5;
-        });
-        powLayer(*layer6, 1.77, [](double n) {
-            return n > 0.5;
-        });
-        normalizeLayer(*layer6);
-        auto reals = std::move(layer6);
         auto image = std::make_unique<TGAImage>();
         image->width = m_worldWidth;
         image->height = m_worldHeight;
-        image->data.reserve(reals->size());
-        for (size_t i = 0; i < reals->size(); ++i) {
-            double value = std::min(reals->at(i), 1.0);
+        image->data.reserve(m_heights->size());
+        for (size_t i = 0; i < m_heights->size(); ++i) {
+            double value = std::min(m_heights->at(i), 1.0);
             Byte4 pixel;
             if (value >= 0.75) {
                 pixel[0] = 0.0;
@@ -194,12 +169,71 @@ public:
         return std::move(image);
     }
     
+    void generate(double frequency)
+    {
+        if (0 == m_worldWidth || 0 == m_worldHeight)
+            return;
+        
+        auto layer1 = generateRealLayer(-0.5, -0.5, frequency);
+        auto layer2 = generateRealLayer(-0.5, -0.5, frequency * 2.0);
+        auto layer3 = generateRealLayer(-0.5, -0.5, frequency * 4.0);
+        auto layer4 = sumLayers({
+            &multiplyLayer(*layer1, 1.0), 
+            &multiplyLayer(*layer1, 0.4),
+            &multiplyLayer(*layer1, 0.1)
+        });
+        sqrtLayer(multiplyLayer(*layer4, 0.8));
+        auto layer5 = generateRealLayer(0.0, 0.0, frequency * 3.0);
+        auto layer6 = sumLayers({
+            &multiplyLayer(*layer4, 0.9), 
+            &multiplyLayer(*layer5, 0.1)
+        });
+        raiseLayerCenter(*layer6);
+        normalizeLayer(*layer6);
+        multiplyLayer(*layer6, 2.0, [](double n) {
+            return n > 0.5;
+        });
+        powLayer(*layer6, 1.77, [](double n) {
+            return n > 0.5;
+        });
+        normalizeLayer(*layer6);
+        m_heights = std::move(layer6);
+    }
+    
+    void getMesh(std::vector<Vector3> &vertices, std::vector<std::vector<size_t>> &quads, int gridSize=10, double scale=20.0, double heightRange=1.0, double heightOffset = -1.0)
+    {
+        size_t columns = (m_worldWidth + gridSize - 1) / gridSize;
+        size_t rows = (m_worldHeight + gridSize - 1) / gridSize;
+        vertices.resize(columns * rows);
+        double halfWidth = (double)m_worldWidth * 0.5;
+        double halfHeight = (double)m_worldHeight * 0.5;
+        for (int y = 0; y < (int)m_worldHeight; y += gridSize) {
+            for (int x = 0; x < (int)m_worldWidth; x += gridSize) {
+                size_t intIndex = (y / gridSize) * columns + (x / gridSize);
+                size_t realIndex = y * m_worldWidth + x;
+                vertices[intIndex] = Vector3(scale * ((double)x - halfWidth) / m_worldWidth, heightOffset + heightRange * m_heights->at(realIndex), scale * ((double)y - halfHeight) / m_worldHeight);
+            }
+        }
+        
+        quads.clear();
+        for (int y = gridSize; y < (int)m_worldHeight; y += gridSize) {
+            for (int x = gridSize; x < (int)m_worldWidth; x += gridSize) {
+                size_t column = x / gridSize;
+                size_t row = y / gridSize;
+                quads.push_back({
+                    (row - 1) * columns + (column - 1),
+                    (row - 1) * columns + column,
+                    row * columns + column,
+                    row * columns + (column - 1),
+                });
+            }
+        }
+    }
+    
 private:
     size_t m_worldWidth = 1024;
     size_t m_worldHeight = 1024;
-    std::mt19937 m_randomGenerator = std::mt19937(0);
-    std::uniform_real_distribution<double> m_randomDistribution = std::uniform_real_distribution<double>(0.0, 1.0);
-    std::function<double ()> m_rand = std::bind(m_randomDistribution, m_randomGenerator);
+    std::unique_ptr<std::vector<double>> m_heights;
 };
     
 }

@@ -46,49 +46,148 @@ public:
         for (size_t y = 0; y < m_worldHeight; ++y)
             for (size_t x = 0; x < m_worldWidth; ++x)
                 reals->push_back(PerlinNoise::noise(offsetX + (double)x / m_worldWidth * scale, offsetY + (double)y / m_worldHeight * scale, 0.0));
-        normalize(*reals);
+        normalizeLayer(*reals);
         return std::move(reals);
     }
     
-    static void normalize(std::vector<double> &reals)
+    static std::unique_ptr<std::vector<double>> sumLayers(const std::vector<const std::vector<double> *> &realLayers)
+    {
+        if (realLayers.empty())
+            return nullptr;
+        auto reals = std::make_unique<std::vector<double>>(realLayers.front()->size());
+        for (const auto &layer: realLayers)
+            for (size_t i = 0; i < layer->size(); ++i)
+                reals->at(i) += layer->at(i);
+        return std::move(reals);
+    }
+    
+    static std::unique_ptr<std::vector<double>> multiplyLayers(const std::vector<const std::vector<double> *> &realLayers)
+    {
+        if (realLayers.empty())
+            return nullptr;
+        auto reals = std::make_unique<std::vector<double>>(realLayers.front()->size(), 1.0);
+        for (const auto &layer: realLayers)
+            for (size_t i = 0; i < layer->size(); ++i)
+                reals->at(i) *= layer->at(i);
+        return std::move(reals);
+    }
+    
+    static std::vector<double> &normalizeLayer(std::vector<double> &reals)
     {
         double maxReal = *std::max_element(reals.begin(), reals.end());
         double minReal = *std::min_element(reals.begin(), reals.end());
         double range = maxReal - minReal;
         for (auto &it: reals)
             it = (it - minReal) / range;
+        return reals;
     }
     
-    std::unique_ptr<std::vector<double>> mix(const std::vector<const std::vector<double> *> &realLayers)
+    static std::vector<double> &sqrtLayer(std::vector<double> &reals, std::function<bool (double)> filter=nullptr)
     {
-        auto reals = std::make_unique<std::vector<double>>(m_worldWidth * m_worldHeight);
-        for (const auto &layer: realLayers) {
-            for (size_t i = 0; i < layer->size(); ++i)
-                reals->at(i) += layer->at(i);
+        for (auto &it: reals) {
+            if (nullptr == filter || filter(it))
+                it = std::sqrt(it);
         }
-        normalize(*reals);
-        return std::move(reals);
+        return reals;
     }
     
-    std::unique_ptr<TGAImage> generate()
+    static std::vector<double> &powLayer(std::vector<double> &reals, double exponent, std::function<bool (double)> filter=nullptr)
+    {
+        for (auto &it: reals) {
+            if (nullptr == filter || filter(it))
+                it = std::pow(it, exponent);
+        }
+        return reals;
+    }
+    
+    static std::vector<double> &multiplyLayer(std::vector<double> &reals, double by, std::function<bool (double)> filter=nullptr)
+    {
+        for (auto &it: reals) {
+            if (nullptr == filter || filter(it))
+                it *= by;
+        }
+        return reals;
+    }
+    
+    static std::vector<double> &originalLayer(std::vector<double> &reals)
+    {
+        return reals;
+    }
+    
+    void raiseLayerCenter(std::vector<double> &reals)
+    {
+        int centerX = m_worldWidth / 2;
+        int centerY = m_worldHeight / 2;
+        double maxDistance = std::sqrt(centerX * centerX + centerY * centerY);
+        size_t realIndex = 0;
+        for (int y = 0; y < (int)m_worldHeight; ++y) {
+            for (int x = 0; x < (int)m_worldWidth; ++x) {
+                double offsetX = x - centerX;
+                double offsetY = y - centerY;
+                double distance = std::sqrt(offsetX * offsetX + offsetY * offsetY);
+                reals[realIndex++] *= 1.0 - 0.9 * distance / maxDistance;
+            }
+        }
+    }
+    
+    std::unique_ptr<TGAImage> generate(double frequency)
     {
         if (0 == m_worldWidth || 0 == m_worldHeight)
             return nullptr;
         
-        auto layer1 = generateRealLayer(0.0, 0.0, 10.0);
-        auto layer2 = generateRealLayer(1.0, 0.0, 30.0);
-        auto layer3 = generateRealLayer(0.0, 5.0, 40.0);
-        auto reals = mix({layer1.get(), layer2.get(), layer3.get()});
+        auto layer1 = generateRealLayer(-0.5, -0.5, frequency);
+        auto layer2 = generateRealLayer(-0.5, -0.5, frequency * 2.0);
+        auto layer3 = generateRealLayer(-0.5, -0.5, frequency * 4.0);
+        auto layer4 = sumLayers({
+            &multiplyLayer(*layer1, 1.0), 
+            &multiplyLayer(*layer1, 0.4),
+            &multiplyLayer(*layer1, 0.1)
+        });
+        sqrtLayer(multiplyLayer(*layer4, 0.8));
+        auto layer5 = generateRealLayer(0.0, 0.0, frequency * 3.0);
+        auto layer6 = sumLayers({
+            &multiplyLayer(*layer4, 0.9), 
+            &multiplyLayer(*layer5, 0.1)
+        });
+        raiseLayerCenter(*layer6);
+        normalizeLayer(*layer6);
+        multiplyLayer(*layer6, 2.0, [](double n) {
+            return n > 0.5;
+        });
+        powLayer(*layer6, 1.77, [](double n) {
+            return n > 0.5;
+        });
+        normalizeLayer(*layer6);
+        auto reals = std::move(layer6);
         auto image = std::make_unique<TGAImage>();
         image->width = m_worldWidth;
         image->height = m_worldHeight;
         image->data.reserve(reals->size());
         for (size_t i = 0; i < reals->size(); ++i) {
-            unsigned char value = 255 * reals->at(i);
+            double value = std::min(reals->at(i), 1.0);
             Byte4 pixel;
-            pixel[0] = value;
-            pixel[2] = value;
-            pixel[1] = value;
+            if (value >= 0.75) {
+                pixel[0] = 0.0;
+                pixel[1] = 255 * value;
+                pixel[2] = 255 * value;
+            } else if (value >= 0.6) {
+                pixel[0] = 0.0;
+                pixel[1] = 255 * value;
+                pixel[2] = 0.0;
+            } else if (value >= 0.5) {
+                pixel[0] = 255 * value;
+                pixel[1] = 255 * value;
+                pixel[2] = 0.0;
+            } else if (value >= 0.4) {
+                pixel[0] = 0.0;
+                pixel[1] = 0.0;
+                pixel[2] = 255 * value;
+            } else {
+                pixel[0] = value;
+                pixel[1] = value;
+                pixel[2] = value;
+            }
+            
             pixel[3] = 255;
             image->data.push_back(pixel);
         }

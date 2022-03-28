@@ -7,8 +7,8 @@ uniform sampler2D debugMap;
 
 void main()
 {
-    float depthValue = texture(debugMap, pointTexCoords).r;
-    fragColor = vec4(vec3(depthValue), 1.0);
+    vec3 color = texture(debugMap, pointTexCoords).rgb;
+    fragColor = vec4(color, 1.0);
 }
 
 )################"

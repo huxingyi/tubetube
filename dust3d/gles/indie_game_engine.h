@@ -325,12 +325,20 @@ public:
         m_uiMap.initialize();
         m_cameraSpaceDepthMap.initialize();
         
-        //std::unique_ptr<TGAImage> terrainImage = m_terrainGenerator.generate();
-        //m_terrainTextureId = LoadTextureFromTGAImage(*terrainImage);
-        
-        //std::cout << "m_terrainTextureId:" << m_terrainTextureId << std::endl;
+        regenerateTerrain();
 
         m_initialized = true;
+    }
+    
+    void regenerateTerrain()
+    {
+        glDeleteTextures(1, &m_terrainTextureId);
+        m_terrainTextureId = 0;
+        
+        std::cout << "m_terrainFrequency:" << m_terrainFrequency << std::endl;
+        
+        std::unique_ptr<TGAImage> terrainImage = m_terrainGenerator.generate(m_terrainFrequency);
+        m_terrainTextureId = LoadTextureFromTGAImage(*terrainImage);
     }
     
     void renderDebugMap(GLuint textureId)
@@ -348,8 +356,8 @@ public:
     
     void flushScreen()
     {
-        //renderDebugMap(m_terrainTextureId);
-        //return;
+        renderDebugMap(m_terrainTextureId);
+        return;
         
         glViewport(0, 0, m_windowWidth, m_windowHeight);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -690,6 +698,15 @@ public:
                 m_cameraPosition -= m_cameraFront * cameraSpeed;
                 dirty();
             }
+            
+            // Test TerrainGenerator
+            if (m_keyPressedQueryHander('9')) {
+                m_terrainFrequency -= 0.5;
+                regenerateTerrain();
+            } else if (m_keyPressedQueryHander('0')) {
+                m_terrainFrequency += 0.5;
+                regenerateTerrain();
+            }
         }
         
         for (auto &stateIt: m_generalStates) {
@@ -792,6 +809,7 @@ private:
     std::map<std::string, std::unique_ptr<LocationState>> m_locationStates;
     std::map<std::string, std::unique_ptr<State>> m_generalStates;
     TerrainGenerator m_terrainGenerator;
+    double m_terrainFrequency = 3.0;
 };
     
 };

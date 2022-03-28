@@ -283,7 +283,7 @@ int main(int argc, char* argv[])
     }
     
     IndieGameEngine::indie()->addGeneralState("", std::make_unique<WorldState>());
-    
+
     SetTimer(windowHandle, 1, 1000 / 120, updateTimer);
     SetTimer(windowHandle, 2, 1000 / 60, renderTimer);
     while (!quit)  {

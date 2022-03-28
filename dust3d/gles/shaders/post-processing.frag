@@ -4,6 +4,7 @@ precision mediump float;
 out vec4 fragColor;
 in vec2 pointTexCoords;
 uniform sampler2D colorMap;
+uniform sampler2D uiMap;
 uniform sampler2D depthMap;
 
 vec3 blur()
@@ -30,7 +31,10 @@ void main()
     vec3 color = texture(colorMap, pointTexCoords).rgb;
     vec3 blurColor = blur();
     float depth = texture(depthMap, pointTexCoords).r * 0.5 + 0.5;
-    fragColor = vec4(mix(color, blurColor, smoothstep(0.99, 1.0, depth)), 1.0);
+    color = mix(color, blurColor, smoothstep(0.99, 1.0, depth));
+    vec4 uiColor = texture(uiMap, pointTexCoords).rgba;
+    color = uiColor.rgb * float(uiColor.a > 0.03) + color.rgb * (1.0 - float(uiColor.a > 0.03));
+    fragColor = vec4(color, 1.0);
 }
 
 )################"

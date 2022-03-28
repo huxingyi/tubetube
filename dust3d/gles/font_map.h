@@ -182,7 +182,7 @@ private:
     std::unique_ptr<Shader> m_shader;
     FT_Library m_library;
     FT_Face m_face;
-    const int m_fontSizeInPixel = 22;
+    const int m_fontSizeInPixel = 14;
     const int m_columns = m_textureWidth / m_fontSizeInPixel;
     const int m_rows = m_textureHeight / m_fontSizeInPixel;
     uint64_t m_nextAge = 1;

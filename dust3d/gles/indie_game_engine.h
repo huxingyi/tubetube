@@ -261,9 +261,7 @@ public:
     {
         if (m_initialized)
             return;
-        
-        glClearColor(0.145f, 0.145f, 0.145f, 1.0f);
-        
+
         {
             const GLchar *vertexShaderSource =
                 #include <dust3d/gles/shaders/phong.vert>
@@ -324,13 +322,14 @@ public:
         m_fontMap.initialize();
         m_particles.initialize();
         m_cameraSpaceColorMap.initialize();
+        m_uiMap.initialize();
         m_cameraSpaceDepthMap.initialize();
         
-        std::unique_ptr<TGAImage> terrainImage = m_terrainGenerator.generate();
-        m_terrainTextureId = LoadTextureFromTGAImage(*terrainImage);
+        //std::unique_ptr<TGAImage> terrainImage = m_terrainGenerator.generate();
+        //m_terrainTextureId = LoadTextureFromTGAImage(*terrainImage);
         
-        std::cout << "m_terrainTextureId:" << m_terrainTextureId << std::endl;
-        
+        //std::cout << "m_terrainTextureId:" << m_terrainTextureId << std::endl;
+
         m_initialized = true;
     }
     
@@ -360,8 +359,11 @@ public:
         glBindTexture(GL_TEXTURE_2D, m_cameraSpaceColorMap.textureId());
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, m_cameraSpaceDepthMap.textureId());
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, m_uiMap.textureId());
         glUniform1i(m_postProcessingShader.getUniformLocation("colorMap"), 0);
         glUniform1i(m_postProcessingShader.getUniformLocation("depthMap"), 1);
+        glUniform1i(m_postProcessingShader.getUniformLocation("uiMap"), 2);
         drawVertexBuffer(m_quadBuffer);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
@@ -380,7 +382,7 @@ public:
         if (m_screenIsDirty) {
             
             m_screenIsDirty = false;
-        
+
             // Render shadow
             
             Matrix4x4 lightViewProjectionMatrix;
@@ -438,6 +440,8 @@ public:
             }
 
             if (m_cameraSpaceColorMap.begin()) {
+                
+                glClearColor(0.145f, 0.145f, 0.145f, 1.0f);
                 
                 // Render triangles
                 
@@ -552,13 +556,22 @@ public:
                 }
                 glUniform4f(m_singleColorShader.getUniformLocation("objectColor"), 0.0, 0.0, 0.0, 1.0);
                 renderObjects(m_singleColorShader, RenderType::Default, DrawHint::Lines);
+
+                m_cameraSpaceColorMap.end();
+            }
+            
+            if (m_uiMap.begin()) {
+                
+                glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
                 
                 // Render text
                 
                 m_fontMap.shader().use();
+                
+                glClear(GL_COLOR_BUFFER_BIT);
                 glDisable(GL_DEPTH_TEST);
                 glEnable(GL_BLEND);
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                glBlendFunc(GL_SRC_ALPHA, GL_ZERO);
                 
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, m_fontMap.textureId());
@@ -575,8 +588,8 @@ public:
                 glUniform4f(m_fontMap.shader().getUniformLocation("objectColor"), 1.0, 1.0, 1.0, 1.0);
                 m_fontMap.renderString(particlesIsDirty ? "Partices rendered:[" + std::to_string(m_particles.aliveElementCount()) + "]" : "Partices NOT rendered", m_windowWidth / 2.0, m_windowHeight / 2.0);
                 glBindTexture(GL_TEXTURE_2D, 0);
-
-                m_cameraSpaceColorMap.end();
+                
+                m_uiMap.end();
             }
         }
         
@@ -626,6 +639,7 @@ public:
         m_windowWidth = width;
         m_windowHeight = height;
         m_cameraSpaceColorMap.setSize(m_windowWidth, m_windowHeight);
+        m_uiMap.setSize(m_windowWidth, m_windowHeight);
         m_cameraSpaceDepthMap.setSize(m_windowWidth, m_windowHeight);
     }
     
@@ -766,6 +780,7 @@ private:
     DepthMap m_cameraSpaceDepthMap;
     FontMap m_fontMap;
     ColorMap m_cameraSpaceColorMap;
+    ColorMap m_uiMap;
     uint64_t m_startMilliseconds = 0;
     uint64_t m_millisecondsSinceStart = 0;
     uint64_t m_lastMilliseconds = 0;

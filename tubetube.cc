@@ -129,15 +129,72 @@ static std::unique_ptr<std::vector<VertexBuffer>> buildVertexBufferListFromSecti
 
 static std::unique_ptr<std::vector<VertexBuffer>> loadResouceVertexBufferList(const std::string &resourceName)
 {
-    if ("Ground" == resourceName) {
+    if ("Sea" == resourceName) {
+        GLfloat waterColor[] = {0.3f, 0.65f, 0.71f};
+        VertexBuffer vertexBuffer(std::make_unique<std::vector<GLfloat>>(std::vector<GLfloat> {
+            -0.5f,  0.0f, -0.5f,  0.0f,  1.0f,  0.0f, waterColor[0], waterColor[1], waterColor[2], // top-left
+             0.5f,  0.0f , 0.5f,  0.0f,  1.0f,  0.0f, waterColor[0], waterColor[1], waterColor[2], // bottom-right
+             0.5f,  0.0f, -0.5f,  0.0f,  1.0f,  0.0f, waterColor[0], waterColor[1], waterColor[2], // top-right     
+             0.5f,  0.0f,  0.5f,  0.0f,  1.0f,  0.0f, waterColor[0], waterColor[1], waterColor[2], // bottom-right
+            -0.5f,  0.0f, -0.5f,  0.0f,  1.0f,  0.0f, waterColor[0], waterColor[1], waterColor[2], // top-left
+            -0.5f,  0.0f,  0.5f,  0.0f,  1.0f,  0.0f, waterColor[0], waterColor[1], waterColor[2]  // bottom-left
+        }), 9, 6, IndieGameEngine::DrawHint::Triangles);
+        auto vertexBufferList = std::make_unique<std::vector<VertexBuffer>>();
+        vertexBufferList->push_back(std::move(vertexBuffer));
+        return std::move(vertexBufferList);
+    } else if ("Ground" == resourceName) {
         TerrainGenerator terrainGenerator;
-        double frequency = 9.0;
+        double frequency = 5.0;
         terrainGenerator.generate(frequency);
         std::vector<Vector3> vertices;
-        std::vector<std::vector<size_t>> quads;
-        terrainGenerator.getMesh(vertices, quads);
+        std::vector<std::vector<size_t>> triangles;
+        terrainGenerator.getTriangulatedMesh(vertices, triangles);
+        
+        double heightOffset = -0.5;
+        double heightScale = 2.0;
         VertexBuffer vertexBuffer;
-        VertexBufferUtils::loadMeshBorders(vertexBuffer, vertices, quads, IndieGameEngine::DrawHint::Lines);
+        auto vertexBufferVertices = std::make_unique<std::vector<GLfloat>>();
+        size_t numbersPerVertex = 9;
+        vertexBufferVertices->resize(triangles.size() * 3 * numbersPerVertex);
+        std::vector<Vector3> colors(vertices.size());
+        for (size_t i = 0; i < vertices.size(); ++i) {
+            colors[i] = TerrainGenerator::heightToColor(vertices[i].y());
+            vertices[i].y() = vertices[i].y() * heightScale + heightOffset;
+        }
+        for (size_t i = 0, targetIndex = 0; i < triangles.size(); ++i) {
+            const auto &triangle = triangles[i];
+            Vector3 triangleNormal = Vector3::normal(vertices[triangle[0]], vertices[triangle[1]], vertices[triangle[2]]);
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)vertices[triangle[0]].x();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)vertices[triangle[0]].y();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)vertices[triangle[0]].z();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)triangleNormal.x();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)triangleNormal.y();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)triangleNormal.z();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)colors[triangle[0]].x();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)colors[triangle[0]].y();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)colors[triangle[0]].z();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)vertices[triangle[1]].x();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)vertices[triangle[1]].y();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)vertices[triangle[1]].z();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)triangleNormal.x();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)triangleNormal.y();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)triangleNormal.z();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)colors[triangle[1]].x();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)colors[triangle[1]].y();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)colors[triangle[1]].z();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)vertices[triangle[2]].x();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)vertices[triangle[2]].y();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)vertices[triangle[2]].z();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)triangleNormal.x();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)triangleNormal.y();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)triangleNormal.z();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)colors[triangle[2]].x();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)colors[triangle[2]].y();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)colors[triangle[2]].z();
+        }
+        size_t vertexCount = vertexBufferVertices->size() / numbersPerVertex;
+        vertexBuffer.update(std::move(vertexBufferVertices), numbersPerVertex, vertexCount, IndieGameEngine::DrawHint::Triangles);
+        
         auto vertexBufferList = std::make_unique<std::vector<VertexBuffer>>();
         vertexBufferList->push_back(std::move(vertexBuffer));
         return std::move(vertexBufferList);
@@ -279,8 +336,12 @@ int main(int argc, char* argv[])
     IndieGameEngine::indie()->setKeyPressedQueryHandler(queryKeyPressed);
     {
         Matrix4x4 modelMatrix;
-        //modelMatrix.scale(Vector3(10000.0, 0.0, 10000.0));
         IndieGameEngine::indie()->addObject("defaultGround", "Ground", modelMatrix, IndieGameEngine::RenderType::Ground);
+    }
+    {
+        Matrix4x4 modelMatrix;
+        modelMatrix.scale(Vector3(10000.0, 0.0, 10000.0));
+        IndieGameEngine::indie()->addObject("defaultSea", "Sea", modelMatrix, IndieGameEngine::RenderType::Ground);
     }
     
     IndieGameEngine::indie()->addGeneralState("", std::make_unique<WorldState>());

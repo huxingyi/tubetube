@@ -6,13 +6,16 @@ uniform mat4 projectionMatrix;
 uniform mat4 lightViewProjectionMatrix;
 layout(location = 0) in vec4 vertexPosition;
 layout(location = 1) in vec4 vertexNormal;
+layout(location = 2) in vec4 vertexColor;
 out vec4 pointNormal;
 out vec4 pointPosition;
+out vec4 pointColor;
 out vec4 shadowCoord;
 void main()
 {
     pointNormal = normalize(modelMatrix * vertexNormal);
     pointPosition = modelMatrix * vertexPosition;
+    pointColor = vertexColor;
     shadowCoord = (lightViewProjectionMatrix * modelMatrix * vertexPosition) * 0.5 + 0.5;
     gl_Position = projectionMatrix * viewMatrix * modelMatrix * vertexPosition;
 }

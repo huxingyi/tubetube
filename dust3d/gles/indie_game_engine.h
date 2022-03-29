@@ -206,11 +206,14 @@ public:
                 case DrawHint::Triangles:
                     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * vertexBuffer.numbersPerVertex(), nullptr);
                     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * vertexBuffer.numbersPerVertex(), (const void *)(sizeof(GLfloat) * 3));
+                    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * vertexBuffer.numbersPerVertex(), (const void *)(sizeof(GLfloat) * 6));
                     glEnableVertexAttribArray(0);
                     glEnableVertexAttribArray(1);
+                    glEnableVertexAttribArray(2);
                     glDrawArrays(GL_TRIANGLES, 0, vertexBuffer.vertexCount());
                     glDisableVertexAttribArray(0);
                     glDisableVertexAttribArray(1);
+                    glDisableVertexAttribArray(2);
                     break;
                 case DrawHint::Lines:
                     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * vertexBuffer.numbersPerVertex(), nullptr);
@@ -566,7 +569,6 @@ public:
                 }
                 glUniform4f(m_singleColorShader.getUniformLocation("objectColor"), 0.0, 0.0, 0.0, 1.0);
                 renderObjects(m_singleColorShader, RenderType::Default, DrawHint::Lines);
-                renderObjects(m_singleColorShader, RenderType::Ground, DrawHint::Lines);
 
                 m_cameraSpaceColorMap.end();
             }
@@ -597,7 +599,7 @@ public:
                     }
                 }
                 glUniform4f(m_fontMap.shader().getUniformLocation("objectColor"), 1.0, 1.0, 1.0, 1.0);
-                m_fontMap.renderString(particlesIsDirty ? "Partices rendered:[" + std::to_string(m_particles.aliveElementCount()) + "]" : "Partices NOT rendered", m_windowWidth / 2.0, m_windowHeight / 2.0);
+                //m_fontMap.renderString(particlesIsDirty ? "Partices rendered:[" + std::to_string(m_particles.aliveElementCount()) + "]" : "Partices NOT rendered", m_windowWidth / 2.0, m_windowHeight / 2.0);
                 glBindTexture(GL_TEXTURE_2D, 0);
                 
                 m_uiMap.end();
@@ -781,7 +783,7 @@ private:
     std::function<uint64_t ()> m_millisecondsQueryHandler = nullptr;
     std::function<bool (char key)> m_keyPressedQueryHander = nullptr;
     bool m_initialized = false;
-    Vector3 m_cameraPosition = Vector3(0.0, 0.5, 3.0);
+    Vector3 m_cameraPosition = Vector3(0.0, 3.5, 3.0);
     Vector3 m_cameraFront = Vector3(0.0, 0.0, -1.0);
     Vector3 m_cameraUp = Vector3(0.0, 1.0, 0.0);
     Vector3 m_lightPosition = Vector3(0.2, 1.0, 2.0);

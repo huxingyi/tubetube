@@ -33,7 +33,7 @@ void main()
     float depth = texture(depthMap, pointTexCoords).r * 0.5 + 0.5;
     color = mix(color, blurColor, smoothstep(0.99, 1.0, depth));
     vec4 uiColor = texture(uiMap, pointTexCoords).rgba;
-    color = uiColor.rgb * float(uiColor.a > 0.0) + color.rgb * (1.0 - float(uiColor.a > 0.0));
+    color = uiColor.rgb * uiColor.a + color.rgb * (1.0 - uiColor.a);
     fragColor = vec4(color, 1.0);
 }
 

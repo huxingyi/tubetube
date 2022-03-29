@@ -28,6 +28,7 @@ uniform vec4 cameraPosition;
 uniform lowp sampler2DShadow shadowMap;
 in vec4 pointNormal;
 in vec4 pointPosition;
+in vec4 pointColor;
 in vec4 shadowCoord;
 out vec4 fragColor;
 
@@ -53,7 +54,7 @@ vec3 calculateDirectionLight(DirectionLight light)
     float specular = pow(max(dot(pointNormal.xyz, halfwayDirection), 0.0), shininess);
     vec3 specularColor = light.specular * specular * light.color.rgb;
     
-    return (ambientColor + diffuseColor + specularColor) * objectColor.rgb;
+    return (ambientColor + diffuseColor + specularColor) * pointColor.rgb;
 }
 
 vec3 calculatePointLight(PointLight light)
@@ -73,7 +74,7 @@ vec3 calculatePointLight(PointLight light)
     float specular = pow(max(dot(pointNormal.xyz, halfwayDirection), 0.0), shininess);
     vec3 specularColor = light.specular * specular * light.color.rgb;
     
-    return (ambientColor + diffuseColor + specularColor) * lightAttenuation * objectColor.rgb;
+    return (ambientColor + diffuseColor + specularColor) * lightAttenuation * pointColor.rgb;
 }
 
 float shadowLookup(float x, float y)

@@ -129,6 +129,43 @@ public:
         }
     }
     
+    static Vector3 heightToColor(double height)
+    {
+        Vector3 color;
+        color[0] = height;
+        color[1] = height;
+        color[2] = height;
+        return color;
+        /*
+        if (height >= 0.75) {
+            //height = (height - 0.75) / (1.0 - 0.75);
+            color[0] = height;
+            color[1] = height;
+            color[2] = height;
+        } else if (height >= 0.6) {
+            //height = (height - 0.6) / (0.75 - 0.6);
+            color[0] = 0.0;
+            color[1] = height;
+            color[2] = 0.0;
+        } else if (height >= 0.5) {
+            //height = (height - 0.5) / (0.6 - 0.5);
+            color[0] = height;
+            color[1] = height;
+            color[2] = 0.0;
+        } else if (height >= 0.4) {
+            //height = (height - 0.4) / (0.5 - 0.4);
+            color[0] = 0.0;
+            color[1] = 0.0;
+            color[2] = height;
+        } else {
+            color[0] = 0.0;
+            color[1] = 0.0;
+            color[2] = 0.0;
+        }
+        return color;
+        */
+    }
+    
     std::unique_ptr<TGAImage> getImage()
     {
         if (nullptr == m_heights)
@@ -139,30 +176,12 @@ public:
         image->height = m_worldHeight;
         image->data.reserve(m_heights->size());
         for (size_t i = 0; i < m_heights->size(); ++i) {
-            double value = std::min(m_heights->at(i), 1.0);
+            double height = std::min(m_heights->at(i), 1.0);
+            Vector3 color = heightToColor(height);
             Byte4 pixel;
-            if (value >= 0.75) {
-                pixel[0] = 0.0;
-                pixel[1] = 255 * value;
-                pixel[2] = 255 * value;
-            } else if (value >= 0.6) {
-                pixel[0] = 0.0;
-                pixel[1] = 255 * value;
-                pixel[2] = 0.0;
-            } else if (value >= 0.5) {
-                pixel[0] = 255 * value;
-                pixel[1] = 255 * value;
-                pixel[2] = 0.0;
-            } else if (value >= 0.4) {
-                pixel[0] = 0.0;
-                pixel[1] = 0.0;
-                pixel[2] = 255 * value;
-            } else {
-                pixel[0] = value;
-                pixel[1] = value;
-                pixel[2] = value;
-            }
-            
+            pixel[0] = 255 * color[0];
+            pixel[1] = 255 * color[1];
+            pixel[2] = 255 * color[2];
             pixel[3] = 255;
             image->data.push_back(pixel);
         }
@@ -200,7 +219,7 @@ public:
         m_heights = std::move(layer6);
     }
     
-    void getMesh(std::vector<Vector3> &vertices, std::vector<std::vector<size_t>> &quads, int gridSize=10, double scale=20.0, double heightRange=1.0, double heightOffset = -1.0)
+    void getQuadMesh(std::vector<Vector3> &vertices, std::vector<std::vector<size_t>> &quads, int gridSize=10, double scale=20.0)
     {
         size_t columns = (m_worldWidth + gridSize - 1) / gridSize;
         size_t rows = (m_worldHeight + gridSize - 1) / gridSize;
@@ -211,7 +230,7 @@ public:
             for (int x = 0; x < (int)m_worldWidth; x += gridSize) {
                 size_t intIndex = (y / gridSize) * columns + (x / gridSize);
                 size_t realIndex = y * m_worldWidth + x;
-                vertices[intIndex] = Vector3(scale * ((double)x - halfWidth) / m_worldWidth, heightOffset + heightRange * m_heights->at(realIndex), scale * ((double)y - halfHeight) / m_worldHeight);
+                vertices[intIndex] = Vector3(scale * ((double)x - halfWidth) / m_worldWidth, m_heights->at(realIndex), scale * ((double)y - halfHeight) / m_worldHeight);
             }
         }
         
@@ -221,12 +240,23 @@ public:
                 size_t column = x / gridSize;
                 size_t row = y / gridSize;
                 quads.push_back({
-                    (row - 1) * columns + (column - 1),
-                    (row - 1) * columns + column,
-                    row * columns + column,
                     row * columns + (column - 1),
+                    row * columns + column,
+                    (row - 1) * columns + column,
+                    (row - 1) * columns + (column - 1)
                 });
             }
+        }
+    }
+    
+    void getTriangulatedMesh(std::vector<Vector3> &vertices, std::vector<std::vector<size_t>> &triangles, int gridSize=10, double scale=20.0)
+    {
+        std::vector<std::vector<size_t>> quads;
+        getQuadMesh(vertices, quads, gridSize, scale);
+        triangles.reserve(quads.size() * 2);
+        for (const auto &it: quads) {
+            triangles.push_back({it[0], it[1], it[2]});
+            triangles.push_back({it[2], it[3], it[0]});
         }
     }
     

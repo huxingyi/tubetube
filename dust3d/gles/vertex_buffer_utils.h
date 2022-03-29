@@ -39,7 +39,7 @@ public:
         uint32_t drawHint)
     {
         auto vertexBufferVertices = std::make_unique<std::vector<GLfloat>>();
-        size_t numbersPerVertex = 6;
+        size_t numbersPerVertex = 9;
         vertexBufferVertices->resize(triangles.size() * 3 * numbersPerVertex);
         for (size_t i = 0, targetIndex = 0; i < triangles.size(); ++i) {
             const auto &triangle = triangles[i];
@@ -50,18 +50,27 @@ public:
             vertexBufferVertices->at(targetIndex++) = (GLfloat)triangleNormal.x();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)triangleNormal.y();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)triangleNormal.z();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)1.0;
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)1.0;
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)1.0;
             vertexBufferVertices->at(targetIndex++) = (GLfloat)vertices[triangle[1]].x();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)vertices[triangle[1]].y();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)vertices[triangle[1]].z();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)triangleNormal.x();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)triangleNormal.y();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)triangleNormal.z();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)1.0;
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)1.0;
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)1.0;
             vertexBufferVertices->at(targetIndex++) = (GLfloat)vertices[triangle[2]].x();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)vertices[triangle[2]].y();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)vertices[triangle[2]].z();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)triangleNormal.x();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)triangleNormal.y();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)triangleNormal.z();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)1.0;
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)1.0;
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)1.0;
         }
         size_t vertexCount = vertexBufferVertices->size() / numbersPerVertex;
         vertexBuffer.update(std::move(vertexBufferVertices), numbersPerVertex, vertexCount, drawHint);

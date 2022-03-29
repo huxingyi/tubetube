@@ -27,7 +27,7 @@ vec3 blur()
     return sum / num;
 }
 
-float depthRange()
+float depthDiff()
 {
     ivec2 imageSize = textureSize(positionMap, 0).xy;
     float imageWidth = float(imageSize.x);
@@ -49,16 +49,70 @@ float depthRange()
     return float(depth < 0.9999) * maxDistance;  // Use depth < 0.9999 to avoid horizontal line been outlined
 }
 
+vec3 rgbToHsl(vec3 color) 
+{
+    float maxChannel = max(max(color.r, color.g), color.b);
+    float minChannel = min(min(color.r, color.g), color.b);
+    float l = (maxChannel + minChannel) / 2.0;
+    float h = l, s = l;
+    if (maxChannel > minChannel) {
+        float d = maxChannel - minChannel;
+        s = l > 0.5 ? d / (2.0 - (maxChannel + minChannel)) : d / (maxChannel + minChannel);
+        if (color.r >= maxChannel) {
+            h = (color.g - color.b) / d + (color.g < color.b ? 6.0 : 0.0);
+        } else if (color.g >= maxChannel) {
+            h = (color.b - color.r) / d + 2.0;
+        } else {
+            h = (color.r - color.g) / d + 4.0;
+        }
+        h /= 6.0;
+    } else {
+        h = s = 0.0;
+    }
+    return vec3(h, s, l);
+}
+
+float hueToRgb(vec3 color)
+{
+    if (color.z < 0.0)
+        color.z += 1.0;
+    if (color.z > 1.0)
+        color.z -= 1.0;
+    if (color.z < 1.0 / 6.0)
+        return color.x + (color.y - color.x) * 6.0 * color.z;
+    if (color.z < 1.0 / 2.0)
+        return color.y;
+    if (color.z < 2.0 / 3.0)
+        return color.x + (color.y - color.x) * (2.0 / 3.0 - color.z) * 6.0;
+    return color.x;
+}
+
+vec3 hslToRgb(vec3 color) 
+{
+    float r, g, b;
+    if (color.y > 0.0) {
+        float q = color.z < 0.5 ? color.z * (1.0 + color.y) : color.z + color.y - color.z * color.y;
+        float p = 2.0 * color.z - q;
+        r = hueToRgb(vec3(p, q, color.x + 1.0 / 3.0));
+        g = hueToRgb(vec3(p, q, color.x));
+        b = hueToRgb(vec3(p, q, color.x - 1.0 / 3.0));
+    } else {
+        r = g = b = color.z;
+    }
+    return vec3(r, g, b);
+}
+
 void main()
 {
     vec3 color = texture(colorMap, pointTexCoords).rgb;
     vec3 blurColor = blur();
     float depth = texture(depthMap, pointTexCoords).r * 0.5 + 0.5;
-    color = mix(color, blurColor, smoothstep(0.995, 1.0, depth));
+    depth = smoothstep(0.995, 1.0, depth);
+    color = mix(color, blurColor, depth);
     vec4 uiColor = texture(uiMap, pointTexCoords).rgba;
     color = uiColor.rgb * uiColor.a + color.rgb * (1.0 - uiColor.a);
-    //fragColor = vec4(vec3(depthRange()), 1.0);
-    fragColor = vec4(mix(color, vec3(0.45, 0.31, 0.15), depthRange()), 1.0);
+    //fragColor = vec4(vec3(depthDiff()), 1.0);
+    fragColor = vec4(mix(hslToRgb(rgbToHsl(color)), vec3(0.45, 0.31, 0.15), depthDiff() * (1.0 - depth)), 1.0);
     //fragColor = texture(positionMap, pointTexCoords);
 }
 

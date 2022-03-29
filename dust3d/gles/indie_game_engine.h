@@ -34,8 +34,6 @@
 #include <dust3d/gles/depth_map.h>
 #include <dust3d/gles/font_map.h>
 #include <dust3d/gles/particles.h>
-//#include <dust3d/gles/terrain_generator.h>
-//#include <third_party/tga_utils/tga_utils.h>
 
 namespace dust3d
 {
@@ -54,8 +52,10 @@ public:
         Default = 0x00000001,
         Ground = 0x00000002,
         Light = 0x00000004,
-        AllButLight = (Default | Ground),
-        All = (Default | Ground | Light)
+        Water = 0x00000008,
+        Terrain = (Ground | Water),
+        AllButLight = (Default | Ground | Water),
+        All = (Default | Ground | Light | Water)
     };
     
     enum DrawHint
@@ -310,6 +310,15 @@ public:
                 ;
             m_postProcessingShader = Shader(vertexShaderSource, fragmentShaderSource);
         }
+        {
+            const GLchar *vertexShaderSource =
+                #include <dust3d/gles/shaders/position.vert>
+                ;
+            const GLchar *fragmentShaderSource = 
+                #include <dust3d/gles/shaders/position.frag>
+                ;
+            m_positionShader = Shader(vertexShaderSource, fragmentShaderSource);
+        }
         
         std::unique_ptr<std::vector<GLfloat>> quadVertices = std::unique_ptr<std::vector<GLfloat>>(new std::vector<GLfloat> {
             -1.0f, -1.0f,  0.0f,  0.0f,  0.0f,
@@ -325,6 +334,8 @@ public:
         m_fontMap.initialize();
         m_particles.initialize();
         m_cameraSpaceColorMap.initialize();
+        m_positionMap.setSamples(1);
+        m_positionMap.initialize();
         m_uiMap.initialize();
         m_cameraSpaceDepthMap.initialize();
         
@@ -332,19 +343,6 @@ public:
 
         m_initialized = true;
     }
-    
-    /*
-    void regenerateTerrain()
-    {
-        glDeleteTextures(1, &m_terrainTextureId);
-        m_terrainTextureId = 0;
-        
-        std::cout << "m_terrainFrequency:" << m_terrainFrequency << std::endl;
-        
-        std::unique_ptr<TGAImage> terrainImage = m_terrainGenerator.generate(m_terrainFrequency);
-        m_terrainTextureId = LoadTextureFromTGAImage(*terrainImage);
-    }
-    */
     
     void renderDebugMap(GLuint textureId)
     {
@@ -374,9 +372,12 @@ public:
         glBindTexture(GL_TEXTURE_2D, m_cameraSpaceDepthMap.textureId());
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, m_uiMap.textureId());
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, m_positionMap.textureId());
         glUniform1i(m_postProcessingShader.getUniformLocation("colorMap"), 0);
         glUniform1i(m_postProcessingShader.getUniformLocation("depthMap"), 1);
         glUniform1i(m_postProcessingShader.getUniformLocation("uiMap"), 2);
+        glUniform1i(m_postProcessingShader.getUniformLocation("positionMap"), 3);
         drawVertexBuffer(m_quadBuffer);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
@@ -451,10 +452,34 @@ public:
                     m_cameraSpaceDepthMap.end();
                 }
             }
+            
+            if (m_positionMap.begin()) {
+                glEnable(GL_DEPTH_TEST);
+                glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                glEnable(GL_BLEND);
+                glBlendFunc(GL_SRC_ALPHA, GL_ZERO);
+                m_positionShader.use();
+                {
+                    GLfloat matrixData[16];
+                    viewMatrix.getData(matrixData);
+                    glUniformMatrix4fv(m_positionShader.getUniformLocation("viewMatrix"), 1, GL_FALSE, &matrixData[0]);
+                }
+                {
+                    GLfloat matrixData[16];
+                    projectionMatrix.getData(matrixData);
+                    glUniformMatrix4fv(m_positionShader.getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
+                }
+                renderObjects(m_positionShader, RenderType::Default, DrawHint::Triangles);
+                renderObjects(m_positionShader, RenderType::Water, DrawHint::Triangles);
+                renderObjects(m_positionShader, RenderType::Ground, DrawHint::Triangles);
+                m_positionMap.end();
+            }
 
             if (m_cameraSpaceColorMap.begin()) {
                 
-                glClearColor(0.145f, 0.145f, 0.145f, 1.0f);
+                //glClearColor(0.145f, 0.145f, 0.145f, 1.0f);
+                glClearColor(1.0f, 0.94f, 0.86f, 1.0f);
                 
                 // Render triangles
                 
@@ -512,7 +537,7 @@ public:
                 glStencilMask(0xFF);
                 renderObjects(m_modelShader, RenderType::Default, DrawHint::Triangles);
                 glStencilMask(0x00);
-                renderObjects(m_modelShader, RenderType::Ground, DrawHint::Triangles);
+                renderObjects(m_modelShader, RenderType::Terrain, DrawHint::Triangles);
                 
                 // Render partices
                 
@@ -549,27 +574,29 @@ public:
                 }
                 
                 // Render lines
+                if (m_showWireframes) {
+                    m_singleColorShader.use();
+                    Matrix4x4 rayModelMatrix;
+                    {
+                        GLfloat matrixData[16];
+                        rayModelMatrix.getData(matrixData);
+                        glUniformMatrix4fv(m_singleColorShader.getUniformLocation("modelMatrix"), 1, GL_FALSE, &matrixData[0]);
+                    }
+                    {
+                        GLfloat matrixData[16];
+                        viewMatrix.getData(matrixData);
+                        glUniformMatrix4fv(m_singleColorShader.getUniformLocation("viewMatrix"), 1, GL_FALSE, &matrixData[0]);
+                    }
+                    {
+                        GLfloat matrixData[16];
+                        projectionMatrix.getData(matrixData);
+                        glUniformMatrix4fv(m_singleColorShader.getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
+                    }
+                    glUniform4f(m_singleColorShader.getUniformLocation("objectColor"), 0.0, 0.0, 0.0, 1.0);
+                    renderObjects(m_singleColorShader, RenderType::Default, DrawHint::Lines);
+                    renderObjects(m_singleColorShader, RenderType::Terrain, DrawHint::Lines);
+                }
                 
-                m_singleColorShader.use();
-                Matrix4x4 rayModelMatrix;
-                {
-                    GLfloat matrixData[16];
-                    rayModelMatrix.getData(matrixData);
-                    glUniformMatrix4fv(m_singleColorShader.getUniformLocation("modelMatrix"), 1, GL_FALSE, &matrixData[0]);
-                }
-                {
-                    GLfloat matrixData[16];
-                    viewMatrix.getData(matrixData);
-                    glUniformMatrix4fv(m_singleColorShader.getUniformLocation("viewMatrix"), 1, GL_FALSE, &matrixData[0]);
-                }
-                {
-                    GLfloat matrixData[16];
-                    projectionMatrix.getData(matrixData);
-                    glUniformMatrix4fv(m_singleColorShader.getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
-                }
-                glUniform4f(m_singleColorShader.getUniformLocation("objectColor"), 0.0, 0.0, 0.0, 1.0);
-                renderObjects(m_singleColorShader, RenderType::Default, DrawHint::Lines);
-
                 m_cameraSpaceColorMap.end();
             }
             
@@ -654,6 +681,7 @@ public:
         m_cameraSpaceColorMap.setSize(m_windowWidth, m_windowHeight);
         m_uiMap.setSize(m_windowWidth, m_windowHeight);
         m_cameraSpaceDepthMap.setSize(m_windowWidth, m_windowHeight);
+        m_positionMap.setSize(m_windowWidth, m_windowHeight);
     }
     
     void setKeyPressedQueryHandler(std::function<bool (char key)> keyPressedQueryHander)
@@ -702,16 +730,10 @@ public:
             } else if (m_keyPressedQueryHander('S')) {
                 m_cameraPosition -= m_cameraFront * cameraSpeed;
                 dirty();
+            } else if (m_keyPressedQueryHander('L')) {
+                m_showWireframes = !m_showWireframes;
+                dirty();
             }
-            
-            // Test TerrainGenerator
-            //if (m_keyPressedQueryHander('9')) {
-            //    m_terrainFrequency -= 0.5;
-            //    regenerateTerrain();
-            //} else if (m_keyPressedQueryHander('0')) {
-            //    m_terrainFrequency += 0.5;
-            //    regenerateTerrain();
-            //}
         }
         
         for (auto &stateIt: m_generalStates) {
@@ -783,8 +805,8 @@ private:
     std::function<uint64_t ()> m_millisecondsQueryHandler = nullptr;
     std::function<bool (char key)> m_keyPressedQueryHander = nullptr;
     bool m_initialized = false;
-    Vector3 m_cameraPosition = Vector3(0.0, 3.5, 3.0);
-    Vector3 m_cameraFront = Vector3(0.0, 0.0, -1.0);
+    Vector3 m_cameraPosition = Vector3(0.0, 3.5, -12.0);
+    Vector3 m_cameraFront = Vector3(0.0, -0.5, +1.0);
     Vector3 m_cameraUp = Vector3(0.0, 1.0, 0.0);
     Vector3 m_lightPosition = Vector3(0.2, 1.0, 2.0);
     double m_fov = 45.0;
@@ -795,7 +817,7 @@ private:
     Shader m_lightShader;
     Shader m_debugQuadShader;
     Shader m_postProcessingShader;
-    //GLuint m_terrainTextureId = 0;
+    Shader m_positionShader;
     Particles m_particles;
     VertexBuffer m_quadBuffer;
     DepthMap m_shadowMap;
@@ -803,18 +825,18 @@ private:
     FontMap m_fontMap;
     ColorMap m_cameraSpaceColorMap;
     ColorMap m_uiMap;
+    ColorMap m_positionMap;
     uint64_t m_startMilliseconds = 0;
     uint64_t m_millisecondsSinceStart = 0;
     uint64_t m_lastMilliseconds = 0;
     double m_time = 0.0;
     double m_elapsedSeconds = 0.0;
     bool m_screenIsDirty = true;
+    bool m_showWireframes = false;
     std::map<std::string, std::pair<std::unique_ptr<std::vector<VertexBuffer>>, int64_t/*referencingCount*/>> m_vertexBufferListMap;
     std::map<std::string, std::unique_ptr<Object>> m_objects;
     std::map<std::string, std::unique_ptr<LocationState>> m_locationStates;
     std::map<std::string, std::unique_ptr<State>> m_generalStates;
-    //TerrainGenerator m_terrainGenerator;
-    //double m_terrainFrequency = 3.0;
 };
     
 };

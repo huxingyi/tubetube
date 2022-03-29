@@ -55,9 +55,9 @@ public:
         GLint defaultFramebuffer = 0;
         glGetIntegerv(GL_FRAMEBUFFER_BINDING, &defaultFramebuffer);
 
-        GLsizei numSamples = 4, maxSamples = 0;
+        GLsizei maxSamples = 0;
         glGetIntegerv(GL_MAX_SAMPLES_ANGLE, &maxSamples);
-        numSamples = std::min(numSamples, maxSamples);
+        GLsizei numSamples = std::min(m_numSamples, maxSamples);
 
         glGenRenderbuffers(1, &m_sampleColorRenderBufferId);
         glBindRenderbuffer(GL_RENDERBUFFER, m_sampleColorRenderBufferId);
@@ -107,7 +107,7 @@ public:
         m_textureWidth = width;
         m_textureHeight = height;
         if (0 != m_resultFrameBufferId)
-            m_sizeChanged = true;
+            m_configureChanged = true;
     }
     
     void release()
@@ -135,8 +135,8 @@ public:
     
     bool begin()
     {
-        if (m_sizeChanged) {
-            m_sizeChanged = false;
+        if (m_configureChanged) {
+            m_configureChanged = false;
             release();
         }
         if (0 == m_resultFrameBufferId) {
@@ -159,16 +159,26 @@ public:
         m_lastFramebufferId = 0;
     }
     
+    void setSamples(GLsizei numSamples)
+    {
+        if (numSamples == m_numSamples)
+            return;
+        m_numSamples = numSamples;
+        if (0 != m_resultFrameBufferId)
+            m_configureChanged = true;
+    }
+    
 private:
     double m_textureWidth = 0.0;
     double m_textureHeight = 0.0;
-    bool m_sizeChanged = false;
+    bool m_configureChanged = false;
     GLuint m_resultFrameBufferId = 0;
     GLuint m_textureId = 0;
     GLuint m_sampleColorRenderBufferId = 0;
     GLuint m_sampleFrameBufferId = 0;
     GLuint m_sampleDepthStencilRenderBufferId = 0;
     GLint m_lastFramebufferId = 0;
+    GLsizei m_numSamples = 4;
     PFNGLRENDERBUFFERSTORAGEMULTISAMPLEANGLEPROC m_renderbufferStorageMultisample = nullptr;
     PFNGLBLITFRAMEBUFFERANGLEPROC m_blitFramebuffer = nullptr;
 };

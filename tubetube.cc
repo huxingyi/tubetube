@@ -5,6 +5,7 @@
 #include <dust3d/gles/indie_game_engine.h>
 #include <dust3d/gles/terrain_generator.h>
 #include <dust3d/mesh/tube_mesh_builder.h>
+#include <dust3d/mesh/mesh_utils.h>
 #include <Windows.h>
 #include <Windowsx.h>
 #include <EGL/egl.h>
@@ -130,7 +131,7 @@ static std::unique_ptr<std::vector<VertexBuffer>> buildVertexBufferListFromSecti
 static std::unique_ptr<std::vector<VertexBuffer>> loadResouceVertexBufferList(const std::string &resourceName)
 {
     if ("Sea" == resourceName) {
-        GLfloat waterColor[] = {0.3f, 0.65f, 0.71f};
+        GLfloat waterColor[] = {0.58f, 0.62f, 0.55f};
         VertexBuffer vertexBuffer(std::make_unique<std::vector<GLfloat>>(std::vector<GLfloat> {
             -0.5f,  0.0f, -0.5f,  0.0f,  1.0f,  0.0f, waterColor[0], waterColor[1], waterColor[2], // top-left
              0.5f,  0.0f , 0.5f,  0.0f,  1.0f,  0.0f, waterColor[0], waterColor[1], waterColor[2], // bottom-right
@@ -144,12 +145,11 @@ static std::unique_ptr<std::vector<VertexBuffer>> loadResouceVertexBufferList(co
         return std::move(vertexBufferList);
     } else if ("Ground" == resourceName) {
         TerrainGenerator terrainGenerator;
-        double frequency = 5.0;
+        double frequency = 9.0;
         terrainGenerator.generate(frequency);
         std::vector<Vector3> vertices;
         std::vector<std::vector<size_t>> triangles;
-        terrainGenerator.getTriangulatedMesh(vertices, triangles);
-        
+        terrainGenerator.getTriangulatedMesh(vertices, triangles, 1.0, 20.0);
         double heightOffset = -0.5;
         double heightScale = 2.0;
         VertexBuffer vertexBuffer;
@@ -161,42 +161,54 @@ static std::unique_ptr<std::vector<VertexBuffer>> loadResouceVertexBufferList(co
             colors[i] = TerrainGenerator::heightToColor(vertices[i].y());
             vertices[i].y() = vertices[i].y() * heightScale + heightOffset;
         }
+        std::vector<Vector3> triangleNormals(triangles.size());
+        for (size_t i = 0; i < triangles.size(); ++i) {
+            const auto &triangle = triangles[i];
+            triangleNormals[i] = Vector3::normal(vertices[triangle[0]], vertices[triangle[1]], vertices[triangle[2]]);
+        }
+        std::vector<Vector3> triangleVertexNormals;
+        MeshUtils::smoothNormal(vertices, triangles, triangleNormals, Math::radiansFromDegrees(90.0), triangleVertexNormals);
         for (size_t i = 0, targetIndex = 0; i < triangles.size(); ++i) {
             const auto &triangle = triangles[i];
-            Vector3 triangleNormal = Vector3::normal(vertices[triangle[0]], vertices[triangle[1]], vertices[triangle[2]]);
+            size_t normalIndex = i * 3;
+            const auto &firstNormal = triangleVertexNormals[normalIndex + 0];
+            const auto &secondNormal = triangleVertexNormals[normalIndex + 1];
+            const auto &thirdNormal = triangleVertexNormals[normalIndex + 2];
             vertexBufferVertices->at(targetIndex++) = (GLfloat)vertices[triangle[0]].x();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)vertices[triangle[0]].y();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)vertices[triangle[0]].z();
-            vertexBufferVertices->at(targetIndex++) = (GLfloat)triangleNormal.x();
-            vertexBufferVertices->at(targetIndex++) = (GLfloat)triangleNormal.y();
-            vertexBufferVertices->at(targetIndex++) = (GLfloat)triangleNormal.z();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)firstNormal.x();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)firstNormal.y();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)firstNormal.z();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)colors[triangle[0]].x();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)colors[triangle[0]].y();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)colors[triangle[0]].z();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)vertices[triangle[1]].x();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)vertices[triangle[1]].y();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)vertices[triangle[1]].z();
-            vertexBufferVertices->at(targetIndex++) = (GLfloat)triangleNormal.x();
-            vertexBufferVertices->at(targetIndex++) = (GLfloat)triangleNormal.y();
-            vertexBufferVertices->at(targetIndex++) = (GLfloat)triangleNormal.z();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)secondNormal.x();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)secondNormal.y();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)secondNormal.z();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)colors[triangle[1]].x();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)colors[triangle[1]].y();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)colors[triangle[1]].z();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)vertices[triangle[2]].x();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)vertices[triangle[2]].y();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)vertices[triangle[2]].z();
-            vertexBufferVertices->at(targetIndex++) = (GLfloat)triangleNormal.x();
-            vertexBufferVertices->at(targetIndex++) = (GLfloat)triangleNormal.y();
-            vertexBufferVertices->at(targetIndex++) = (GLfloat)triangleNormal.z();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)thirdNormal.x();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)thirdNormal.y();
+            vertexBufferVertices->at(targetIndex++) = (GLfloat)thirdNormal.z();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)colors[triangle[2]].x();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)colors[triangle[2]].y();
             vertexBufferVertices->at(targetIndex++) = (GLfloat)colors[triangle[2]].z();
         }
         size_t vertexCount = vertexBufferVertices->size() / numbersPerVertex;
         vertexBuffer.update(std::move(vertexBufferVertices), numbersPerVertex, vertexCount, IndieGameEngine::DrawHint::Triangles);
-        
         auto vertexBufferList = std::make_unique<std::vector<VertexBuffer>>();
+        VertexBuffer edgeVertexBuffer;
+        VertexBufferUtils::loadMeshBorders(edgeVertexBuffer, vertices, triangles, IndieGameEngine::DrawHint::Lines);
         vertexBufferList->push_back(std::move(vertexBuffer));
+        vertexBufferList->push_back(std::move(edgeVertexBuffer));
         return std::move(vertexBufferList);
     } else if ("Plane" == resourceName) {
         auto sections = std::make_unique<std::vector<TubeMeshBuilder::Section>>(std::vector<TubeMeshBuilder::Section> {
@@ -340,8 +352,8 @@ int main(int argc, char* argv[])
     }
     {
         Matrix4x4 modelMatrix;
-        modelMatrix.scale(Vector3(10000.0, 0.0, 10000.0));
-        IndieGameEngine::indie()->addObject("defaultSea", "Sea", modelMatrix, IndieGameEngine::RenderType::Ground);
+        modelMatrix.scale(Vector3(1000.0, -0.001, 1000.0));
+        IndieGameEngine::indie()->addObject("defaultSea", "Sea", modelMatrix, IndieGameEngine::RenderType::Water);
     }
     
     IndieGameEngine::indie()->addGeneralState("", std::make_unique<WorldState>());

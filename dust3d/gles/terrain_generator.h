@@ -132,38 +132,28 @@ public:
     static Vector3 heightToColor(double height)
     {
         Vector3 color;
-        color[0] = height;
-        color[1] = height;
-        color[2] = height;
-        return color;
-        /*
         if (height >= 0.75) {
-            //height = (height - 0.75) / (1.0 - 0.75);
-            color[0] = height;
-            color[1] = height;
-            color[2] = height;
+            color[0] = 1.0;
+            color[1] = 1.0;
+            color[2] = 1.0;
         } else if (height >= 0.6) {
-            //height = (height - 0.6) / (0.75 - 0.6);
-            color[0] = 0.0;
-            color[1] = height;
-            color[2] = 0.0;
+            color[0] = 0.93;
+            color[1] = 0.79;
+            color[2] = 0.66;
         } else if (height >= 0.5) {
-            //height = (height - 0.5) / (0.6 - 0.5);
-            color[0] = height;
-            color[1] = height;
-            color[2] = 0.0;
+            color[0] = 0.93;
+            color[1] = 0.79;
+            color[2] = 0.66;
         } else if (height >= 0.4) {
-            //height = (height - 0.4) / (0.5 - 0.4);
-            color[0] = 0.0;
-            color[1] = 0.0;
-            color[2] = height;
+            color[0] = 0.87;
+            color[1] = 0.72;
+            color[2] = 0.47;
         } else {
-            color[0] = 0.0;
-            color[1] = 0.0;
-            color[2] = 0.0;
+            color[0] = 0.87;
+            color[1] = 0.72;
+            color[2] = 0.47;
         }
         return color;
-        */
     }
     
     std::unique_ptr<TGAImage> getImage()
@@ -261,8 +251,8 @@ public:
     }
     
 private:
-    size_t m_worldWidth = 1024;
-    size_t m_worldHeight = 1024;
+    size_t m_worldWidth = 64;
+    size_t m_worldHeight = 64;
     std::unique_ptr<std::vector<double>> m_heights;
 };
     

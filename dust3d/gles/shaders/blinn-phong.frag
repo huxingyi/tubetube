@@ -102,11 +102,15 @@ float shadow()
 
 void main()
 {
+    /*
     vec3 resultColor;
     resultColor += calculateDirectionLight(directionLight);
     for (int i = 0; i < POINT_LIGHT_COUNT; i++)
         resultColor += calculatePointLight(pointLights[i]);
     fragColor = vec4(gammaCorrection(resultColor * shadow()), 1.0);
+    */
+    
+    fragColor = vec4(pointColor.rgb, 1.0);
 }
 
 )################"

@@ -353,11 +353,6 @@ public:
         return line - verticalOffset;
     }
     
-    inline static double angleBetween(const Vector3 &first, const Vector3 &second)
-    {
-        return std::acos(dotProduct(first.normalized(), second.normalized()));
-    }
-    
     inline Vector3 rotated(const Vector3 &unitAxis, double angle) const
     {
         double c = std::cos(angle);

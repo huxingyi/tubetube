@@ -89,15 +89,69 @@ float shadowLookup(float x, float y)
 
 float shadow()
 {
-    // 3x3 kernel with 4 taps per sample, effectively 6x6 PCF
     float sum = 0.0;
+    float num = 0.0;
     float x, y;
-    for (x = -2.0; x <= 2.0; x += 2.0)
-        for (y = -2.0; y <= 2.0; y += 2.0)
+    for (x = -2.0; x <= 2.0; x += 2.0) {
+        for (y = -2.0; y <= 2.0; y += 2.0) {
             sum += shadowLookup(x, y);
+            num += 1.0;
+        }
+    }
+    return sum / num;
+}
 
-    // divide sum by 9.0
-    return sum * 0.11;
+vec3 rgbToHsl(vec3 color) 
+{
+    float maxChannel = max(max(color.r, color.g), color.b);
+    float minChannel = min(min(color.r, color.g), color.b);
+    float l = (maxChannel + minChannel) / 2.0;
+    float h = l, s = l;
+    if (maxChannel > minChannel) {
+        float d = maxChannel - minChannel;
+        s = l > 0.5 ? d / (2.0 - (maxChannel + minChannel)) : d / (maxChannel + minChannel);
+        if (color.r >= maxChannel) {
+            h = (color.g - color.b) / d + (color.g < color.b ? 6.0 : 0.0);
+        } else if (color.g >= maxChannel) {
+            h = (color.b - color.r) / d + 2.0;
+        } else {
+            h = (color.r - color.g) / d + 4.0;
+        }
+        h /= 6.0;
+    } else {
+        h = s = 0.0;
+    }
+    return vec3(h, s, l);
+}
+
+float hueToRgb(vec3 color)
+{
+    if (color.z < 0.0)
+        color.z += 1.0;
+    if (color.z > 1.0)
+        color.z -= 1.0;
+    if (color.z < 1.0 / 6.0)
+        return color.x + (color.y - color.x) * 6.0 * color.z;
+    if (color.z < 1.0 / 2.0)
+        return color.y;
+    if (color.z < 2.0 / 3.0)
+        return color.x + (color.y - color.x) * (2.0 / 3.0 - color.z) * 6.0;
+    return color.x;
+}
+
+vec3 hslToRgb(vec3 color) 
+{
+    float r, g, b;
+    if (color.y > 0.0) {
+        float q = color.z < 0.5 ? color.z * (1.0 + color.y) : color.z + color.y - color.z * color.y;
+        float p = 2.0 * color.z - q;
+        r = hueToRgb(vec3(p, q, color.x + 1.0 / 3.0));
+        g = hueToRgb(vec3(p, q, color.x));
+        b = hueToRgb(vec3(p, q, color.x - 1.0 / 3.0));
+    } else {
+        r = g = b = color.z;
+    }
+    return vec3(r, g, b);
 }
 
 void main()
@@ -109,8 +163,9 @@ void main()
         resultColor += calculatePointLight(pointLights[i]);
     fragColor = vec4(gammaCorrection(resultColor * shadow()), 1.0);
     */
-    
-    fragColor = vec4(pointColor.rgb, 1.0);
+    vec3 hsl = rgbToHsl(pointColor.rgb);
+    hsl.z += shadow() * 0.05;
+    fragColor = vec4(hslToRgb(hsl), 1.0);
 }
 
 )################"

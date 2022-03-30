@@ -352,7 +352,8 @@ int main(int argc, char* argv[])
     }
     {
         Matrix4x4 modelMatrix;
-        modelMatrix.scale(Vector3(1000.0, -0.001, 1000.0));
+        modelMatrix.translate(Vector3(0.0, -0.001, 0.0));
+        modelMatrix.scale(Vector3(1000.0, 0.0, 1000.0));
         IndieGameEngine::indie()->addObject("defaultSea", "Sea", modelMatrix, IndieGameEngine::RenderType::Water);
     }
     

@@ -55,6 +55,7 @@ public:
         Water = 0x00000008,
         Terrain = (Ground | Water),
         AllButLight = (Default | Ground | Water),
+        AllButLightAndWater = (Default | Ground),
         All = (Default | Ground | Light | Water)
     };
     
@@ -460,6 +461,12 @@ public:
                 glEnable(GL_BLEND);
                 glBlendFunc(GL_SRC_ALPHA, GL_ZERO);
                 m_positionShader.use();
+                Matrix4x4 positionMatrix;
+                {
+                    GLfloat matrixData[16];
+                    positionMatrix.getData(matrixData);
+                    glUniformMatrix4fv(m_positionShader.getUniformLocation("positionMatrix"), 1, GL_FALSE, &matrixData[0]);
+                }
                 {
                     GLfloat matrixData[16];
                     viewMatrix.getData(matrixData);
@@ -471,8 +478,14 @@ public:
                     glUniformMatrix4fv(m_positionShader.getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
                 }
                 renderObjects(m_positionShader, RenderType::Default, DrawHint::Triangles);
-                renderObjects(m_positionShader, RenderType::Water, DrawHint::Triangles);
                 renderObjects(m_positionShader, RenderType::Ground, DrawHint::Triangles);
+                positionMatrix.scale(Vector3(-1000, 0.0, -1000.0));
+                {
+                    GLfloat matrixData[16];
+                    positionMatrix.getData(matrixData);
+                    glUniformMatrix4fv(m_positionShader.getUniformLocation("positionMatrix"), 1, GL_FALSE, &matrixData[0]);
+                }
+                renderObjects(m_positionShader, RenderType::Water, DrawHint::Triangles);
                 m_positionMap.end();
             }
 

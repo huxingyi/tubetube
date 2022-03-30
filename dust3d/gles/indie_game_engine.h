@@ -339,8 +339,6 @@ public:
         m_positionMap.initialize();
         m_uiMap.initialize();
         m_cameraSpaceDepthMap.initialize();
-        
-        //regenerateTerrain();
 
         m_initialized = true;
     }
@@ -360,7 +358,7 @@ public:
     
     void flushScreen()
     {
-        //renderDebugMap(m_terrainTextureId);
+        //renderDebugMap(m_shadowMap.textureId());
         //return;
         
         glViewport(0, 0, m_windowWidth, m_windowHeight);

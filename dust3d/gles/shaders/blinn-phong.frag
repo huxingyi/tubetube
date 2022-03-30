@@ -164,7 +164,7 @@ void main()
     fragColor = vec4(gammaCorrection(resultColor * shadow()), 1.0);
     */
     vec3 hsl = rgbToHsl(pointColor.rgb);
-    hsl.z += shadow() * 0.05;
+    hsl.z += shadow() > 0.4 ? 0.1 : 0.0;
     fragColor = vec4(hslToRgb(hsl), 1.0);
 }
 

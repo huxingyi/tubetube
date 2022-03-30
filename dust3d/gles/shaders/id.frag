@@ -1,11 +1,11 @@
 R"################(#version 300 es
 
 precision highp float;
+uniform vec4 id;
 out vec4 fragColor;
-in vec4 pointPosition;
 void main()
 {
-    fragColor = pointPosition;
+    fragColor = id;
 }
 
 )################"

@@ -320,6 +320,15 @@ public:
                 ;
             m_positionShader = Shader(vertexShaderSource, fragmentShaderSource);
         }
+        {
+            const GLchar *vertexShaderSource =
+                #include <dust3d/gles/shaders/id.vert>
+                ;
+            const GLchar *fragmentShaderSource = 
+                #include <dust3d/gles/shaders/id.frag>
+                ;
+            m_idShader = Shader(vertexShaderSource, fragmentShaderSource);
+        }
         
         std::unique_ptr<std::vector<GLfloat>> quadVertices = std::unique_ptr<std::vector<GLfloat>>(new std::vector<GLfloat> {
             -1.0f, -1.0f,  0.0f,  0.0f,  0.0f,
@@ -337,6 +346,8 @@ public:
         m_cameraSpaceColorMap.initialize();
         m_positionMap.setSamples(1);
         m_positionMap.initialize();
+        m_idMap.setSamples(1);
+        m_idMap.initialize();
         m_uiMap.initialize();
         m_cameraSpaceDepthMap.initialize();
 
@@ -373,10 +384,13 @@ public:
         glBindTexture(GL_TEXTURE_2D, m_uiMap.textureId());
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, m_positionMap.textureId());
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_2D, m_idMap.textureId());
         glUniform1i(m_postProcessingShader.getUniformLocation("colorMap"), 0);
         glUniform1i(m_postProcessingShader.getUniformLocation("depthMap"), 1);
         glUniform1i(m_postProcessingShader.getUniformLocation("uiMap"), 2);
         glUniform1i(m_postProcessingShader.getUniformLocation("positionMap"), 3);
+        glUniform1i(m_postProcessingShader.getUniformLocation("idMap"), 4);
         drawVertexBuffer(m_quadBuffer);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
@@ -485,6 +499,38 @@ public:
                 }
                 renderObjects(m_positionShader, RenderType::Water, DrawHint::Triangles);
                 m_positionMap.end();
+            }
+            
+            if (m_idMap.begin()) {
+                glEnable(GL_DEPTH_TEST);
+                glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                glEnable(GL_BLEND);
+                glBlendFunc(GL_SRC_ALPHA, GL_ZERO);
+                m_idShader.use();
+                Matrix4x4 positionMatrix;
+                {
+                    GLfloat matrixData[16];
+                    positionMatrix.getData(matrixData);
+                    glUniformMatrix4fv(m_idShader.getUniformLocation("positionMatrix"), 1, GL_FALSE, &matrixData[0]);
+                }
+                {
+                    GLfloat matrixData[16];
+                    viewMatrix.getData(matrixData);
+                    glUniformMatrix4fv(m_idShader.getUniformLocation("viewMatrix"), 1, GL_FALSE, &matrixData[0]);
+                }
+                {
+                    GLfloat matrixData[16];
+                    projectionMatrix.getData(matrixData);
+                    glUniformMatrix4fv(m_idShader.getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
+                }
+                glUniform4f(m_idShader.getUniformLocation("id"), 0.0, 0.0, 0.0, 1.0);
+                renderObjects(m_idShader, RenderType::Default, DrawHint::Triangles);
+                glUniform4f(m_idShader.getUniformLocation("id"), 0.1, 0.0, 0.0, 1.0);
+                renderObjects(m_idShader, RenderType::Ground, DrawHint::Triangles);
+                glUniform4f(m_idShader.getUniformLocation("id"), 0.2, 0.0, 0.0, 1.0);
+                renderObjects(m_idShader, RenderType::Water, DrawHint::Triangles);
+                m_idMap.end();
             }
 
             if (m_cameraSpaceColorMap.begin()) {
@@ -693,6 +739,7 @@ public:
         m_uiMap.setSize(m_windowWidth, m_windowHeight);
         m_cameraSpaceDepthMap.setSize(m_windowWidth, m_windowHeight);
         m_positionMap.setSize(m_windowWidth, m_windowHeight);
+        m_idMap.setSize(m_windowWidth, m_windowHeight);
     }
     
     void setKeyPressedQueryHandler(std::function<bool (char key)> keyPressedQueryHander)
@@ -816,7 +863,7 @@ private:
     std::function<uint64_t ()> m_millisecondsQueryHandler = nullptr;
     std::function<bool (char key)> m_keyPressedQueryHander = nullptr;
     bool m_initialized = false;
-    Vector3 m_cameraPosition = Vector3(0.0, 3.5, -12.0);
+    Vector3 m_cameraPosition = Vector3(-3.0, 3.5, -15.0);
     Vector3 m_cameraFront = Vector3(0.0, -0.5, +1.0);
     Vector3 m_cameraUp = Vector3(0.0, 1.0, 0.0);
     Vector3 m_lightPosition = Vector3(0.2, 1.0, 2.0);
@@ -829,6 +876,7 @@ private:
     Shader m_debugQuadShader;
     Shader m_postProcessingShader;
     Shader m_positionShader;
+    Shader m_idShader;
     Particles m_particles;
     VertexBuffer m_quadBuffer;
     DepthMap m_shadowMap;
@@ -837,6 +885,7 @@ private:
     ColorMap m_cameraSpaceColorMap;
     ColorMap m_uiMap;
     ColorMap m_positionMap;
+    ColorMap m_idMap;
     uint64_t m_startMilliseconds = 0;
     uint64_t m_millisecondsSinceStart = 0;
     uint64_t m_lastMilliseconds = 0;

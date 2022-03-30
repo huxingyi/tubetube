@@ -8,10 +8,12 @@ uniform sampler2D uiMap;
 uniform sampler2D depthMap;
 uniform sampler2D positionMap;
 uniform sampler2D idMap;
+uniform float time;
 
 const float groundId = 0.1;
 const float waterId = 0.2;
 const float epsilon = 0.01;
+const float pi = 3.14159;
 
 vec3 blur()
 {
@@ -59,7 +61,8 @@ float foam()
     ivec2 imageSize = textureSize(idMap, 0).xy;
     float imageWidth = float(imageSize.x);
     float imageHeight = float(imageSize.y);
-    const float foamSize = 5.0;
+    const float duration = 10.0;
+    float foamSize = 5.0;
     float sum = 0.0;
     float num = 0.0;
     float x;

@@ -362,6 +362,11 @@ public:
             unitAxis * Vector3::dotProduct(unitAxis, *this) * (1.0 - c);
     }
     
+    inline static Vector3 lerp(const Vector3 &first, const Vector3 &second, double t)
+    {
+        return first * (1.0 - t) + second * t;
+    }
+    
 private:
     double m_data[3] = {0.0};
 };
@@ -422,6 +427,13 @@ inline bool operator==(const Vector3 &a, const Vector3 &b)
     return Math::isEqual(a.x(), b.x()) &&
         Math::isEqual(a.y(), b.y()) &&
         Math::isEqual(a.z(), b.z());
+}
+
+inline bool operator!=(const Vector3 &a, const Vector3 &b)
+{
+    return !Math::isEqual(a.x(), b.x()) ||
+        !Math::isEqual(a.y(), b.y()) ||
+        !Math::isEqual(a.z(), b.z());
 }
 
 }

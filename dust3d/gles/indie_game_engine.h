@@ -27,6 +27,7 @@
 #include <functional>
 #include <dust3d/base/debug.h>
 #include <dust3d/base/matrix4x4.h>
+#include <dust3d/base/quaternion.h>
 #include <dust3d/gles/color_map.h>
 #include <dust3d/gles/shader.h>
 #include <dust3d/gles/vertex_buffer.h>
@@ -80,7 +81,9 @@ public:
     public:
         Vector3 worldLocation;
         Vector3 forwardDirection;
+        Vector3 upDirection = Vector3(0.0, 1.0, 0.0);
         double speed = 0.0;
+        bool followedByCamera = false;
         
         Vector3 velocity() const
         {
@@ -391,6 +394,7 @@ public:
         glUniform1i(m_postProcessingShader.getUniformLocation("uiMap"), 2);
         glUniform1i(m_postProcessingShader.getUniformLocation("positionMap"), 3);
         glUniform1i(m_postProcessingShader.getUniformLocation("idMap"), 4);
+        glUniform1f(m_postProcessingShader.getUniformLocation("time"), (float)m_time);
         drawVertexBuffer(m_quadBuffer);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
@@ -441,7 +445,7 @@ public:
             }
             
             Matrix4x4 viewMatrix;
-            viewMatrix.lookAt(m_cameraPosition, m_cameraPosition + m_cameraFront, m_cameraUp);
+            viewMatrix.lookAt(m_cameraPosition, m_cameraTarget, m_cameraUp);
             
             Matrix4x4 projectionMatrix;
             projectionMatrix.perspectiveProject(Math::radiansFromDegrees(m_fov), (float)m_windowWidth / (float)m_windowHeight, 0.1, 100.0);
@@ -697,6 +701,7 @@ public:
             std::cerr << "OpenGL Error : " << glError << std::endl;
     }
     
+    /*
     void handleMouseMove(double x, double y)
     {
         static int s_lastX = 0;
@@ -720,7 +725,8 @@ public:
         s_lastX = x;
         s_lastY = y;
     }
-
+    */
+    
     void setVertexBufferListLoadHandler(std::function<std::unique_ptr<std::vector<VertexBuffer>>(const std::string &resourceName)> vertexBufferListLoadHander)
     {
         m_vertexBufferListLoadHander = vertexBufferListLoadHander;
@@ -772,7 +778,19 @@ public:
         m_millisecondsSinceStart = milliseconds - m_startMilliseconds;
         m_lastMilliseconds = milliseconds;
         m_time = (double)milliseconds / 1000.0;
-
+        
+        if (m_cameraPosition != m_nextCameraPosition ||
+                m_cameraTarget != m_nextCameraTarget ||
+                m_cameraUp != m_nextCameraUp)
+        {
+            const double ratio = 0.5;
+            m_cameraPosition = Vector3::lerp(m_cameraPosition, m_nextCameraPosition, ratio);
+            m_cameraTarget = Vector3::lerp(m_cameraTarget, m_nextCameraTarget, ratio);
+            m_cameraUp = Vector3::lerp(m_cameraUp, m_nextCameraUp, ratio).normalized();
+            dirty();
+        }
+        
+        /*
         if (nullptr != m_keyPressedQueryHander) {
             const double cameraSpeed = 0.05;
             if (m_keyPressedQueryHander('A')) {
@@ -793,6 +811,7 @@ public:
                 dirty();
             }
         }
+        */
         
         for (auto &stateIt: m_generalStates) {
             if (stateIt.second->update())
@@ -800,19 +819,19 @@ public:
         }
         for (auto &stateIt: m_locationStates) {
             if (stateIt.second->update()) {
-                Object *object = findObject(stateIt.first);
-                if (nullptr == object) {
-                    //if ("camera" == stateIt.first) {
-                    //    m_cameraPosition = stateIt.second->worldLocation;
-                    //    m_cameraFront = stateIt.second->forwardDirection;
-                    //    m_cameraUp = Vector3(0.0, 1.0, 0.0);
-                    //    dirty();
-                    //}
-                    continue;
+                if (stateIt.second->followedByCamera) {
+                    m_nextCameraPosition = stateIt.second->worldLocation - stateIt.second->forwardDirection * m_cameraFollowBehindDistance + stateIt.second->upDirection * m_cameraFollowHeightOffset;
+                    m_nextCameraTarget = stateIt.second->worldLocation;
+                    m_nextCameraUp = stateIt.second->upDirection;
                 }
+                Object *object = findObject(stateIt.first);
+                if (nullptr == object)
+                    continue;
                 Matrix4x4 translationMatrix;
                 translationMatrix.translate(stateIt.second->worldLocation);
-                object->updateWorldMatrix(translationMatrix * object->localMatrix());
+                Matrix4x4 rotationMatrix;
+                rotationMatrix.rotate(Quaternion::rotationTo(Vector3(0.0, 1.0, 0.0), stateIt.second->upDirection));
+                object->updateWorldMatrix(translationMatrix * rotationMatrix * object->localMatrix());
                 dirty();
             }
         }
@@ -858,15 +877,35 @@ public:
         return m_objects.size();
     }
     
+    const Vector3 &cameraPosition()
+    {
+        return m_cameraPosition;
+    }
+    
+    const Vector3 &cameraTarget()
+    {
+        return m_cameraTarget;
+    }
+    
+    const Vector3 &cameraUp()
+    {
+        return m_cameraUp;
+    }
+    
 private:
     std::function<std::unique_ptr<std::vector<VertexBuffer>> (const std::string &resourceName)> m_vertexBufferListLoadHander = nullptr;
     std::function<uint64_t ()> m_millisecondsQueryHandler = nullptr;
     std::function<bool (char key)> m_keyPressedQueryHander = nullptr;
     bool m_initialized = false;
-    Vector3 m_cameraPosition = Vector3(-3.0, 3.5, -15.0);
-    Vector3 m_cameraFront = Vector3(0.0, -0.5, +1.0);
+    Vector3 m_cameraPosition = Vector3(-3.0, 3.5, 15.0);
+    Vector3 m_cameraTarget = m_cameraPosition + Vector3(0.0, 0.0, -1.0).normalized();
     Vector3 m_cameraUp = Vector3(0.0, 1.0, 0.0);
     Vector3 m_lightPosition = Vector3(0.2, 1.0, 2.0);
+    Vector3 m_nextCameraPosition = m_cameraPosition;
+    Vector3 m_nextCameraTarget = m_cameraTarget;
+    Vector3 m_nextCameraUp = m_cameraUp;
+    double m_cameraFollowBehindDistance = 3.5;
+    double m_cameraFollowHeightOffset = 2.2;
     double m_fov = 45.0;
     double m_windowWidth = std::numeric_limits<double>::epsilon();
     double m_windowHeight = std::numeric_limits<double>::epsilon();

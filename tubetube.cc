@@ -52,7 +52,7 @@ static LRESULT CALLBACK wndProc(HWND hwnd, unsigned int msg, WPARAM wParam, LPAR
         case WM_MOUSEMOVE: {
                 auto x = GET_X_LPARAM(lParam); 
                 auto y = GET_Y_LPARAM(lParam);
-                IndieGameEngine::indie()->handleMouseMove(x, y);
+                //IndieGameEngine::indie()->handleMouseMove(x, y);
             } break;
     }
 
@@ -145,7 +145,7 @@ static std::unique_ptr<std::vector<VertexBuffer>> loadResouceVertexBufferList(co
         return std::move(vertexBufferList);
     } else if ("Ground" == resourceName) {
         TerrainGenerator terrainGenerator;
-        double frequency = 9.0;
+        double frequency = 5.0;
         terrainGenerator.generate(frequency);
         std::vector<Vector3> vertices;
         std::vector<std::vector<size_t>> triangles;
@@ -270,6 +270,65 @@ private:
     double m_forwardAcceleration = rand01();
 };
 
+class PlayerLocationState: public IndieGameEngine::LocationState
+{
+public:
+    bool update()
+    {
+        if (!Math::isZero(m_forwardAcceleration))
+            speed += m_forwardAcceleration * IndieGameEngine::indie()->elapsedSecondsSinceLastUpdate();
+
+        worldLocation += velocity() * IndieGameEngine::indie()->elapsedSecondsSinceLastUpdate();
+        const double tailFlameRadius = 0.03;
+        double tailFlameSpeed = speed * 0.5;
+        uint64_t emitInterval = (tailFlameRadius * 0.5 / speed) * 1000;
+        if (m_lastEmitTime + emitInterval < IndieGameEngine::indie()->millisecondsSinceStart()) {
+            IndieGameEngine::indie()->addParticle(1.5, tailFlameRadius, worldLocation - forwardDirection * 0.2 + Vector3(0.0, 0.02, 0.0), forwardDirection * tailFlameSpeed, Vector3(0.95, 0.9, 0.27), Vector3(0.58, 0.31, 0.22));
+            m_lastEmitTime = IndieGameEngine::indie()->millisecondsSinceStart();
+        }
+        
+        const double responseSpeed = 1.0 * IndieGameEngine::indie()->elapsedSecondsSinceLastUpdate();
+        
+        if (queryKeyPressed(' ') || queryKeyPressed('W')) {
+            m_forwardAcceleration = std::min(m_forwardAcceleration + 1.0 * responseSpeed, m_maxForwardAcceleration);
+        } else if (queryKeyPressed('S')) {
+            m_forwardAcceleration = std::max(m_forwardAcceleration - 1.0 * responseSpeed, -m_maxForwardAcceleration);
+        } else {
+            m_forwardAcceleration = 0.0;
+        }
+        
+        if (queryKeyPressed('R')) {
+            Vector3 xDirection = Vector3::crossProduct(forwardDirection, upDirection);
+            forwardDirection = forwardDirection.rotated(xDirection, responseSpeed * Math::radiansFromDegrees(10.0));
+            upDirection = Vector3::crossProduct(xDirection, forwardDirection);
+        } else if (queryKeyPressed('F')) {
+            Vector3 xDirection = Vector3::crossProduct(forwardDirection, upDirection);
+            forwardDirection = forwardDirection.rotated(xDirection, responseSpeed * Math::radiansFromDegrees(-10.0));
+            upDirection = Vector3::crossProduct(xDirection, forwardDirection);
+        }
+
+        if (queryKeyPressed('A')) {
+            upDirection = upDirection.rotated(forwardDirection, responseSpeed * Math::radiansFromDegrees(-10.0));
+            forwardDirection = forwardDirection.rotated(upDirection, responseSpeed * Math::radiansFromDegrees(-5.0));
+            return true;
+        } else if (queryKeyPressed('D')) {
+            upDirection = upDirection.rotated(forwardDirection, responseSpeed * Math::radiansFromDegrees(10.0));
+            forwardDirection = forwardDirection.rotated(upDirection, responseSpeed * Math::radiansFromDegrees(5.0));
+            return true;
+        }
+        
+        if (!Math::isZero(speed))
+            return true;
+        
+        return false;
+    }
+    
+private:
+    uint64_t m_lastEmitTime = 0;
+    double m_forwardAcceleration = 0.0;
+    const double m_maxForwardAcceleration = 1.0;
+};
+
 class WorldState: public IndieGameEngine::State
 {
 public:
@@ -345,7 +404,7 @@ int main(int argc, char* argv[])
     });
     IndieGameEngine::indie()->setWindowSize(static_cast<double>(windowWidth), static_cast<double>(windowHeight));
     IndieGameEngine::indie()->setVertexBufferListLoadHandler(loadResouceVertexBufferList);
-    IndieGameEngine::indie()->setKeyPressedQueryHandler(queryKeyPressed);
+    //IndieGameEngine::indie()->setKeyPressedQueryHandler(queryKeyPressed);
     {
         Matrix4x4 modelMatrix;
         IndieGameEngine::indie()->addObject("defaultGround", "Ground", modelMatrix, IndieGameEngine::RenderType::Ground);
@@ -356,10 +415,18 @@ int main(int argc, char* argv[])
         modelMatrix.scale(Vector3(1000.0, 0.0, 1000.0));
         IndieGameEngine::indie()->addObject("defaultSea", "Sea", modelMatrix, IndieGameEngine::RenderType::Water);
     }
-    
+    {
+        IndieGameEngine::indie()->addObject("palyer0", "Plane", Matrix4x4(), IndieGameEngine::RenderType::Default);
+        auto playerState = std::make_unique<PlayerLocationState>();
+        playerState->worldLocation = IndieGameEngine::indie()->cameraPosition();
+        playerState->forwardDirection = (IndieGameEngine::indie()->cameraTarget() - IndieGameEngine::indie()->cameraPosition()).normalized();
+        playerState->upDirection = IndieGameEngine::indie()->cameraUp();
+        playerState->followedByCamera = true;
+        IndieGameEngine::indie()->addLocationState("palyer0", std::move(playerState));
+    }
     IndieGameEngine::indie()->addGeneralState("", std::make_unique<WorldState>());
 
-    SetTimer(windowHandle, 1, 1000 / 120, updateTimer);
+    SetTimer(windowHandle, 1, 1000 / 300, updateTimer);
     SetTimer(windowHandle, 2, 1000 / 60, renderTimer);
     while (!quit)  {
         MSG msg;

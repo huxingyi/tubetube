@@ -297,11 +297,11 @@ public:
             m_forwardAcceleration = 0.0;
         }
         
-        if (queryKeyPressed('R')) {
+        if (queryKeyPressed('E')) {
             Vector3 xDirection = Vector3::crossProduct(forwardDirection, upDirection);
             forwardDirection = forwardDirection.rotated(xDirection, responseSpeed * Math::radiansFromDegrees(10.0));
             upDirection = Vector3::crossProduct(xDirection, forwardDirection);
-        } else if (queryKeyPressed('F')) {
+        } else if (queryKeyPressed('R')) {
             Vector3 xDirection = Vector3::crossProduct(forwardDirection, upDirection);
             forwardDirection = forwardDirection.rotated(xDirection, responseSpeed * Math::radiansFromDegrees(-10.0));
             upDirection = Vector3::crossProduct(xDirection, forwardDirection);
@@ -326,7 +326,7 @@ public:
 private:
     uint64_t m_lastEmitTime = 0;
     double m_forwardAcceleration = 0.0;
-    const double m_maxForwardAcceleration = 1.0;
+    const double m_maxForwardAcceleration = 0.5;
 };
 
 class WorldState: public IndieGameEngine::State

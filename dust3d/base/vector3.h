@@ -364,6 +364,7 @@ public:
     
     inline static Vector3 lerp(const Vector3 &first, const Vector3 &second, double t)
     {
+        t = std::max(t, 1.0);
         return first * (1.0 - t) + second * t;
     }
     

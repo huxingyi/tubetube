@@ -783,10 +783,23 @@ public:
                 m_cameraTarget != m_nextCameraTarget ||
                 m_cameraUp != m_nextCameraUp)
         {
-            const double ratio = 0.5;
+            const double ratio = elapsedSecondsSinceLastUpdate() * 2.0;
+            Vector3 cameraFront = (m_cameraTarget - m_cameraPosition).normalized();
+            Vector3 nextCameraFront = (m_nextCameraTarget - m_nextCameraPosition).normalized();
             m_cameraPosition = Vector3::lerp(m_cameraPosition, m_nextCameraPosition, ratio);
-            m_cameraTarget = Vector3::lerp(m_cameraTarget, m_nextCameraTarget, ratio);
-            m_cameraUp = Vector3::lerp(m_cameraUp, m_nextCameraUp, ratio).normalized();
+            {
+                Matrix4x4 matrix;
+                matrix.rotate(Quaternion::slerp(Quaternion(), Quaternion::rotationTo(cameraFront, nextCameraFront), ratio));
+                cameraFront = matrix * cameraFront;
+                m_cameraUp = matrix * m_cameraUp;
+            }
+            {
+                Matrix4x4 matrix;
+                matrix.rotate(Quaternion::slerp(Quaternion(), Quaternion::rotationTo(m_cameraUp, m_nextCameraUp), ratio));
+                cameraFront = matrix * cameraFront;
+                m_cameraUp = matrix * m_cameraUp;
+            }
+            m_cameraTarget = m_cameraPosition + cameraFront;
             dirty();
         }
         
@@ -831,6 +844,8 @@ public:
                 translationMatrix.translate(stateIt.second->worldLocation);
                 Matrix4x4 rotationMatrix;
                 rotationMatrix.rotate(Quaternion::rotationTo(Vector3(0.0, 1.0, 0.0), stateIt.second->upDirection));
+                Vector3 rotatedForward = rotationMatrix * Vector3(0.0, 0.0, -1.0);
+                rotationMatrix.rotate(Quaternion::rotationTo(rotatedForward, stateIt.second->forwardDirection));
                 object->updateWorldMatrix(translationMatrix * rotationMatrix * object->localMatrix());
                 dirty();
             }

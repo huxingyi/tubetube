@@ -145,7 +145,7 @@ static std::unique_ptr<std::vector<VertexBuffer>> loadResouceVertexBufferList(co
         return std::move(vertexBufferList);
     } else if ("Ground" == resourceName) {
         TerrainGenerator terrainGenerator;
-        double frequency = 5.0;
+        double frequency = 9.0;
         terrainGenerator.generate(frequency);
         std::vector<Vector3> vertices;
         std::vector<std::vector<size_t>> triangles;
@@ -275,10 +275,75 @@ class PlayerLocationState: public IndieGameEngine::LocationState
 public:
     bool update()
     {
+        bool updated = false;
+        
         if (!Math::isZero(m_forwardAcceleration))
             speed += m_forwardAcceleration * IndieGameEngine::indie()->elapsedSecondsSinceLastUpdate();
 
         worldLocation += velocity() * IndieGameEngine::indie()->elapsedSecondsSinceLastUpdate();
+
+        const double responseSpeed = 1.0 * IndieGameEngine::indie()->elapsedSecondsSinceLastUpdate();
+        
+        if (queryKeyPressed(' ') || queryKeyPressed('W')) {
+            m_forwardAcceleration = std::min(m_forwardAcceleration + 1.0 * responseSpeed, m_maxForwardAcceleration);
+            updated = true;
+        } else if (queryKeyPressed('S')) {
+            m_forwardAcceleration = std::max(m_forwardAcceleration - 1.0 * responseSpeed, -m_maxForwardAcceleration);
+            updated = true;
+        } else {
+            if (!Math::isZero(m_forwardAcceleration)) {
+                m_forwardAcceleration = 0.0;
+                updated = true;
+            }
+        }
+        
+        if (queryKeyPressed('E')) {
+            Matrix4x4 rotationMatrix;
+            rotationMatrix.rotate(Quaternion::fromAxisAndAngle(Vector3(1.0, 0.0, 0.0), responseSpeed * Math::radiansFromDegrees(10.0)));
+            Vector3 newDirection = rotationMatrix * forwardDirection;
+            double angle = Vector3::angle(newDirection, Vector3(0.0, 1.0, 0.0), Vector3(1.0, 0.0, 0.0));
+            if (angle < Math::radiansFromDegrees(180.0)) {
+                forwardDirection = newDirection;
+                updated = true;
+            }
+        } else if (queryKeyPressed('R')) {
+            Matrix4x4 rotationMatrix;
+            rotationMatrix.rotate(Quaternion::fromAxisAndAngle(Vector3(-1.0, 0.0, 0.0), responseSpeed * Math::radiansFromDegrees(10.0)));
+            Vector3 newDirection = rotationMatrix * forwardDirection;
+            double angle = Vector3::angle(newDirection, Vector3(0.0, -1.0, 0.0), Vector3(-1.0, 0.0, 0.0));
+            if (angle < Math::radiansFromDegrees(180.0)) {
+                forwardDirection = newDirection;
+                updated = true;
+            }
+        }
+
+        if (queryKeyPressed('A')) {
+            Matrix4x4 rotationMatrix;
+            rotationMatrix.rotate(Quaternion::fromAxisAndAngle(Vector3(0.0, 1.0, 0.0), responseSpeed * Math::radiansFromDegrees(10.0) * speed));
+            forwardDirection = rotationMatrix * forwardDirection;
+            m_roll = std::max(m_roll - responseSpeed * Math::radiansFromDegrees(45.0), -Math::radiansFromDegrees(60.0));
+            upDirection = Vector3(0.0, 1.0, 0.0).rotated(forwardDirection, m_roll);
+            updated = true;
+        } else if (queryKeyPressed('D')) {
+            Matrix4x4 rotationMatrix;
+            rotationMatrix.rotate(Quaternion::fromAxisAndAngle(Vector3(0.0, -1.0, 0.0), responseSpeed * Math::radiansFromDegrees(10.0) * speed));
+            forwardDirection = rotationMatrix * forwardDirection;
+            m_roll = std::min(m_roll + responseSpeed * Math::radiansFromDegrees(45.0), Math::radiansFromDegrees(60.0));
+            upDirection = Vector3(0.0, 1.0, 0.0).rotated(forwardDirection, m_roll);
+            updated = true;
+        } else {
+            if (upDirection != Vector3(0.0, 1.0, 0.0)) {
+                double t = IndieGameEngine::indie()->elapsedSecondsSinceLastUpdate();
+                Matrix4x4 rotationMatrix;
+                rotationMatrix.rotate(Quaternion::slerp(Quaternion(), Quaternion::rotationTo(upDirection, Vector3(0.0, 1.0, 0.0)), t));
+                upDirection = rotationMatrix * upDirection;
+                m_roll = Vector3::angle(Vector3(0.0, 1.0, 0.0), upDirection, forwardDirection);
+                if (m_roll > Math::radiansFromDegrees(180.0))
+                    m_roll = m_roll - Math::radiansFromDegrees(360.0);
+                updated = true;
+            }
+        }
+        
         const double tailFlameRadius = 0.03;
         double tailFlameSpeed = speed * 0.5;
         uint64_t emitInterval = (tailFlameRadius * 0.5 / speed) * 1000;
@@ -287,45 +352,16 @@ public:
             m_lastEmitTime = IndieGameEngine::indie()->millisecondsSinceStart();
         }
         
-        const double responseSpeed = 1.0 * IndieGameEngine::indie()->elapsedSecondsSinceLastUpdate();
-        
-        if (queryKeyPressed(' ') || queryKeyPressed('W')) {
-            m_forwardAcceleration = std::min(m_forwardAcceleration + 1.0 * responseSpeed, m_maxForwardAcceleration);
-        } else if (queryKeyPressed('S')) {
-            m_forwardAcceleration = std::max(m_forwardAcceleration - 1.0 * responseSpeed, -m_maxForwardAcceleration);
-        } else {
-            m_forwardAcceleration = 0.0;
-        }
-        
-        if (queryKeyPressed('E')) {
-            Vector3 xDirection = Vector3::crossProduct(forwardDirection, upDirection);
-            forwardDirection = forwardDirection.rotated(xDirection, responseSpeed * Math::radiansFromDegrees(10.0));
-            upDirection = Vector3::crossProduct(xDirection, forwardDirection);
-        } else if (queryKeyPressed('R')) {
-            Vector3 xDirection = Vector3::crossProduct(forwardDirection, upDirection);
-            forwardDirection = forwardDirection.rotated(xDirection, responseSpeed * Math::radiansFromDegrees(-10.0));
-            upDirection = Vector3::crossProduct(xDirection, forwardDirection);
-        }
-
-        if (queryKeyPressed('A')) {
-            upDirection = upDirection.rotated(forwardDirection, responseSpeed * Math::radiansFromDegrees(-10.0));
-            forwardDirection = forwardDirection.rotated(upDirection, responseSpeed * Math::radiansFromDegrees(-5.0));
-            return true;
-        } else if (queryKeyPressed('D')) {
-            upDirection = upDirection.rotated(forwardDirection, responseSpeed * Math::radiansFromDegrees(10.0));
-            forwardDirection = forwardDirection.rotated(upDirection, responseSpeed * Math::radiansFromDegrees(5.0));
-            return true;
-        }
-        
         if (!Math::isZero(speed))
-            return true;
+            updated = true;
         
-        return false;
+        return updated;
     }
     
 private:
     uint64_t m_lastEmitTime = 0;
     double m_forwardAcceleration = 0.0;
+    double m_roll = 0.0;
     const double m_maxForwardAcceleration = 0.5;
 };
 
@@ -419,7 +455,7 @@ int main(int argc, char* argv[])
         IndieGameEngine::indie()->addObject("palyer0", "Plane", Matrix4x4(), IndieGameEngine::RenderType::Default);
         auto playerState = std::make_unique<PlayerLocationState>();
         playerState->worldLocation = IndieGameEngine::indie()->cameraPosition();
-        playerState->forwardDirection = (IndieGameEngine::indie()->cameraTarget() - IndieGameEngine::indie()->cameraPosition()).normalized();
+        playerState->forwardDirection = IndieGameEngine::indie()->cameraFront();
         playerState->upDirection = IndieGameEngine::indie()->cameraUp();
         playerState->followedByCamera = true;
         IndieGameEngine::indie()->addLocationState("palyer0", std::move(playerState));

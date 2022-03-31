@@ -445,7 +445,7 @@ public:
             }
             
             Matrix4x4 viewMatrix;
-            viewMatrix.lookAt(m_cameraPosition, m_cameraTarget, m_cameraUp);
+            viewMatrix.lookAt(m_cameraPosition, m_cameraPosition + m_cameraFront, m_cameraUp);
             
             Matrix4x4 projectionMatrix;
             projectionMatrix.perspectiveProject(Math::radiansFromDegrees(m_fov), (float)m_windowWidth / (float)m_windowHeight, 0.1, 100.0);
@@ -780,51 +780,15 @@ public:
         m_time = (double)milliseconds / 1000.0;
         
         if (m_cameraPosition != m_nextCameraPosition ||
-                m_cameraTarget != m_nextCameraTarget ||
-                m_cameraUp != m_nextCameraUp)
+                m_cameraFront != m_nextCameraFront)
         {
-            const double ratio = elapsedSecondsSinceLastUpdate() * 2.0;
-            Vector3 cameraFront = (m_cameraTarget - m_cameraPosition).normalized();
-            Vector3 nextCameraFront = (m_nextCameraTarget - m_nextCameraPosition).normalized();
-            m_cameraPosition = Vector3::lerp(m_cameraPosition, m_nextCameraPosition, ratio);
-            {
-                Matrix4x4 matrix;
-                matrix.rotate(Quaternion::slerp(Quaternion(), Quaternion::rotationTo(cameraFront, nextCameraFront), ratio));
-                cameraFront = matrix * cameraFront;
-                m_cameraUp = matrix * m_cameraUp;
-            }
-            {
-                Matrix4x4 matrix;
-                matrix.rotate(Quaternion::slerp(Quaternion(), Quaternion::rotationTo(m_cameraUp, m_nextCameraUp), ratio));
-                cameraFront = matrix * cameraFront;
-                m_cameraUp = matrix * m_cameraUp;
-            }
-            m_cameraTarget = m_cameraPosition + cameraFront;
+            m_cameraPosition = m_nextCameraPosition;
+            const double t = elapsedSecondsSinceLastUpdate();
+            Matrix4x4 matrix;
+            matrix.rotate(Quaternion::slerp(Quaternion(), Quaternion::rotationTo(m_cameraFront, m_nextCameraFront), t));
+            m_cameraFront = matrix * m_cameraFront;
             dirty();
         }
-        
-        /*
-        if (nullptr != m_keyPressedQueryHander) {
-            const double cameraSpeed = 0.05;
-            if (m_keyPressedQueryHander('A')) {
-                m_cameraPosition -= Vector3::crossProduct(m_cameraFront, m_cameraUp) * cameraSpeed;
-                dirty();
-            } else if (m_keyPressedQueryHander('D')) {
-                m_cameraPosition += Vector3::crossProduct(m_cameraFront, m_cameraUp) * cameraSpeed;
-                dirty();
-            }
-            if (m_keyPressedQueryHander('W')) {
-                m_cameraPosition += m_cameraFront * cameraSpeed;
-                dirty();
-            } else if (m_keyPressedQueryHander('S')) {
-                m_cameraPosition -= m_cameraFront * cameraSpeed;
-                dirty();
-            } else if (m_keyPressedQueryHander('L')) {
-                m_showWireframes = !m_showWireframes;
-                dirty();
-            }
-        }
-        */
         
         for (auto &stateIt: m_generalStates) {
             if (stateIt.second->update())
@@ -833,9 +797,9 @@ public:
         for (auto &stateIt: m_locationStates) {
             if (stateIt.second->update()) {
                 if (stateIt.second->followedByCamera) {
-                    m_nextCameraPosition = stateIt.second->worldLocation - stateIt.second->forwardDirection * m_cameraFollowBehindDistance + stateIt.second->upDirection * m_cameraFollowHeightOffset;
-                    m_nextCameraTarget = stateIt.second->worldLocation;
-                    m_nextCameraUp = stateIt.second->upDirection;
+                    Vector3 axis = Vector3::crossProduct(m_cameraUp, stateIt.second->forwardDirection);
+                    m_nextCameraFront = stateIt.second->forwardDirection.rotated(axis, m_cameraFollowAngle).normalized();
+                    m_nextCameraPosition = stateIt.second->worldLocation - m_nextCameraFront * m_cameraFollowBehindDistance;
                 }
                 Object *object = findObject(stateIt.first);
                 if (nullptr == object)
@@ -844,8 +808,7 @@ public:
                 translationMatrix.translate(stateIt.second->worldLocation);
                 Matrix4x4 rotationMatrix;
                 rotationMatrix.rotate(Quaternion::rotationTo(Vector3(0.0, 1.0, 0.0), stateIt.second->upDirection));
-                Vector3 rotatedForward = rotationMatrix * Vector3(0.0, 0.0, -1.0);
-                rotationMatrix.rotate(Quaternion::rotationTo(rotatedForward, stateIt.second->forwardDirection));
+                rotationMatrix.rotate(Quaternion::rotationTo(Vector3(0.0, 0.0, -1.0), stateIt.second->forwardDirection));
                 object->updateWorldMatrix(translationMatrix * rotationMatrix * object->localMatrix());
                 dirty();
             }
@@ -887,22 +850,27 @@ public:
         m_generalStates[objectId] = std::move(state);
     }
     
-    size_t objectCount()
+    size_t objectCount() const
     {
         return m_objects.size();
     }
     
-    const Vector3 &cameraPosition()
+    const Vector3 &cameraPosition() const
     {
         return m_cameraPosition;
     }
     
-    const Vector3 &cameraTarget()
+    const Vector3 &cameraTarget() const
     {
-        return m_cameraTarget;
+        return m_cameraPosition + m_cameraFront;
     }
     
-    const Vector3 &cameraUp()
+    const Vector3 &cameraFront() const
+    {
+        return m_cameraFront;
+    }
+    
+    const Vector3 &cameraUp() const
     {
         return m_cameraUp;
     }
@@ -913,14 +881,13 @@ private:
     std::function<bool (char key)> m_keyPressedQueryHander = nullptr;
     bool m_initialized = false;
     Vector3 m_cameraPosition = Vector3(-3.0, 3.5, 15.0);
-    Vector3 m_cameraTarget = m_cameraPosition + Vector3(0.0, 0.0, -1.0).normalized();
+    Vector3 m_cameraFront = Vector3(0.0, 0.0, -1.0).normalized();
     Vector3 m_cameraUp = Vector3(0.0, 1.0, 0.0);
     Vector3 m_lightPosition = Vector3(0.2, 1.0, 2.0);
     Vector3 m_nextCameraPosition = m_cameraPosition;
-    Vector3 m_nextCameraTarget = m_cameraTarget;
-    Vector3 m_nextCameraUp = m_cameraUp;
-    double m_cameraFollowBehindDistance = 3.5;
-    double m_cameraFollowHeightOffset = 2.2;
+    Vector3 m_nextCameraFront = m_cameraFront;
+    double m_cameraFollowBehindDistance = 1.5;
+    double m_cameraFollowAngle = Math::radiansFromDegrees(18.0);
     double m_fov = 45.0;
     double m_windowWidth = std::numeric_limits<double>::epsilon();
     double m_windowHeight = std::numeric_limits<double>::epsilon();

@@ -28,6 +28,8 @@
 #include <dust3d/base/debug.h>
 #include <dust3d/base/matrix4x4.h>
 #include <dust3d/base/quaternion.h>
+#include <dust3d/base/task.h>
+#include <dust3d/base/task_list.h>
 #include <dust3d/gles/color_map.h>
 #include <dust3d/gles/shader.h>
 #include <dust3d/gles/vertex_buffer.h>
@@ -351,6 +353,7 @@ public:
         m_positionMap.initialize();
         m_idMap.setSamples(1);
         m_idMap.initialize();
+        m_uiMap.setSamples(1);
         m_uiMap.initialize();
         m_cameraSpaceDepthMap.initialize();
 
@@ -372,7 +375,7 @@ public:
     
     void flushScreen()
     {
-        //renderDebugMap(m_shadowMap.textureId());
+        //renderDebugMap(m_uiMap.textureId());
         //return;
         
         glViewport(0, 0, m_windowWidth, m_windowHeight);
@@ -409,6 +412,9 @@ public:
             particlesIsDirty = true;
             m_screenIsDirty = true;
         }
+        
+        if (m_uiTaskList.anyWorkDone())
+            m_screenIsDirty = true;
         
         if (m_screenIsDirty) {
             
@@ -546,9 +552,9 @@ public:
                 
                 glEnable(GL_STENCIL_TEST);
                 glEnable(GL_DEPTH_TEST);
-                glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);  
+                glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-                glEnable(GL_CULL_FACE);  
+                glEnable(GL_CULL_FACE);
                 glEnable(GL_BLEND);
                 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -664,7 +670,7 @@ public:
             if (m_uiMap.begin()) {
                 
                 glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-                
+
                 // Render text
                 
                 m_fontMap.shader().use();
@@ -672,7 +678,7 @@ public:
                 glClear(GL_COLOR_BUFFER_BIT);
                 glDisable(GL_DEPTH_TEST);
                 glEnable(GL_BLEND);
-                glBlendFunc(GL_SRC_ALPHA, GL_ZERO);
+                glBlendFunc(GL_ONE, GL_ZERO);
                 
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, m_fontMap.textureId());
@@ -686,10 +692,27 @@ public:
                         glUniformMatrix4fv(m_fontMap.shader().getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
                     }
                 }
-                glUniform4f(m_fontMap.shader().getUniformLocation("objectColor"), 1.0, 1.0, 1.0, 1.0);
-                //m_fontMap.renderString(particlesIsDirty ? "Partices rendered:[" + std::to_string(m_particles.aliveElementCount()) + "]" : "Partices NOT rendered", m_windowWidth / 2.0, m_windowHeight / 2.0);
-                glBindTexture(GL_TEXTURE_2D, 0);
+                glUniform4f(m_fontMap.shader().getUniformLocation("objectColor"), 0.0, 0.0, 0.0, 1.0);
                 
+                if (m_uiTaskList.size() < 1) {
+                    std::cout << "Post a task begin" << std::endl;
+                    m_uiTaskList.post(
+                        []() {
+                            std::cout << "work on thread:" << std::this_thread::get_id() << std::endl;
+                        }, 
+                        []() {
+                            std::cout << "after on thread:" << std::this_thread::get_id() << std::endl;
+                        }
+                    );
+                    std::cout << "Post a task end" << std::endl;
+                }
+                m_uiTaskList.update();
+                
+                m_fontMap.setFont("abel/abel-regular.ttf", 13);
+                m_fontMap.renderString(particlesIsDirty ? "Partices rendered:[" + std::to_string(m_particles.aliveElementCount()) + "]" : "Partices NOT rendered", m_windowWidth / 2.0, m_windowHeight / 2.0);
+                
+                glBindTexture(GL_TEXTURE_2D, 0);
+
                 m_uiMap.end();
             }
         }
@@ -914,6 +937,7 @@ private:
     double m_elapsedSeconds = 0.0;
     bool m_screenIsDirty = true;
     bool m_showWireframes = false;
+    TaskList m_uiTaskList;
     std::map<std::string, std::pair<std::unique_ptr<std::vector<VertexBuffer>>, int64_t/*referencingCount*/>> m_vertexBufferListMap;
     std::map<std::string, std::unique_ptr<Object>> m_objects;
     std::map<std::string, std::unique_ptr<LocationState>> m_locationStates;

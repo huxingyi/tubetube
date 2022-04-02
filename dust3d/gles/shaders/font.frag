@@ -1,6 +1,6 @@
 R"################(#version 300 es
 
-precision lowp float;
+precision highp float;
 uniform sampler2D fontMap;
 uniform vec4 objectColor;
 in vec2 pointTexCoords;

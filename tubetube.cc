@@ -254,14 +254,14 @@ public:
         if (m_forwardAcceleration > 0)
             speed += m_forwardAcceleration * IndieGameEngine::indie()->elapsedSecondsSinceLastUpdate();
 
-        worldLocation += velocity() * IndieGameEngine::indie()->elapsedSecondsSinceLastUpdate();
-        const double tailFlameRadius = 0.03;
-        double tailFlameSpeed = speed * 0.1;
-        uint64_t emitInterval = (tailFlameRadius * 0.5 / speed) * 1000;
-        if (m_lastEmitTime + emitInterval < IndieGameEngine::indie()->millisecondsSinceStart()) {
-            IndieGameEngine::indie()->addParticle(1.5, tailFlameRadius, worldLocation - forwardDirection * 0.2 + Vector3(0.0, 0.02, 0.0), forwardDirection * tailFlameSpeed, Vector3(0.95, 0.9, 0.27), Vector3(0.58, 0.31, 0.22));
-            m_lastEmitTime = IndieGameEngine::indie()->millisecondsSinceStart();
-        }
+        //worldLocation += velocity() * IndieGameEngine::indie()->elapsedSecondsSinceLastUpdate();
+        //const double tailFlameRadius = 0.015;
+        //double tailFlameSpeed = speed * 0.1;
+        //uint64_t emitInterval = (tailFlameRadius * 0.5 / speed) * 1000;
+        //if (m_lastEmitTime + emitInterval < IndieGameEngine::indie()->millisecondsSinceStart()) {
+        //    IndieGameEngine::indie()->addParticle(1.5, tailFlameRadius, worldLocation - forwardDirection * 0.2 + Vector3(0.0, 0.02, 0.0), forwardDirection * tailFlameSpeed, Vector3(0.95, 0.9, 0.27), Vector3(0.58, 0.31, 0.22));
+        //    m_lastEmitTime = IndieGameEngine::indie()->millisecondsSinceStart();
+        //}
         return true;
     }
 
@@ -344,11 +344,11 @@ public:
             }
         }
         
-        const double tailFlameRadius = 0.03;
+        const double tailFlameRadius = 0.015;
         double tailFlameSpeed = speed * 0.5;
-        uint64_t emitInterval = (tailFlameRadius * 0.5 / speed) * 1000;
+        uint64_t emitInterval = (tailFlameRadius * 0.5 / tailFlameSpeed) * 1000;
         if (m_lastEmitTime + emitInterval < IndieGameEngine::indie()->millisecondsSinceStart()) {
-            IndieGameEngine::indie()->addParticle(1.5, tailFlameRadius, worldLocation - forwardDirection * 0.2 + Vector3(0.0, 0.02, 0.0), forwardDirection * tailFlameSpeed, Vector3(0.95, 0.9, 0.27), Vector3(0.58, 0.31, 0.22));
+            IndieGameEngine::indie()->addParticle(0.5, tailFlameRadius, worldLocation - forwardDirection * 0.1 + Vector3(0.0, 0.01, 0.0), forwardDirection * tailFlameSpeed, Vector3(0.95, 0.9, 0.27), Vector3(0.58, 0.31, 0.22));
             m_lastEmitTime = IndieGameEngine::indie()->millisecondsSinceStart();
         }
         
@@ -370,9 +370,12 @@ class WorldState: public IndieGameEngine::State
 public:
     bool update()
     {
+        /*
         if (IndieGameEngine::indie()->objectCount() < 50) {
             auto objectId = "plane" + std::to_string(IndieGameEngine::indie()->objectCount());
-            IndieGameEngine::indie()->addObject(objectId, "Plane", Matrix4x4(), IndieGameEngine::RenderType::Default);
+            Matrix4x4 modelMatrix;
+            modelMatrix.scale(Vector3(0.5, 0.5, 0.5));
+            IndieGameEngine::indie()->addObject(objectId, "Plane", modelMatrix, IndieGameEngine::RenderType::Default);
             auto dummyPlaneState = std::make_unique<DummyPlaneLocationState>();
             dummyPlaneState->worldLocation = Vector3(spawn(), spawn() + 3.0, spawn());
             dummyPlaneState->forwardDirection = Vector3(0.0, 0.0, -1.0);
@@ -380,6 +383,7 @@ public:
             IndieGameEngine::indie()->addLocationState(objectId, std::move(dummyPlaneState));
             return true;
         }
+        */
         return false;
     }
 };
@@ -452,7 +456,9 @@ int main(int argc, char* argv[])
         IndieGameEngine::indie()->addObject("defaultSea", "Sea", modelMatrix, IndieGameEngine::RenderType::Water);
     }
     {
-        IndieGameEngine::indie()->addObject("palyer0", "Plane", Matrix4x4(), IndieGameEngine::RenderType::Default);
+        Matrix4x4 modelMatrix;
+        modelMatrix.scale(Vector3(0.5, 0.5, 0.5));
+        IndieGameEngine::indie()->addObject("palyer0", "Plane", modelMatrix, IndieGameEngine::RenderType::Default);
         auto playerState = std::make_unique<PlayerLocationState>();
         playerState->worldLocation = IndieGameEngine::indie()->cameraPosition();
         playerState->forwardDirection = IndieGameEngine::indie()->cameraFront();

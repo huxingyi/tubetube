@@ -53,11 +53,35 @@ public:
     
     void initialize()
     {
-        auto error = FT_Init_FreeType(&m_library);
-        if (error)
-            dust3dDebug << "FT_Init_FreeType failed:" << error;
+        if (nullptr == m_shader) {
+            const GLchar *vertexShaderSource =
+                #include <dust3d/gles/shaders/font.vert>
+                ;
+            const GLchar *fragmentShaderSource = 
+                #include <dust3d/gles/shaders/font.frag>
+                ;
+            m_shader = std::unique_ptr<Shader>(new Shader(vertexShaderSource, fragmentShaderSource));
+        }
         
-        error = FT_New_Face(m_library, "abel/abel-regular.ttf", 0, &m_face);
+        if (nullptr == m_library) {
+            auto error = FT_Init_FreeType(&m_library);
+            if (error) {
+                dust3dDebug << "FT_Init_FreeType failed:" << error;
+                return;
+            }
+        }
+        
+        if (m_fontFilePath.empty() || 0 == m_fontSizeInPixel)
+            return;
+        
+        m_columns = m_textureWidth / m_fontSizeInPixel;
+        m_rows = m_textureHeight / m_fontSizeInPixel;
+        m_nextAge = 1;
+        m_currentColumn = 0;
+        m_currentRow = 0;
+        m_imageClipMap.clear();
+        
+        auto error = FT_New_Face(m_library, m_fontFilePath.c_str(), 0, &m_face);
         if (FT_Err_Unknown_File_Format == error) {
             dust3dDebug << "FT_New_Face failed: FT_Err_Unknown_File_Format";
         } else if (error) {
@@ -68,14 +92,22 @@ public:
         if (error) {
             dust3dDebug << "FT_Set_Pixel_Sizes failed:" << error;
         }
+    }
+    
+    void setFont(const char *filePath, size_t pixelSize)
+    {
+        std::string newFontFilePath = filePath;
+        if (m_fontFilePath == newFontFilePath && m_fontSizeInPixel == pixelSize)
+            return;
         
-        const GLchar *vertexShaderSource =
-            #include <dust3d/gles/shaders/font.vert>
-            ;
-        const GLchar *fragmentShaderSource = 
-            #include <dust3d/gles/shaders/font.frag>
-            ;
-        m_shader = std::unique_ptr<Shader>(new Shader(vertexShaderSource, fragmentShaderSource));
+        if (nullptr != m_face) {
+            FT_Done_Face(m_face);
+            m_face = nullptr;
+        }
+        m_fontFilePath = newFontFilePath;
+        m_fontSizeInPixel = pixelSize;
+        
+        initialize();
     }
     
     void renderString(const std::string &string, double left, double top)
@@ -174,20 +206,21 @@ public:
     {
         return *m_shader;
     }
-
+    
 private:
     GLuint m_textureWidth = 1024;
     GLuint m_textureHeight = 1024;
     GLuint m_textureId = 0;
     std::unique_ptr<Shader> m_shader;
-    FT_Library m_library;
-    FT_Face m_face;
-    const int m_fontSizeInPixel = 14;
-    const int m_columns = m_textureWidth / m_fontSizeInPixel;
-    const int m_rows = m_textureHeight / m_fontSizeInPixel;
+    FT_Library m_library = nullptr;
+    FT_Face m_face = nullptr;
+    int m_fontSizeInPixel = 13;
+    int m_columns = 0;
+    int m_rows = 0;
     uint64_t m_nextAge = 1;
     int m_currentColumn = 0;
     int m_currentRow = 0;
+    std::string m_fontFilePath;
     std::map<char16_t, ImageClip> m_imageClipMap;
     
     void addCharsToImageClips(const std::u16string &utf16)

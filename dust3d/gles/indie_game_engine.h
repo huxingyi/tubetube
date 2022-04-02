@@ -695,7 +695,28 @@ public:
                 glUniform4f(m_fontMap.shader().getUniformLocation("objectColor"), 0.0, 0.0, 0.0, 1.0);
                 
                 if (m_uiTaskList.size() < 1) {
+                    class TestTask: public Task
+                    {
+                    public:
+                        TestTask(int order):
+                            m_order(order)
+                        {
+                        }
+                        void work() override
+                        {
+                            std::cout << "work on thread:" << std::this_thread::get_id() << " order:" << m_order << std::endl;
+                        }
+                        void after() override
+                        {
+                            std::cout << "after on thread:" << std::this_thread::get_id() << " order:" << m_order << std::endl;
+                        }
+                    private:
+                        int m_order = 0;
+                    };
                     std::cout << "Post a task begin" << std::endl;
+                    m_uiTaskList.post(std::make_unique<TestTask>(1));
+                    m_uiTaskList.post(std::make_unique<TestTask>(2));
+                    /*
                     m_uiTaskList.post(
                         []() {
                             std::cout << "work on thread:" << std::this_thread::get_id() << std::endl;
@@ -704,6 +725,7 @@ public:
                             std::cout << "after on thread:" << std::this_thread::get_id() << std::endl;
                         }
                     );
+                    */
                     std::cout << "Post a task end" << std::endl;
                 }
                 m_uiTaskList.update();

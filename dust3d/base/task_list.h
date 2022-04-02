@@ -66,9 +66,9 @@ public:
         }
         
     private:
+        std::unique_ptr<Task> m_task;
         std::function<void (void)> m_workFunction = nullptr;
         std::function<void (void)> m_afterFunction = nullptr;
-        std::unique_ptr<Task> m_task;
         std::atomic<bool> m_workDone = false;
         
         void run()

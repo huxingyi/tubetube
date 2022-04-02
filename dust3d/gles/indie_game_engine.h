@@ -36,6 +36,7 @@
 #include <dust3d/gles/vertex_buffer_utils.h>
 #include <dust3d/gles/depth_map.h>
 #include <dust3d/gles/font_map.h>
+#include <dust3d/gles/icon_map.h>
 #include <dust3d/gles/particles.h>
 
 namespace dust3d
@@ -347,6 +348,7 @@ public:
         m_shadowMap.setSize(1024, 1024);
         m_shadowMap.initialize();
         m_fontMap.initialize();
+        m_iconMap.initialize();
         m_particles.initialize();
         m_cameraSpaceColorMap.initialize();
         m_positionMap.setSamples(1);
@@ -375,7 +377,7 @@ public:
     
     void flushScreen()
     {
-        //renderDebugMap(m_uiMap.textureId());
+        //renderDebugMap(m_iconMap.textureId());
         //return;
         
         glViewport(0, 0, m_windowWidth, m_windowHeight);
@@ -694,44 +696,15 @@ public:
                 }
                 glUniform4f(m_fontMap.shader().getUniformLocation("objectColor"), 0.0, 0.0, 0.0, 1.0);
                 
-                if (m_uiTaskList.size() < 1) {
-                    class TestTask: public Task
-                    {
-                    public:
-                        TestTask(int order):
-                            m_order(order)
-                        {
-                        }
-                        void work() override
-                        {
-                            std::cout << "work on thread:" << std::this_thread::get_id() << " order:" << m_order << std::endl;
-                        }
-                        void after() override
-                        {
-                            std::cout << "after on thread:" << std::this_thread::get_id() << " order:" << m_order << std::endl;
-                        }
-                    private:
-                        int m_order = 0;
-                    };
-                    std::cout << "Post a task begin" << std::endl;
-                    m_uiTaskList.post(std::make_unique<TestTask>(1));
-                    m_uiTaskList.post(std::make_unique<TestTask>(2));
-                    /*
-                    m_uiTaskList.post(
-                        []() {
-                            std::cout << "work on thread:" << std::this_thread::get_id() << std::endl;
-                        }, 
-                        []() {
-                            std::cout << "after on thread:" << std::this_thread::get_id() << std::endl;
-                        }
-                    );
-                    */
-                    std::cout << "Post a task end" << std::endl;
-                }
                 m_uiTaskList.update();
                 
                 m_fontMap.setFont("abel/abel-regular.ttf", 13);
                 m_fontMap.renderString(particlesIsDirty ? "Partices rendered:[" + std::to_string(m_particles.aliveElementCount()) + "]" : "Partices NOT rendered", m_windowWidth / 2.0, m_windowHeight / 2.0);
+                
+                glBindTexture(GL_TEXTURE_2D, m_iconMap.textureId());
+                
+                m_iconMap.setIconSize(64);
+                m_iconMap.renderSvg("nano.svg", 0.0, m_windowHeight);
                 
                 glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -948,6 +921,7 @@ private:
     DepthMap m_shadowMap;
     DepthMap m_cameraSpaceDepthMap;
     FontMap m_fontMap;
+    IconMap m_iconMap;
     ColorMap m_cameraSpaceColorMap;
     ColorMap m_uiMap;
     ColorMap m_positionMap;

@@ -49,6 +49,10 @@ public:
         unsigned int bitmapHeight;
         int advanceX;
         uint64_t age;
+        std::pair<GLfloat, GLfloat> leftBottomUv;
+        std::pair<GLfloat, GLfloat> rightBottomUv;
+        std::pair<GLfloat, GLfloat> rightTopUv;
+        std::pair<GLfloat, GLfloat> leftTopUv;
     };
     
     void initialize()
@@ -140,53 +144,36 @@ public:
                 (GLfloat)left + clip.bitmapLeft, 
                 (GLfloat)top - clip.bitmapBottomMove + clip.bitmapHeight
             };
-            
-            std::pair<GLfloat, GLfloat> leftBottomUv = {
-                (GLfloat)(clip.column * m_fontSizeInPixel) / m_textureWidth,
-                (GLfloat)(clip.row * m_fontSizeInPixel + clip.bitmapHeight) / m_textureHeight
-            };
-            std::pair<GLfloat, GLfloat> rightBottomUv = {
-                (GLfloat)(clip.column * m_fontSizeInPixel + clip.bitmapWidth) / m_textureWidth,
-                (GLfloat)(clip.row * m_fontSizeInPixel + clip.bitmapHeight) / m_textureHeight
-            };
-            std::pair<GLfloat, GLfloat> rightTopUv = {
-                (GLfloat)(clip.column * m_fontSizeInPixel + clip.bitmapWidth) / m_textureWidth,
-                (GLfloat)(clip.row * m_fontSizeInPixel) / m_textureHeight
-            };
-            std::pair<GLfloat, GLfloat> leftTopUv = {
-                (GLfloat)(clip.column * m_fontSizeInPixel) / m_textureWidth,
-                (GLfloat)(clip.row * m_fontSizeInPixel) / m_textureHeight
-            };
 
             vertices[targetIndex++] = leftBottom.first; // left bottom x
             vertices[targetIndex++] = leftBottom.second; // left bottom y
-            vertices[targetIndex++] = leftBottomUv.first; // left bottom u
-            vertices[targetIndex++] = leftBottomUv.second; // left bottom v
+            vertices[targetIndex++] = clip.leftBottomUv.first; // left bottom u
+            vertices[targetIndex++] = clip.leftBottomUv.second; // left bottom v
             
             vertices[targetIndex++] = rightBottom.first; // right bottom x
             vertices[targetIndex++] = rightBottom.second; // right bottom y
-            vertices[targetIndex++] = rightBottomUv.first; // right bottom u
-            vertices[targetIndex++] = rightBottomUv.second; // right bottom v
+            vertices[targetIndex++] = clip.rightBottomUv.first; // right bottom u
+            vertices[targetIndex++] = clip.rightBottomUv.second; // right bottom v
             
             vertices[targetIndex++] = rightTop.first; // right top x
             vertices[targetIndex++] = rightTop.second; // right top y
-            vertices[targetIndex++] = rightTopUv.first; // right top u
-            vertices[targetIndex++] = rightTopUv.second; // right top v
+            vertices[targetIndex++] = clip.rightTopUv.first; // right top u
+            vertices[targetIndex++] = clip.rightTopUv.second; // right top v
             
             vertices[targetIndex++] = rightTop.first; // right top x
             vertices[targetIndex++] = rightTop.second; // right top y
-            vertices[targetIndex++] = rightTopUv.first; // right top u
-            vertices[targetIndex++] = rightTopUv.second; // right top v
+            vertices[targetIndex++] = clip.rightTopUv.first; // right top u
+            vertices[targetIndex++] = clip.rightTopUv.second; // right top v
             
             vertices[targetIndex++] = leftTop.first; // left top x
             vertices[targetIndex++] = leftTop.second; // left top y
-            vertices[targetIndex++] = leftTopUv.first; // left top u
-            vertices[targetIndex++] = leftTopUv.second; // left top v
+            vertices[targetIndex++] = clip.leftTopUv.first; // left top u
+            vertices[targetIndex++] = clip.leftTopUv.second; // left top v
             
             vertices[targetIndex++] = leftBottom.first; // left bottom x
             vertices[targetIndex++] = leftBottom.second; // left bottom y
-            vertices[targetIndex++] = leftBottomUv.first; // left bottom u
-            vertices[targetIndex++] = leftBottomUv.second; // left bottom v
+            vertices[targetIndex++] = clip.leftBottomUv.first; // left bottom u
+            vertices[targetIndex++] = clip.leftBottomUv.second; // left bottom v
             
             left += clip.advanceX;
         }
@@ -282,7 +269,23 @@ private:
                 slot->bitmap.width,
                 slot->bitmap.rows,
                 slot->advance.x >> 6,
-                m_nextAge++
+                m_nextAge++,
+                {
+                    (GLfloat)(column * m_fontSizeInPixel) / m_textureWidth,
+                    (GLfloat)(row * m_fontSizeInPixel + slot->bitmap.rows) / m_textureHeight
+                },
+                {
+                    (GLfloat)(column * m_fontSizeInPixel + slot->bitmap.width) / m_textureWidth,
+                    (GLfloat)(row * m_fontSizeInPixel + slot->bitmap.rows) / m_textureHeight
+                },
+                {
+                    (GLfloat)(column * m_fontSizeInPixel + slot->bitmap.width) / m_textureWidth,
+                    (GLfloat)(row * m_fontSizeInPixel) / m_textureHeight
+                },
+                {
+                    (GLfloat)(column * m_fontSizeInPixel) / m_textureWidth,
+                    (GLfloat)(row * m_fontSizeInPixel) / m_textureHeight
+                }
             }});
             glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
             glBindTexture(GL_TEXTURE_2D, 0);

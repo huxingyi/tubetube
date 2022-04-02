@@ -39,10 +39,6 @@ class IconMap
 public:
     struct ImageClip
     {
-        int bitmapLeft;
-        int bitmapBottomMove;
-        unsigned int bitmapWidth;
-        unsigned int bitmapHeight;
         std::pair<GLfloat, GLfloat> leftBottomUv;
         std::pair<GLfloat, GLfloat> rightBottomUv;
         std::pair<GLfloat, GLfloat> rightTopUv;
@@ -58,20 +54,20 @@ public:
         return m_textureId;
     }
     
-    void setIconSize(size_t pixelSize)
+    void setIconBitmapSize(size_t pixelSize)
     {
-        if (m_iconSize > 0) {
-            if ((size_t)m_iconSize == pixelSize)
+        if (m_iconBitmapSize > 0) {
+            if ((size_t)m_iconBitmapSize == pixelSize)
                 return;
-            dust3dDebug << "Icon size could not be changed, previous value:" << m_iconSize;
+            dust3dDebug << "Icon size could not be changed, previous value:" << m_iconBitmapSize;
             return;
         }
-        m_iconSize = (int)pixelSize;
-        m_columns = m_textureWidth / m_iconSize;
-        m_rows = m_textureHeight / m_iconSize;
+        m_iconBitmapSize = (int)pixelSize;
+        m_columns = m_textureWidth / m_iconBitmapSize;
+        m_rows = m_textureHeight / m_iconBitmapSize;
     }
     
-    void renderSvg(const std::string &svgPath, double left, double top)
+    void renderSvg(const std::string &svgPath, double left, double top, double width, double height)
     {
         const ImageClip *imageClip = addSvgToTexture(svgPath);
         if (nullptr == imageClip)
@@ -80,20 +76,20 @@ public:
         const auto &clip = *imageClip;
 
         std::pair<GLfloat, GLfloat> leftBottom = {
-            (GLfloat)left + clip.bitmapLeft, 
-            (GLfloat)top - clip.bitmapBottomMove
+            (GLfloat)left, 
+            (GLfloat)top
         };
         std::pair<GLfloat, GLfloat> rightBottom = {
-            (GLfloat)left + clip.bitmapLeft + clip.bitmapWidth, 
-            (GLfloat)top - clip.bitmapBottomMove
+            (GLfloat)left + width, 
+            (GLfloat)top
         };
         std::pair<GLfloat, GLfloat> rightTop = {
-            (GLfloat)left + clip.bitmapLeft + clip.bitmapWidth, 
-            (GLfloat)top - clip.bitmapBottomMove + clip.bitmapHeight
+            (GLfloat)left + width, 
+            (GLfloat)top + height
         };
         std::pair<GLfloat, GLfloat> leftTop = {
-            (GLfloat)left + clip.bitmapLeft, 
-            (GLfloat)top - clip.bitmapBottomMove + clip.bitmapHeight
+            (GLfloat)left, 
+            (GLfloat)top + height
         };
         
         std::array<GLfloat, 16> vertices;
@@ -129,7 +125,7 @@ private:
     GLuint m_textureWidth = 1024;
     GLuint m_textureHeight = 1024;
     GLuint m_textureId = 0;
-    int m_iconSize = 0;
+    int m_iconBitmapSize = 0;
     int m_columns = 0;
     int m_rows = 0;
     int m_currentColumn = 0;
@@ -139,7 +135,7 @@ private:
     
     const ImageClip *addSvgToTexture(const std::string &svgPath)
     {
-        if (0 == m_iconSize)
+        if (0 == m_iconBitmapSize)
             return nullptr;
         
         auto findImageClip = m_imageClipMap.find(svgPath);
@@ -154,11 +150,11 @@ private:
             if (nullptr == m_svgRasterizer)
                 return nullptr;
         }
-        NSVGimage *image = nsvgParseFromFile(svgPath.c_str(), "px", m_iconSize);
+        NSVGimage *image = nsvgParseFromFile(svgPath.c_str(), "px", 96);
         if (nullptr == image)
             return nullptr;
-        std::vector<unsigned char> rgba(m_iconSize * m_iconSize * 4);
-        nsvgRasterize(m_svgRasterizer, image, 0, 0, 1, rgba.data(), m_iconSize, m_iconSize, m_iconSize * 4);
+        std::vector<unsigned char> rgba(m_iconBitmapSize * m_iconBitmapSize * 4);
+        nsvgRasterize(m_svgRasterizer, image, 0, 0, 1.0, rgba.data(), m_iconBitmapSize, m_iconBitmapSize, m_iconBitmapSize * 4);
         std::vector<unsigned char> a(rgba.size() / 4);
         for (size_t i = 0, j = 0; i < a.size(); ++i, j += 4)
             a[i] = rgba[j + 3];
@@ -182,30 +178,26 @@ private:
             m_currentColumn = 0;
             ++m_currentRow;
         }
-        glTexSubImage2D(GL_TEXTURE_2D, 0, column * m_iconSize, row * m_iconSize, m_iconSize, m_iconSize, GL_RED_EXT, GL_UNSIGNED_BYTE, a.data());
+        glTexSubImage2D(GL_TEXTURE_2D, 0, column * m_iconBitmapSize, row * m_iconBitmapSize, m_iconBitmapSize, m_iconBitmapSize, GL_RED_EXT, GL_UNSIGNED_BYTE, a.data());
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
         glBindTexture(GL_TEXTURE_2D, 0);
         
         auto insertResult = m_imageClipMap.insert({svgPath, ImageClip {
-            0,
-            (int)m_iconSize,
-            (unsigned int)m_iconSize,
-            (unsigned int)m_iconSize,
             {
-                (GLfloat)(column * m_iconSize) / m_textureWidth,
-                (GLfloat)(row * m_iconSize + m_iconSize) / m_textureHeight
+                (GLfloat)(column * m_iconBitmapSize) / m_textureWidth,
+                (GLfloat)(row * m_iconBitmapSize + m_iconBitmapSize) / m_textureHeight
             },
             {
-                (GLfloat)(column * m_iconSize + m_iconSize) / m_textureWidth,
-                (GLfloat)(row * m_iconSize + m_iconSize) / m_textureHeight
+                (GLfloat)(column * m_iconBitmapSize + m_iconBitmapSize) / m_textureWidth,
+                (GLfloat)(row * m_iconBitmapSize + m_iconBitmapSize) / m_textureHeight
             },
             {
-                (GLfloat)(column * m_iconSize + m_iconSize) / m_textureWidth,
-                (GLfloat)(row * m_iconSize) / m_textureHeight
+                (GLfloat)(column * m_iconBitmapSize + m_iconBitmapSize) / m_textureWidth,
+                (GLfloat)(row * m_iconBitmapSize) / m_textureHeight
             },
             {
-                (GLfloat)(column * m_iconSize) / m_textureWidth,
-                (GLfloat)(row * m_iconSize) / m_textureHeight
+                (GLfloat)(column * m_iconBitmapSize) / m_textureWidth,
+                (GLfloat)(row * m_iconBitmapSize) / m_textureHeight
             }
         }});
 

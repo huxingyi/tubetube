@@ -6,6 +6,7 @@
 #include <dust3d/gles/terrain_generator.h>
 #include <dust3d/mesh/tube_mesh_builder.h>
 #include <dust3d/mesh/mesh_utils.h>
+#include <dust3d/widget/button.h>
 #include <Windows.h>
 #include <Windowsx.h>
 #include <EGL/egl.h>
@@ -35,12 +36,15 @@ static LRESULT CALLBACK wndProc(HWND hwnd, unsigned int msg, WPARAM wParam, LPAR
                 DestroyWindow(hwnd);
                 PostQuitMessage(0);
                 return 0;
-            } break;
+            } 
+            break;
         case WM_SIZE: {
                 windowWidth = LOWORD(lParam);
                 windowHeight = HIWORD(lParam);
+                IndieGameEngine::indie()->setWindowSize(windowWidth, windowHeight);
                 return 0;
-            } break;
+            } 
+            break;
         case WM_MOUSEWHEEL: {
                 //auto zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
                 //fov += zDelta > 0.0 ? -5.0 : 5.0;
@@ -48,12 +52,14 @@ static LRESULT CALLBACK wndProc(HWND hwnd, unsigned int msg, WPARAM wParam, LPAR
                 //    fov = 1.0f;
                 //if (fov > 45.0f)
                 //    fov = 45.0f; 
-            } break;
+            } 
+            break;
         case WM_MOUSEMOVE: {
                 auto x = GET_X_LPARAM(lParam); 
                 auto y = GET_Y_LPARAM(lParam);
                 //IndieGameEngine::indie()->handleMouseMove(x, y);
-            } break;
+            } 
+            break;
     }
 
     return (DefWindowProc(hwnd, msg, wParam, lParam));
@@ -467,6 +473,20 @@ int main(int argc, char* argv[])
         IndieGameEngine::indie()->addLocationState("palyer0", std::move(playerState));
     }
     IndieGameEngine::indie()->addGeneralState("", std::make_unique<WorldState>());
+    
+    auto toolBoxWidget = std::make_unique<Widget>();
+    toolBoxWidget->setLayoutDirection(Widget::LayoutDirection::TopToBottom);
+    toolBoxWidget->addSpacing(5.0);
+    toolBoxWidget->addWidget(std::make_unique<Button>());
+    toolBoxWidget->addExpanding();
+    toolBoxWidget->addSpacing(5.0);
+    toolBoxWidget->addWidget(std::make_unique<Button>());
+    toolBoxWidget->addSpacing(5.0);
+    toolBoxWidget->addWidget(std::make_unique<Button>());
+    toolBoxWidget->addSpacing(5.0);
+    
+    IndieGameEngine::indie()->rootWidget()->addSpacing(5.0);
+    IndieGameEngine::indie()->rootWidget()->addWidget(std::move(toolBoxWidget));
 
     SetTimer(windowHandle, 1, 1000 / 300, updateTimer);
     SetTimer(windowHandle, 2, 1000 / 60, renderTimer);

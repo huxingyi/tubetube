@@ -30,6 +30,7 @@
 #include <dust3d/base/quaternion.h>
 #include <dust3d/base/task.h>
 #include <dust3d/base/task_list.h>
+#include <dust3d/widget/widget.h>
 #include <dust3d/gles/color_map.h>
 #include <dust3d/gles/shader.h>
 #include <dust3d/gles/vertex_buffer.h>
@@ -335,6 +336,15 @@ public:
                 ;
             m_idShader = Shader(vertexShaderSource, fragmentShaderSource);
         }
+        {
+            const GLchar *vertexShaderSource =
+                #include <dust3d/gles/shaders/frame.vert>
+                ;
+            const GLchar *fragmentShaderSource = 
+                #include <dust3d/gles/shaders/frame.frag>
+                ;
+            m_frameShader = Shader(vertexShaderSource, fragmentShaderSource);
+        }
         
         std::unique_ptr<std::vector<GLfloat>> quadVertices = std::unique_ptr<std::vector<GLfloat>>(new std::vector<GLfloat> {
             -1.0f, -1.0f,  0.0f,  0.0f,  0.0f,
@@ -377,7 +387,7 @@ public:
     
     void flushScreen()
     {
-        //renderDebugMap(m_iconMap.textureId());
+        //renderDebugMap(m_uiMap.textureId());
         //return;
         
         glViewport(0, 0, m_windowWidth, m_windowHeight);
@@ -402,6 +412,54 @@ public:
         glUniform1f(m_postProcessingShader.getUniformLocation("time"), (float)m_time);
         drawVertexBuffer(m_quadBuffer);
         glBindTexture(GL_TEXTURE_2D, 0);
+    }
+    
+    void renderFrame(double left, double top, double width, double height, double cornerRadius)
+    {
+        //std::cout << "left:" << left << std::endl;
+        //std::cout << "top:" << top << std::endl;
+        //std::cout << "width:" << width << std::endl;
+        //std::cout << "height:" << height << std::endl;
+        
+        std::array<GLfloat, 8> vertices;
+        size_t targetIndex = 0;
+        
+        double bottom = m_windowHeight - top;
+        double right = left + width;
+        top = bottom - height;
+
+        vertices[targetIndex++] = left;
+        vertices[targetIndex++] = top;
+        
+        vertices[targetIndex++] = right;
+        vertices[targetIndex++] = top;
+        
+        vertices[targetIndex++] = right;
+        vertices[targetIndex++] = bottom;
+        
+        vertices[targetIndex++] = left;
+        vertices[targetIndex++] = bottom;
+        
+        glUniform4f(m_frameShader.getUniformLocation("frameCoords"), left, top, right, bottom);
+        glUniform1f(m_frameShader.getUniformLocation("frameCornerRadius"), cornerRadius);
+        
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 2, &vertices[0]);
+        glEnableVertexAttribArray(0);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, targetIndex / 2);
+        glDisableVertexAttribArray(0);
+    }
+    
+    void renderWidget(Widget *widget)
+    {
+        glUniform4f(m_frameShader.getUniformLocation("objectColor"), 1.0, 1.0, 1.0, 0.5);
+        
+        if (Widget::RenderHint::Container & widget->renderHints())
+            renderFrame(widget->layoutLeft(), widget->layoutTop(), widget->layoutWidth(), widget->layoutHeight(), 8.0);
+        else if (Widget::RenderHint::Element & widget->renderHints())
+            renderFrame(widget->layoutLeft(), widget->layoutTop(), widget->layoutWidth(), widget->layoutHeight(), 4.0);
+        
+        for (auto &child: widget->children())
+            renderWidget(child.get());
     }
     
     void renderScene()
@@ -429,10 +487,10 @@ public:
                 Matrix4x4 viewMatrix;
                 viewMatrix.lookAt(m_lightPosition, Vector3(0.0, 0.0, 0.0), Vector3(0.0, 1.0, 0.0));
                 
-                Matrix4x4 projectionMatrix;
-                projectionMatrix.orthographicProject(-10.0, 10.0, -10.0, 10.0, -10.0, 20.0);
+                Matrix4x4 shadowProjectionMatrix;
+                shadowProjectionMatrix.orthographicProject(-10.0, 10.0, -10.0, 10.0, -10.0, 20.0);
                 
-                lightViewProjectionMatrix = projectionMatrix * viewMatrix;
+                lightViewProjectionMatrix = shadowProjectionMatrix * viewMatrix;
                 
                 if (m_shadowMap.begin()) {
                     glEnable(GL_DEPTH_TEST);
@@ -444,7 +502,7 @@ public:
                     }
                     {
                         GLfloat matrixData[16];
-                        projectionMatrix.getData(matrixData);
+                        shadowProjectionMatrix.getData(matrixData);
                         glUniformMatrix4fv(m_shadowMap.shader().getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
                     }
                     renderObjects(m_shadowMap.shader(), RenderType::AllButLight, DrawHint::Triangles);
@@ -685,28 +743,38 @@ public:
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, m_fontMap.textureId());
                 glUniform1i(m_fontMap.shader().getUniformLocation("fontMap"), 0);
+                Matrix4x4 uiProjectionMatrix;
+                uiProjectionMatrix.orthographicProject(0.0, m_windowWidth, 0.0, m_windowHeight);
                 {
-                    Matrix4x4 projectionMatrix;
-                    projectionMatrix.orthographicProject(0.0, m_windowWidth, 0.0, m_windowHeight);
-                    {
-                        GLfloat matrixData[16];
-                        projectionMatrix.getData(matrixData);
-                        glUniformMatrix4fv(m_fontMap.shader().getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
-                    }
+                    GLfloat matrixData[16];
+                    uiProjectionMatrix.getData(matrixData);
+                    glUniformMatrix4fv(m_fontMap.shader().getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
                 }
                 glUniform4f(m_fontMap.shader().getUniformLocation("objectColor"), 0.0, 0.0, 0.0, 1.0);
                 
-                m_uiTaskList.update();
-                
-                m_fontMap.setFont("abel/abel-regular.ttf", 13);
-                m_fontMap.renderString(particlesIsDirty ? "Partices rendered:[" + std::to_string(m_particles.aliveElementCount()) + "]" : "Partices NOT rendered", m_windowWidth / 2.0, m_windowHeight / 2.0);
-                
-                glBindTexture(GL_TEXTURE_2D, m_iconMap.textureId());
-                
-                m_iconMap.setIconSize(64);
-                m_iconMap.renderSvg("nano.svg", 0.0, m_windowHeight);
+                //m_uiTaskList.update();
+
+                //m_fontMap.setFont("abel/abel-regular.ttf", 13);
+                //m_fontMap.renderString(particlesIsDirty ? "Partices rendered:[" + std::to_string(m_particles.aliveElementCount()) + "]" : "Partices NOT rendered", m_windowWidth / 2.0, m_windowHeight / 2.0);
                 
                 glBindTexture(GL_TEXTURE_2D, 0);
+                
+                glBindTexture(GL_TEXTURE_2D, m_iconMap.textureId());
+                glUniform4f(m_fontMap.shader().getUniformLocation("objectColor"), 0.0, 0.0, 0.0, 1.0);
+                //m_iconMap.setIconBitmapSize(64);
+                //m_iconMap.renderSvg("toolbar_add.svg", 0.0, m_windowHeight - 13, 13, 13);
+                glBindTexture(GL_TEXTURE_2D, 0);
+                
+                if (nullptr != m_rootWidget) {
+                    m_frameShader.use();
+                    {
+                        GLfloat matrixData[16];
+                        uiProjectionMatrix.getData(matrixData);
+                        glUniformMatrix4fv(m_frameShader.getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
+                    }
+                    m_rootWidget->layout();
+                    renderWidget(m_rootWidget.get());
+                }
 
                 m_uiMap.end();
             }
@@ -764,6 +832,8 @@ public:
         m_cameraSpaceDepthMap.setSize(m_windowWidth, m_windowHeight);
         m_positionMap.setSize(m_windowWidth, m_windowHeight);
         m_idMap.setSize(m_windowWidth, m_windowHeight);
+        m_rootWidget->setSizePolicy(Widget::FixedSize);
+        m_rootWidget->setSize(m_windowWidth, m_windowHeight);
     }
     
     void setKeyPressedQueryHandler(std::function<bool (char key)> keyPressedQueryHander)
@@ -893,6 +963,11 @@ public:
         return m_cameraUp;
     }
     
+    Widget *rootWidget() const
+    {
+        return m_rootWidget.get();
+    }
+    
 private:
     std::function<std::unique_ptr<std::vector<VertexBuffer>> (const std::string &resourceName)> m_vertexBufferListLoadHander = nullptr;
     std::function<uint64_t ()> m_millisecondsQueryHandler = nullptr;
@@ -916,6 +991,7 @@ private:
     Shader m_postProcessingShader;
     Shader m_positionShader;
     Shader m_idShader;
+    Shader m_frameShader;
     Particles m_particles;
     VertexBuffer m_quadBuffer;
     DepthMap m_shadowMap;
@@ -934,6 +1010,7 @@ private:
     bool m_screenIsDirty = true;
     bool m_showWireframes = false;
     TaskList m_uiTaskList;
+    std::unique_ptr<Widget> m_rootWidget = std::make_unique<Widget>();
     std::map<std::string, std::pair<std::unique_ptr<std::vector<VertexBuffer>>, int64_t/*referencingCount*/>> m_vertexBufferListMap;
     std::map<std::string, std::unique_ptr<Object>> m_objects;
     std::map<std::string, std::unique_ptr<LocationState>> m_locationStates;

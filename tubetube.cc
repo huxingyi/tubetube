@@ -415,7 +415,8 @@ int main(int argc, char* argv[])
         EGL_ALPHA_SIZE,     8,
         EGL_DEPTH_SIZE,     24,
         EGL_STENCIL_SIZE,   8,
-        EGL_SAMPLE_BUFFERS, 0,  // Multisamples is enabled in framebuffer see dust3d/gles/screen_map.h
+        EGL_SAMPLE_BUFFERS, 1,
+        EGL_SAMPLES,        4,
         EGL_RENDERABLE_TYPE, getContextRenderableType(eglDisplay),
         EGL_NONE
     };
@@ -472,12 +473,20 @@ int main(int argc, char* argv[])
         playerState->followedByCamera = true;
         IndieGameEngine::indie()->addLocationState("palyer0", std::move(playerState));
     }
+    
     IndieGameEngine::indie()->addGeneralState("", std::make_unique<WorldState>());
     
+    IndieGameEngine::indie()->setBackgroundColor(Color("#252525"));
+    
     auto toolBoxWidget = std::make_unique<Widget>();
-    toolBoxWidget->setLayoutDirection(Widget::LayoutDirection::TopToBottom);
+    toolBoxWidget->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
     toolBoxWidget->addSpacing(5.0);
-    toolBoxWidget->addWidget(std::make_unique<Button>());
+    auto openReferenceSheetButton = std::make_unique<Button>();
+    openReferenceSheetButton->setBackgroundColor(Color("#fc6621"));
+    openReferenceSheetButton->setColor(Color("#000000")); //f7d9c8
+    openReferenceSheetButton->setText("Open Reference Image..");
+    openReferenceSheetButton->setIcon("toolbar_add.svg");
+    toolBoxWidget->addWidget(std::move(openReferenceSheetButton));
     toolBoxWidget->addExpanding(0.5);
     toolBoxWidget->addSpacing(5.0);
     toolBoxWidget->addWidget(std::make_unique<Button>());
@@ -486,8 +495,13 @@ int main(int argc, char* argv[])
     toolBoxWidget->addSpacing(5.0);
     toolBoxWidget->addExpanding(1.5);
     
+    auto mainLayout = std::make_unique<Widget>();
+    mainLayout->setLayoutDirection(Widget::LayoutDirection::TopToBottom);
+    mainLayout->addSpacing(5.0);
+    mainLayout->addWidget(std::move(toolBoxWidget));
+    
     //IndieGameEngine::indie()->rootWidget()->addSpacing(5.0);
-    IndieGameEngine::indie()->rootWidget()->addWidget(std::move(toolBoxWidget));
+    IndieGameEngine::indie()->rootWidget()->addWidget(std::move(mainLayout));
 
     SetTimer(windowHandle, 1, 1000 / 300, updateTimer);
     SetTimer(windowHandle, 2, 1000 / 60, renderTimer);

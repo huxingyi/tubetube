@@ -25,12 +25,14 @@
 
 #include <string>
 #include <functional>
+#include <dust3d/base/color.h>
 #include <dust3d/base/debug.h>
 #include <dust3d/base/matrix4x4.h>
 #include <dust3d/base/quaternion.h>
 #include <dust3d/base/task.h>
 #include <dust3d/base/task_list.h>
 #include <dust3d/widget/widget.h>
+#include <dust3d/widget/button.h>
 #include <dust3d/gles/color_map.h>
 #include <dust3d/gles/shader.h>
 #include <dust3d/gles/vertex_buffer.h>
@@ -358,14 +360,16 @@ public:
         m_shadowMap.setSize(1024, 1024);
         m_shadowMap.initialize();
         m_fontMap.initialize();
+        m_fontMap.setFont("abel/abel-regular.ttf", 12);
         m_iconMap.initialize();
+        m_iconMap.setIconBitmapSize(64);
         m_particles.initialize();
         m_cameraSpaceColorMap.initialize();
         m_positionMap.setSamples(1);
         m_positionMap.initialize();
         m_idMap.setSamples(1);
         m_idMap.initialize();
-        m_uiMap.setSamples(1);
+        //m_uiMap.setSamples(1);
         m_uiMap.initialize();
         m_cameraSpaceDepthMap.initialize();
 
@@ -449,14 +453,53 @@ public:
         glDisableVertexAttribArray(0);
     }
     
+    void renderString(const std::string &string, double left, double top, double width, double height)
+    {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, m_fontMap.textureId());
+        glUniform1i(m_fontMap.shader().getUniformLocation("fontMap"), 0);
+        m_fontMap.renderString(string, left, m_windowHeight - (top + height), height);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+    
+    void renderIcon(const std::string &icon, double left, double top, double height)
+    {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, m_iconMap.textureId());
+        m_iconMap.renderSvg(icon, left, m_windowHeight - (top + height), height, height);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+    
     void renderWidget(Widget *widget)
     {
-        glUniform4f(m_frameShader.getUniformLocation("objectColor"), 1.0, 1.0, 1.0, 0.5);
-        
+        // Render background
+        glBlendFunc(GL_ONE, GL_ZERO);
+        m_frameShader.use();
+        m_frameShader.setUniformColor("objectColor", widget->backgroundColor());
         if (Widget::RenderHint::Container & widget->renderHints())
             renderFrame(widget->layoutLeft(), widget->layoutTop(), widget->layoutWidth(), widget->layoutHeight(), 8.0);
         else if (Widget::RenderHint::Element & widget->renderHints())
             renderFrame(widget->layoutLeft(), widget->layoutTop(), widget->layoutWidth(), widget->layoutHeight(), 4.0);
+
+        // Render button
+        if (Widget::RenderHint::Button & widget->renderHints()) {
+            Button *button = dynamic_cast<Button *>(widget);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            m_fontMap.shader().use();
+            auto textSize = m_fontMap.measureString(button->text());
+            double padding = textSize.second * 0.3;
+            double leftOffset = padding;
+            if (!button->icon().empty()) {
+                double iconSize = textSize.second;
+                m_fontMap.shader().use();
+                m_fontMap.shader().setUniformColor("objectColor", widget->color());
+                renderIcon(button->icon(), widget->layoutLeft() + leftOffset, widget->layoutTop() + (widget->layoutHeight() - iconSize) * 0.5, iconSize);
+                leftOffset += textSize.second + padding;
+            }
+            m_fontMap.shader().use();
+            m_fontMap.shader().setUniformColor("objectColor", widget->color());
+            renderString(button->text(), widget->layoutLeft() + leftOffset, widget->layoutTop(), widget->layoutWidth(), widget->layoutHeight());
+        }
         
         for (auto &child: widget->children())
             renderWidget(child.get());
@@ -474,6 +517,9 @@ public:
         }
         
         if (m_uiTaskList.anyWorkDone())
+            m_screenIsDirty = true;
+        
+        if (m_rootWidget->layoutChanged())
             m_screenIsDirty = true;
         
         if (m_screenIsDirty) {
@@ -495,16 +541,8 @@ public:
                 if (m_shadowMap.begin()) {
                     glEnable(GL_DEPTH_TEST);
                     glDisable(GL_CULL_FACE); // Disable fulling face, unless there will be hole in shadow
-                    {
-                        GLfloat matrixData[16];
-                        viewMatrix.getData(matrixData);
-                        glUniformMatrix4fv(m_shadowMap.shader().getUniformLocation("viewMatrix"), 1, GL_FALSE, &matrixData[0]);
-                    }
-                    {
-                        GLfloat matrixData[16];
-                        shadowProjectionMatrix.getData(matrixData);
-                        glUniformMatrix4fv(m_shadowMap.shader().getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
-                    }
+                    m_shadowMap.shader().setUniformMatrix("viewMatrix", viewMatrix);
+                    m_shadowMap.shader().setUniformMatrix("projectionMatrix", shadowProjectionMatrix);
                     renderObjects(m_shadowMap.shader(), RenderType::AllButLight, DrawHint::Triangles);
                     m_shadowMap.end();
                 }
@@ -521,16 +559,8 @@ public:
                 if (m_cameraSpaceDepthMap.begin()) {
                     glEnable(GL_DEPTH_TEST);
                     glDisable(GL_CULL_FACE);
-                    {
-                        GLfloat matrixData[16];
-                        viewMatrix.getData(matrixData);
-                        glUniformMatrix4fv(m_cameraSpaceDepthMap.shader().getUniformLocation("viewMatrix"), 1, GL_FALSE, &matrixData[0]);
-                    }
-                    {
-                        GLfloat matrixData[16];
-                        projectionMatrix.getData(matrixData);
-                        glUniformMatrix4fv(m_cameraSpaceDepthMap.shader().getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
-                    }
+                    m_cameraSpaceDepthMap.shader().setUniformMatrix("viewMatrix", viewMatrix);
+                    m_cameraSpaceDepthMap.shader().setUniformMatrix("projectionMatrix", projectionMatrix);
                     renderObjects(m_cameraSpaceDepthMap.shader(), RenderType::AllButLight, DrawHint::Triangles);
                     m_cameraSpaceDepthMap.end();
                 }
@@ -542,31 +572,15 @@ public:
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                 glEnable(GL_BLEND);
                 glBlendFunc(GL_SRC_ALPHA, GL_ZERO);
-                m_positionShader.use();
                 Matrix4x4 positionMatrix;
-                {
-                    GLfloat matrixData[16];
-                    positionMatrix.getData(matrixData);
-                    glUniformMatrix4fv(m_positionShader.getUniformLocation("positionMatrix"), 1, GL_FALSE, &matrixData[0]);
-                }
-                {
-                    GLfloat matrixData[16];
-                    viewMatrix.getData(matrixData);
-                    glUniformMatrix4fv(m_positionShader.getUniformLocation("viewMatrix"), 1, GL_FALSE, &matrixData[0]);
-                }
-                {
-                    GLfloat matrixData[16];
-                    projectionMatrix.getData(matrixData);
-                    glUniformMatrix4fv(m_positionShader.getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
-                }
+                m_positionShader.use();
+                m_positionShader.setUniformMatrix("positionMatrix", positionMatrix);
+                m_positionShader.setUniformMatrix("viewMatrix", viewMatrix);
+                m_positionShader.setUniformMatrix("projectionMatrix", projectionMatrix);
                 renderObjects(m_positionShader, RenderType::Default, DrawHint::Triangles);
                 renderObjects(m_positionShader, RenderType::Ground, DrawHint::Triangles);
                 positionMatrix.scale(Vector3(-1000, 0.0, -1000.0));
-                {
-                    GLfloat matrixData[16];
-                    positionMatrix.getData(matrixData);
-                    glUniformMatrix4fv(m_positionShader.getUniformLocation("positionMatrix"), 1, GL_FALSE, &matrixData[0]);
-                }
+                m_positionShader.setUniformMatrix("positionMatrix", positionMatrix);
                 renderObjects(m_positionShader, RenderType::Water, DrawHint::Triangles);
                 m_positionMap.end();
             }
@@ -578,22 +592,9 @@ public:
                 glEnable(GL_BLEND);
                 glBlendFunc(GL_SRC_ALPHA, GL_ZERO);
                 m_idShader.use();
-                Matrix4x4 positionMatrix;
-                {
-                    GLfloat matrixData[16];
-                    positionMatrix.getData(matrixData);
-                    glUniformMatrix4fv(m_idShader.getUniformLocation("positionMatrix"), 1, GL_FALSE, &matrixData[0]);
-                }
-                {
-                    GLfloat matrixData[16];
-                    viewMatrix.getData(matrixData);
-                    glUniformMatrix4fv(m_idShader.getUniformLocation("viewMatrix"), 1, GL_FALSE, &matrixData[0]);
-                }
-                {
-                    GLfloat matrixData[16];
-                    projectionMatrix.getData(matrixData);
-                    glUniformMatrix4fv(m_idShader.getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
-                }
+                m_idShader.setUniformMatrix("positionMatrix", Matrix4x4());
+                m_idShader.setUniformMatrix("viewMatrix", viewMatrix);
+                m_idShader.setUniformMatrix("projectionMatrix", projectionMatrix);
                 glUniform4f(m_idShader.getUniformLocation("id"), 0.0, 0.0, 0.0, 1.0);
                 renderObjects(m_idShader, RenderType::Default, DrawHint::Triangles);
                 glUniform4f(m_idShader.getUniformLocation("id"), 0.1, 0.0, 0.0, 1.0);
@@ -606,7 +607,8 @@ public:
             if (m_cameraSpaceColorMap.begin()) {
                 
                 //glClearColor(0.145f, 0.145f, 0.145f, 1.0f);
-                glClearColor(1.0f, 0.94f, 0.86f, 1.0f);
+                //glClearColor(1.0f, 0.94f, 0.86f, 1.0f);
+                glClearColor(m_backgroundColor[0], m_backgroundColor[1], m_backgroundColor[2], m_backgroundColor[3]);
                 
                 // Render triangles
                 
@@ -622,21 +624,9 @@ public:
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, m_shadowMap.textureId());
                 glUniform1i(m_modelShader.getUniformLocation("shadowMap"), 0);
-                {
-                    GLfloat matrixData[16];
-                    viewMatrix.getData(matrixData);
-                    glUniformMatrix4fv(m_modelShader.getUniformLocation("viewMatrix"), 1, GL_FALSE, &matrixData[0]);
-                }
-                {
-                    GLfloat matrixData[16];
-                    projectionMatrix.getData(matrixData);
-                    glUniformMatrix4fv(m_modelShader.getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
-                }
-                {
-                    GLfloat matrixData[16];
-                    lightViewProjectionMatrix.getData(matrixData);
-                    glUniformMatrix4fv(m_modelShader.getUniformLocation("lightViewProjectionMatrix"), 1, GL_FALSE, &matrixData[0]);
-                }
+                m_modelShader.setUniformMatrix("viewMatrix", viewMatrix);
+                m_modelShader.setUniformMatrix("projectionMatrix", projectionMatrix);
+                m_modelShader.setUniformMatrix("lightViewProjectionMatrix", lightViewProjectionMatrix);
                 glUniform4f(m_modelShader.getUniformLocation("objectColor"), 1.0, 1.0, 1.0, 1.0);
                 glUniform4f(m_modelShader.getUniformLocation("directionLight.color"), 1.0, 1.0, 1.0, 1.0);
                 glUniform4f(m_modelShader.getUniformLocation("directionLight.direction"), -0.2, -1.0, -0.3, 1.0);
@@ -670,16 +660,8 @@ public:
                 
                 if (particlesIsDirty) {
                     m_particles.shader().use();
-                    {
-                        GLfloat matrixData[16];
-                        viewMatrix.getData(matrixData);
-                        glUniformMatrix4fv(m_particles.shader().getUniformLocation("viewMatrix"), 1, GL_FALSE, &matrixData[0]);
-                    }
-                    {
-                        GLfloat matrixData[16];
-                        projectionMatrix.getData(matrixData);
-                        glUniformMatrix4fv(m_particles.shader().getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
-                    }
+                    m_particles.shader().setUniformMatrix("viewMatrix", viewMatrix);
+                    m_particles.shader().setUniformMatrix("projectionMatrix", projectionMatrix);
                     glUniform1f(m_particles.shader().getUniformLocation("time"), (float)m_time);
                     glUniform2f(m_particles.shader().getUniformLocation("windowSize"), (float)m_windowWidth, (float)m_windowHeight);
                     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Particles::Element), &m_particles.elements()[0].timeRangeAndRadius[0]);
@@ -704,21 +686,9 @@ public:
                 if (m_showWireframes) {
                     m_singleColorShader.use();
                     Matrix4x4 rayModelMatrix;
-                    {
-                        GLfloat matrixData[16];
-                        rayModelMatrix.getData(matrixData);
-                        glUniformMatrix4fv(m_singleColorShader.getUniformLocation("modelMatrix"), 1, GL_FALSE, &matrixData[0]);
-                    }
-                    {
-                        GLfloat matrixData[16];
-                        viewMatrix.getData(matrixData);
-                        glUniformMatrix4fv(m_singleColorShader.getUniformLocation("viewMatrix"), 1, GL_FALSE, &matrixData[0]);
-                    }
-                    {
-                        GLfloat matrixData[16];
-                        projectionMatrix.getData(matrixData);
-                        glUniformMatrix4fv(m_singleColorShader.getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
-                    }
+                    m_singleColorShader.setUniformMatrix("modelMatrix", rayModelMatrix);
+                    m_singleColorShader.setUniformMatrix("viewMatrix", viewMatrix);
+                    m_singleColorShader.setUniformMatrix("projectionMatrix", projectionMatrix);
                     glUniform4f(m_singleColorShader.getUniformLocation("objectColor"), 0.0, 0.0, 0.0, 1.0);
                     renderObjects(m_singleColorShader, RenderType::Default, DrawHint::Lines);
                     renderObjects(m_singleColorShader, RenderType::Terrain, DrawHint::Lines);
@@ -734,7 +704,7 @@ public:
                 // Render text
                 
                 m_fontMap.shader().use();
-                
+
                 glClear(GL_COLOR_BUFFER_BIT);
                 glDisable(GL_DEPTH_TEST);
                 glEnable(GL_BLEND);
@@ -743,35 +713,24 @@ public:
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, m_fontMap.textureId());
                 glUniform1i(m_fontMap.shader().getUniformLocation("fontMap"), 0);
-                Matrix4x4 uiProjectionMatrix;
-                uiProjectionMatrix.orthographicProject(0.0, m_windowWidth, 0.0, m_windowHeight);
-                {
-                    GLfloat matrixData[16];
-                    uiProjectionMatrix.getData(matrixData);
-                    glUniformMatrix4fv(m_fontMap.shader().getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
-                }
-                glUniform4f(m_fontMap.shader().getUniformLocation("objectColor"), 0.0, 0.0, 0.0, 1.0);
+                m_fontMap.shader().setUniformMatrix("projectionMatrix", m_screenProjectionMatrix);
+                //glUniform4f(m_fontMap.shader().getUniformLocation("objectColor"), 1.0, 0.0, 0.0, 1.0);
                 
                 //m_uiTaskList.update();
 
-                //m_fontMap.setFont("abel/abel-regular.ttf", 13);
                 //m_fontMap.renderString(particlesIsDirty ? "Partices rendered:[" + std::to_string(m_particles.aliveElementCount()) + "]" : "Partices NOT rendered", m_windowWidth / 2.0, m_windowHeight / 2.0);
                 
                 glBindTexture(GL_TEXTURE_2D, 0);
                 
-                glBindTexture(GL_TEXTURE_2D, m_iconMap.textureId());
-                glUniform4f(m_fontMap.shader().getUniformLocation("objectColor"), 0.0, 0.0, 0.0, 1.0);
+                //glBindTexture(GL_TEXTURE_2D, m_iconMap.textureId());
+                //glUniform4f(m_fontMap.shader().getUniformLocation("objectColor"), 0.0, 0.0, 0.0, 1.0);
                 //m_iconMap.setIconBitmapSize(64);
-                //m_iconMap.renderSvg("toolbar_add.svg", 0.0, m_windowHeight - 13, 13, 13);
-                glBindTexture(GL_TEXTURE_2D, 0);
+                //m_iconMap.renderSvg("toolbar_add.svg", 10.0, m_windowHeight - 13, 13, 13);
+                //glBindTexture(GL_TEXTURE_2D, 0);
                 
                 if (nullptr != m_rootWidget) {
                     m_frameShader.use();
-                    {
-                        GLfloat matrixData[16];
-                        uiProjectionMatrix.getData(matrixData);
-                        glUniformMatrix4fv(m_frameShader.getUniformLocation("projectionMatrix"), 1, GL_FALSE, &matrixData[0]);
-                    }
+                    m_frameShader.setUniformMatrix("projectionMatrix", m_screenProjectionMatrix);
                     m_rootWidget->layout();
                     renderWidget(m_rootWidget.get());
                 }
@@ -786,33 +745,7 @@ public:
         if (glError != GL_NO_ERROR)
             std::cerr << "OpenGL Error : " << glError << std::endl;
     }
-    
-    /*
-    void handleMouseMove(double x, double y)
-    {
-        static int s_lastX = 0;
-        static int s_lastY = 0;
-        static bool s_firstTime = true;
-        if (s_firstTime) {
-            s_firstTime = false;
-            s_lastX = x;
-            s_lastY = y;
-        }
-        int offsetX = x - s_lastX;
-        int offsetY = y - s_lastY;
-        if (0 != offsetX) {
-            m_cameraFront = m_cameraFront.rotated(Vector3(0.0, 1.0, 0.0), Math::radiansFromDegrees(45.0 * -offsetX / m_windowWidth));
-            dirty();
-        }
-        if (0 != offsetY) {
-            m_cameraFront = m_cameraFront.rotated(Vector3(1.0, 0.0, 0.0), Math::radiansFromDegrees(45.0 * -offsetY / m_windowHeight));
-            dirty();
-        }
-        s_lastX = x;
-        s_lastY = y;
-    }
-    */
-    
+
     void setVertexBufferListLoadHandler(std::function<std::unique_ptr<std::vector<VertexBuffer>>(const std::string &resourceName)> vertexBufferListLoadHander)
     {
         m_vertexBufferListLoadHander = vertexBufferListLoadHander;
@@ -834,6 +767,8 @@ public:
         m_idMap.setSize(m_windowWidth, m_windowHeight);
         m_rootWidget->setSizePolicy(Widget::FixedSize);
         m_rootWidget->setSize(m_windowWidth, m_windowHeight);
+        m_screenProjectionMatrix = Matrix4x4();
+        m_screenProjectionMatrix.orthographicProject(0.0, m_windowWidth, 0.0, m_windowHeight);
         dirty();
     }
     
@@ -969,6 +904,11 @@ public:
         return m_rootWidget.get();
     }
     
+    void setBackgroundColor(const Color &color)
+    {
+        m_backgroundColor = color;
+    }
+    
 private:
     std::function<std::unique_ptr<std::vector<VertexBuffer>> (const std::string &resourceName)> m_vertexBufferListLoadHander = nullptr;
     std::function<uint64_t ()> m_millisecondsQueryHandler = nullptr;
@@ -1010,6 +950,9 @@ private:
     double m_elapsedSeconds = 0.0;
     bool m_screenIsDirty = true;
     bool m_showWireframes = false;
+    Color m_backgroundColor;
+    Matrix4x4 m_screenProjectionMatrix;
+    
     TaskList m_uiTaskList;
     std::unique_ptr<Widget> m_rootWidget = std::make_unique<Widget>();
     std::map<std::string, std::pair<std::unique_ptr<std::vector<VertexBuffer>>, int64_t/*referencingCount*/>> m_vertexBufferListMap;

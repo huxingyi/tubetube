@@ -24,6 +24,7 @@
 #define DUST3D_WIDGET_WIDGET_H_
 
 #include <dust3d/base/math.h>
+#include <dust3d/base/color.h>
 
 namespace dust3d
 {
@@ -31,6 +32,14 @@ namespace dust3d
 class Widget
 {
 public:
+    Widget()
+    {
+    }
+    
+    virtual ~Widget()
+    {
+    }
+
     enum LayoutDirection
     {
         LeftToRight = 0,
@@ -48,6 +57,7 @@ public:
     {
         Container = 0x00000001,
         Element = 0x00000002,
+        Button = 0x00000004,
     };
 
     const double &width() const
@@ -65,7 +75,7 @@ public:
         if (m_widthPolicy == widthPolicy)
             return;
         m_widthPolicy = widthPolicy;
-        layoutChanged = true;
+        m_layoutChanged = true;
     }
     
     SizePolicy widthPolicy() const
@@ -78,7 +88,7 @@ public:
         if (m_heightPolicy == heightPolicy)
             return;
         m_heightPolicy = heightPolicy;
-        layoutChanged = true;
+        m_layoutChanged = true;
     }
     
     SizePolicy heightPolicy() const
@@ -97,7 +107,7 @@ public:
         if (Math::isEqual(width, m_width))
             return;
         m_width = width;
-        layoutChanged = true;
+        m_layoutChanged = true;
     }
     
     void setHeight(double height)
@@ -105,7 +115,7 @@ public:
         if (Math::isEqual(height, m_height))
             return;
         m_height = height;
-        layoutChanged = true;
+        m_layoutChanged = true;
     }
     
     void setSize(double width, double height)
@@ -119,7 +129,7 @@ public:
         if (m_layoutDirection == layoutDirection)
             return;
         m_layoutDirection = layoutDirection;
-        layoutChanged = true;
+        m_layoutChanged = true;
     }
     
     void setParent(const Widget *parent)
@@ -127,14 +137,14 @@ public:
         if (m_parent == parent)
             return;
         m_parent = parent;
-        layoutChanged = true;
+        m_layoutChanged = true;
     }
     
     void addWidget(std::unique_ptr<Widget> widget)
     {
         widget->setParent(this);
         m_children.push_back(std::move(widget));
-        layoutChanged = true;
+        m_layoutChanged = true;
     }
     
     void addSpacing(double fixedSize)
@@ -163,7 +173,7 @@ public:
         if (Math::isEqual(m_expandingWeight, weight))
             return;
         m_expandingWeight = weight;
-        layoutChanged = true;
+        m_layoutChanged = true;
     }
     
     double layoutLeft() const
@@ -320,13 +330,13 @@ public:
 
     void layout()
     {
-        if (!layoutChanged)
+        if (!m_layoutChanged)
             return;
         
         layoutSize();
         layoutLocation();
         
-        layoutChanged = false;
+        m_layoutChanged = false;
     }
     
     std::vector<std::unique_ptr<Widget>> &children()
@@ -339,6 +349,35 @@ public:
         return m_renderHints;
     }
     
+    const Color &backgroundColor()
+    {
+        return m_backgroundColor;
+    }
+    
+    void setBackgroundColor(const Color &color)
+    {
+        if (m_backgroundColor == color)
+            return;
+        m_backgroundColor = color;
+    }
+    
+    const Color &color()
+    {
+        return m_color;
+    }
+    
+    void setColor(const Color &color)
+    {
+        if (m_color == color)
+            return;
+        m_color = color;
+    }
+    
+    bool layoutChanged() const
+    {
+        return m_layoutChanged;
+    }
+    
 protected:
     double m_width = 1.0;
     double m_height = 1.0;
@@ -347,9 +386,11 @@ protected:
     double m_layoutWidth = 0.0;
     double m_layoutHeight = 0.0;
     double m_expandingWeight = 0.0;
-    bool layoutChanged = true;
+    bool m_layoutChanged = true;
     const Widget *m_parent = nullptr;
     uint64_t m_renderHints = 0;
+    Color m_backgroundColor;
+    Color m_color;
     LayoutDirection m_layoutDirection = LayoutDirection::LeftToRight;
     SizePolicy m_widthPolicy = SizePolicy::RelativeSize;
     SizePolicy m_heightPolicy = SizePolicy::RelativeSize;

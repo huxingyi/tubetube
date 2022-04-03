@@ -34,10 +34,10 @@ public:
     Button()
     {
         m_heightPolicy = SizePolicy::FixedSize;
-        m_height = 22.0;
+        m_height = 20.0;
         m_widthPolicy = SizePolicy::FixedSize;
-        m_width = 22.0;
-        m_renderHints = RenderHint::Element;
+        m_width = 128.0;
+        m_renderHints = RenderHint::Element | RenderHint::Button;
     }
     
     void setIcon(const std::string &icon)
@@ -47,13 +47,26 @@ public:
         m_icon = icon;
     }
     
+    void setText(const std::string &text)
+    {
+        if (m_text == text)
+            return;
+        m_text = text;
+    }
+    
     const std::string &icon()
     {
         return m_icon;
     }
     
+    const std::string &text()
+    {
+        return m_text;
+    }
+    
 private:
     std::string m_icon;
+    std::string m_text;
 };
 
 }

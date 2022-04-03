@@ -53,6 +53,9 @@ public:
         
         GLenum none = GL_NONE;
         GLint defaultFramebuffer = 0;
+        
+        GLint lastTextureId = 0;
+        glGetIntegerv(GL_TEXTURE_BINDING_2D, &lastTextureId);
 
         glGenTextures(1, &m_textureId);
         glBindTexture(GL_TEXTURE_2D, m_textureId);
@@ -66,7 +69,7 @@ public:
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24_OES, m_textureWidth, m_textureHeight, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, nullptr);
 
-        glBindTexture(GL_TEXTURE_2D, 0);
+        glBindTexture(GL_TEXTURE_2D, lastTextureId);
 
         glGetIntegerv(GL_FRAMEBUFFER_BINDING, &defaultFramebuffer);
 
@@ -76,9 +79,6 @@ public:
         m_drawBuffers(1, &none);
 
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_textureId, 0);
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, m_textureId);
         
         auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
         if (GL_FRAMEBUFFER_COMPLETE != status)

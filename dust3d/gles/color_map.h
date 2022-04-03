@@ -83,13 +83,16 @@ public:
         
         glGenFramebuffers(1, &m_resultFrameBufferId);
         glBindFramebuffer(GL_FRAMEBUFFER, m_resultFrameBufferId);
-
+        
+        GLint lastTextureId = 0;
+        glGetIntegerv(GL_TEXTURE_BINDING_2D, &lastTextureId);
         glGenTextures(1, &m_textureId);
         glBindTexture(GL_TEXTURE_2D, m_textureId);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_textureWidth, m_textureHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_textureId, 0);
+        glBindTexture(GL_TEXTURE_2D, lastTextureId);
         
         {
             auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);

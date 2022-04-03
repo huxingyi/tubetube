@@ -23,6 +23,7 @@
 #ifndef DUST3D_GLES_FONT_MAP_H_
 #define DUST3D_GLES_FONT_MAP_H_
 
+#include <cmath>
 #include <string>
 #include <array>
 #include <locale>
@@ -65,6 +66,19 @@ public:
                 #include <dust3d/gles/shaders/font.frag>
                 ;
             m_shader = std::unique_ptr<Shader>(new Shader(vertexShaderSource, fragmentShaderSource));
+        }
+        
+        if (0 == m_textureId) {
+            GLint lastTextureId = 0;
+            glGetIntegerv(GL_TEXTURE_BINDING_2D, &lastTextureId);
+            glGenTextures(1, &m_textureId);
+            glBindTexture(GL_TEXTURE_2D, m_textureId);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RED_EXT, m_textureWidth, m_textureHeight, 0, GL_RED_EXT, GL_UNSIGNED_BYTE, nullptr);
+            glBindTexture(GL_TEXTURE_2D, lastTextureId);
         }
         
         if (nullptr == m_library) {
@@ -114,36 +128,66 @@ public:
         initialize();
     }
     
-    void renderString(const std::string &string, double left, double top)
+    std::pair<double, double> measureString(const std::string &string)
+    {
+        std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> utf16conv;
+        std::u16string utf16 = utf16conv.from_bytes(string);
+        addCharsToImageClips(utf16);
+        double maxFontHeight = 0.0;
+        double totalWidth = 0.0;
+        for (size_t i = 0; i < utf16.size(); ++i) {
+            auto findImageClip = m_imageClipMap.find(utf16[i]);
+            if (findImageClip == m_imageClipMap.end())
+                continue;
+            maxFontHeight = std::max(maxFontHeight, (double)findImageClip->second.bitmapHeight);
+            totalWidth += findImageClip->second.advanceX;
+        }
+        return {totalWidth, maxFontHeight};
+    }
+    
+    void renderString(const std::string &string, double left, double top, double lineHeight=0.0)
     {
         std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> utf16conv;
         std::u16string utf16 = utf16conv.from_bytes(string);
         addCharsToImageClips(utf16);
         std::vector<GLfloat> vertices(24 * utf16.size());
         size_t targetIndex = 0;
+        std::vector<const ImageClip *> clips;
+        clips.reserve(utf16.size());
+        double maxFontHeight = 0;
         for (size_t i = 0; i < utf16.size(); ++i) {
             auto findImageClip = m_imageClipMap.find(utf16[i]);
             if (findImageClip == m_imageClipMap.end())
                 continue;
-            
-            const auto &clip = findImageClip->second;
+            maxFontHeight = std::max(maxFontHeight, (double)findImageClip->second.bitmapHeight);
+            clips.push_back(&findImageClip->second);
+        }
+        double scale = 1.0;
+        top += (lineHeight - maxFontHeight) * 0.5;
+        for (size_t i = 0; i < clips.size(); ++i) {
+            const auto &clip = *clips[i];
             
             std::pair<GLfloat, GLfloat> leftBottom = {
-                (GLfloat)left + clip.bitmapLeft, 
-                (GLfloat)top - clip.bitmapBottomMove
+                (GLfloat)left + clip.bitmapLeft * scale, 
+                (GLfloat)top - clip.bitmapBottomMove * scale
             };
             std::pair<GLfloat, GLfloat> rightBottom = {
-                (GLfloat)left + clip.bitmapLeft + clip.bitmapWidth, 
-                (GLfloat)top - clip.bitmapBottomMove
+                (GLfloat)left + clip.bitmapLeft * scale + clip.bitmapWidth * scale, 
+                (GLfloat)top - clip.bitmapBottomMove * scale
             };
             std::pair<GLfloat, GLfloat> rightTop = {
-                (GLfloat)left + clip.bitmapLeft + clip.bitmapWidth, 
-                (GLfloat)top - clip.bitmapBottomMove + clip.bitmapHeight
+                (GLfloat)left + clip.bitmapLeft * scale + clip.bitmapWidth * scale, 
+                (GLfloat)top - clip.bitmapBottomMove * scale + clip.bitmapHeight * scale
             };
             std::pair<GLfloat, GLfloat> leftTop = {
-                (GLfloat)left + clip.bitmapLeft, 
-                (GLfloat)top - clip.bitmapBottomMove + clip.bitmapHeight
+                (GLfloat)left + clip.bitmapLeft * scale, 
+                (GLfloat)top - clip.bitmapBottomMove * scale + clip.bitmapHeight * scale
             };
+            
+            //std::cout << "bitmapHeight:" << clip.bitmapHeight << std::endl;
+            //std::cout << "lineHeight:" << lineHeight << std::endl;
+            //std::cout << "m_fontSizeInPixel:" << m_fontSizeInPixel << std::endl;
+            //std::cout << "fontLineHeight():" << fontLineHeight() << std::endl;
 
             vertices[targetIndex++] = leftBottom.first; // left bottom x
             vertices[targetIndex++] = leftBottom.second; // left bottom y
@@ -175,9 +219,11 @@ public:
             vertices[targetIndex++] = clip.leftBottomUv.first; // left bottom u
             vertices[targetIndex++] = clip.leftBottomUv.second; // left bottom v
             
-            left += clip.advanceX;
+            left += clip.advanceX * scale;
         }
-
+        if (0 == targetIndex)
+            return;
+        
         glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 4, vertices.data());
         glEnableVertexAttribArray(0);
         glDrawArrays(GL_TRIANGLES, 0, targetIndex / 4);
@@ -201,7 +247,7 @@ private:
     std::unique_ptr<Shader> m_shader;
     FT_Library m_library = nullptr;
     FT_Face m_face = nullptr;
-    int m_fontSizeInPixel = 13;
+    int m_fontSizeInPixel = 0;
     int m_columns = 0;
     int m_rows = 0;
     uint64_t m_nextAge = 1;
@@ -248,18 +294,10 @@ private:
                     ++m_currentRow;
                 }
             }
+            GLint lastTextureId = 0;
+            glGetIntegerv(GL_TEXTURE_BINDING_2D, &lastTextureId);
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-            if (0 == m_textureId) {
-                glGenTextures(1, &m_textureId);
-                glBindTexture(GL_TEXTURE_2D, m_textureId);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RED_EXT, m_textureWidth, m_textureHeight, 0, GL_RED_EXT, GL_UNSIGNED_BYTE, nullptr);
-            } else {
-                glBindTexture(GL_TEXTURE_2D, m_textureId);
-            }
+            glBindTexture(GL_TEXTURE_2D, m_textureId);
             glTexSubImage2D(GL_TEXTURE_2D, 0, column * m_fontSizeInPixel, row * m_fontSizeInPixel, slot->bitmap.width, slot->bitmap.rows, GL_RED_EXT, GL_UNSIGNED_BYTE, slot->bitmap.buffer);
             m_imageClipMap.insert({utf16[i], ImageClip {
                 column,
@@ -288,7 +326,7 @@ private:
                 }
             }});
             glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-            glBindTexture(GL_TEXTURE_2D, 0);
+            glBindTexture(GL_TEXTURE_2D, lastTextureId);
         }
     }
 };

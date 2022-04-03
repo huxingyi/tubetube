@@ -47,6 +47,18 @@ public:
     
     void initialize()
     {
+        if (0 == m_textureId) {
+            GLint lastTextureId = 0;
+            glGetIntegerv(GL_TEXTURE_BINDING_2D, &lastTextureId);
+            glGenTextures(1, &m_textureId);
+            glBindTexture(GL_TEXTURE_2D, m_textureId);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RED_EXT, m_textureWidth, m_textureHeight, 0, GL_RED_EXT, GL_UNSIGNED_BYTE, nullptr);
+            glBindTexture(GL_TEXTURE_2D, lastTextureId);
+        }
     }
     
     GLuint textureId() const
@@ -70,8 +82,10 @@ public:
     void renderSvg(const std::string &svgPath, double left, double top, double width, double height)
     {
         const ImageClip *imageClip = addSvgToTexture(svgPath);
-        if (nullptr == imageClip)
+        if (nullptr == imageClip) {
+            dust3dDebug << "renderSvg failed because of addSvgToTexture failure";
             return;
+        }
         
         const auto &clip = *imageClip;
 
@@ -135,24 +149,32 @@ private:
     
     const ImageClip *addSvgToTexture(const std::string &svgPath)
     {
-        if (0 == m_iconBitmapSize)
+        if (0 == m_iconBitmapSize) {
+            dust3dDebug << "addSvgToTexture failed because of bitmap size is zero";
             return nullptr;
+        }
         
         auto findImageClip = m_imageClipMap.find(svgPath);
         if (findImageClip != m_imageClipMap.end())
             return &findImageClip->second;
         
-        if (m_currentRow >= m_rows)
+        if (m_currentRow >= m_rows) {
+            dust3dDebug << "addSvgToTexture failed because of texture space is used up";
             return nullptr;
+        }
         
         if (nullptr == m_svgRasterizer) {
             m_svgRasterizer = nsvgCreateRasterizer();
-            if (nullptr == m_svgRasterizer)
+            if (nullptr == m_svgRasterizer) {
+                dust3dDebug << "addSvgToTexture failed because of nsvgCreateRasterizer failure";
                 return nullptr;
+            }
         }
         NSVGimage *image = nsvgParseFromFile(svgPath.c_str(), "px", 96);
-        if (nullptr == image)
+        if (nullptr == image) {
+            dust3dDebug << "addSvgToTexture failed because of nsvgParseFromFile failure";
             return nullptr;
+        }
         std::vector<unsigned char> rgba(m_iconBitmapSize * m_iconBitmapSize * 4);
         nsvgRasterize(m_svgRasterizer, image, 0, 0, 1.0, rgba.data(), m_iconBitmapSize, m_iconBitmapSize, m_iconBitmapSize * 4);
         std::vector<unsigned char> a(rgba.size() / 4);
@@ -160,17 +182,9 @@ private:
             a[i] = rgba[j + 3];
         
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        if (0 == m_textureId) {
-            glGenTextures(1, &m_textureId);
-            glBindTexture(GL_TEXTURE_2D, m_textureId);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RED_EXT, m_textureWidth, m_textureHeight, 0, GL_RED_EXT, GL_UNSIGNED_BYTE, nullptr);
-        } else {
-            glBindTexture(GL_TEXTURE_2D, m_textureId);
-        }
+        GLint lastTextureId = 0;
+        glGetIntegerv(GL_TEXTURE_BINDING_2D, &lastTextureId);
+        glBindTexture(GL_TEXTURE_2D, m_textureId);
         int column = m_currentColumn;
         int row = m_currentRow;
         ++m_currentColumn;
@@ -180,7 +194,7 @@ private:
         }
         glTexSubImage2D(GL_TEXTURE_2D, 0, column * m_iconBitmapSize, row * m_iconBitmapSize, m_iconBitmapSize, m_iconBitmapSize, GL_RED_EXT, GL_UNSIGNED_BYTE, a.data());
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-        glBindTexture(GL_TEXTURE_2D, 0);
+        glBindTexture(GL_TEXTURE_2D, lastTextureId);
         
         auto insertResult = m_imageClipMap.insert({svgPath, ImageClip {
             {

@@ -26,6 +26,8 @@
 #include <string>
 #include <map>
 #include <GLES2/gl2.h>
+#include <dust3d/base/color.h>
+#include <dust3d/base/matrix4x4.h>
 
 namespace dust3d
 {
@@ -73,6 +75,18 @@ public:
         GLuint location = glGetUniformLocation(m_program, name.c_str());
         m_uniformLocationMap.insert({name, location});
         return location;
+    }
+    
+    void setUniformMatrix(const std::string &name, const Matrix4x4 &matrix)
+    {
+        GLfloat matrixData[16];
+        matrix.getData(matrixData);
+        glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, &matrixData[0]);
+    }
+    
+    void setUniformColor(const std::string &name, const Color &color)
+    {
+        glUniform4f(getUniformLocation(name), color[0], color[1], color[2], color[3]);
     }
     
 private:

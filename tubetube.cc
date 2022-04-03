@@ -478,14 +478,15 @@ int main(int argc, char* argv[])
     toolBoxWidget->setLayoutDirection(Widget::LayoutDirection::TopToBottom);
     toolBoxWidget->addSpacing(5.0);
     toolBoxWidget->addWidget(std::make_unique<Button>());
-    toolBoxWidget->addExpanding();
+    toolBoxWidget->addExpanding(0.5);
     toolBoxWidget->addSpacing(5.0);
     toolBoxWidget->addWidget(std::make_unique<Button>());
     toolBoxWidget->addSpacing(5.0);
     toolBoxWidget->addWidget(std::make_unique<Button>());
     toolBoxWidget->addSpacing(5.0);
+    toolBoxWidget->addExpanding(1.5);
     
-    IndieGameEngine::indie()->rootWidget()->addSpacing(5.0);
+    //IndieGameEngine::indie()->rootWidget()->addSpacing(5.0);
     IndieGameEngine::indie()->rootWidget()->addWidget(std::move(toolBoxWidget));
 
     SetTimer(windowHandle, 1, 1000 / 300, updateTimer);

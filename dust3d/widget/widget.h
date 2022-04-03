@@ -68,6 +68,11 @@ public:
         layoutChanged = true;
     }
     
+    SizePolicy widthPolicy() const
+    {
+        return m_widthPolicy;
+    }
+    
     void setHeightPolicy(SizePolicy heightPolicy)
     {
         if (m_heightPolicy == heightPolicy)
@@ -140,11 +145,25 @@ public:
         addWidget(std::move(widget));
     }
     
-    void addExpanding()
+    void addExpanding(double weight=1.0)
     {
         auto widget = std::make_unique<Widget>();
         widget->setSizePolicy(SizePolicy::FlexibleSize);
+        widget->setExpandingWeight(weight);
         addWidget(std::move(widget));
+    }
+    
+    double expandingWeight() const
+    {
+        return m_expandingWeight;
+    }
+    
+    void setExpandingWeight(double weight)
+    {
+        if (Math::isEqual(m_expandingWeight, weight))
+            return;
+        m_expandingWeight = weight;
+        layoutChanged = true;
     }
     
     double layoutLeft() const
@@ -201,6 +220,53 @@ public:
         return m_parent->layoutHeight();
     }
     
+    void layoutExpandingChildrenSize()
+    {
+        double usedSize = 0.0;
+        double totalExpandingWeights = 0.0;
+        
+        switch (m_layoutDirection) {
+        case LayoutDirection::LeftToRight:
+            for (const auto &widget: m_children) {
+                if (SizePolicy::FlexibleSize == widget->widthPolicy()) {
+                    totalExpandingWeights += widget->expandingWeight();
+                    continue;
+                }
+                usedSize += widget->layoutWidth();
+            }
+            break;
+        case LayoutDirection::TopToBottom:
+            for (const auto &widget: m_children) {
+                if (SizePolicy::FlexibleSize == widget->heightPolicy()) {
+                    totalExpandingWeights += widget->expandingWeight();
+                    continue;
+                }
+                usedSize += widget->layoutHeight();
+            }
+            break;
+        }
+        if (Math::isZero(totalExpandingWeights))
+            return;
+        
+        double expandingSize = 0.0;
+        switch (m_layoutDirection) {
+        case LayoutDirection::LeftToRight:
+            expandingSize = (m_layoutWidth - usedSize) / totalExpandingWeights;
+            for (auto &widget: m_children) {
+                if (SizePolicy::FlexibleSize == widget->widthPolicy())
+                    widget->setLayoutWidth(expandingSize * widget->expandingWeight());
+            }
+            break;
+        case LayoutDirection::TopToBottom:
+            expandingSize = (m_layoutHeight - usedSize) / totalExpandingWeights;
+            for (auto &widget: m_children) {
+                if (SizePolicy::FlexibleSize == widget->heightPolicy())
+                    widget->setLayoutHeight(expandingSize * widget->expandingWeight());
+            }
+            break;
+        }
+    }
+    
     void layoutSize()
     {
         switch (m_widthPolicy) {
@@ -223,36 +289,27 @@ public:
         
         for (auto &widget: m_children)
             widget->layoutSize();
+        
+        layoutExpandingChildrenSize();
     }
     
     void layoutLocation()
     {
         double layoutLeft = m_layoutLeft;
         double layoutTop = m_layoutTop;
-        double layoutBottom = m_layoutTop + m_layoutHeight;
         switch (m_layoutDirection) {
         case LayoutDirection::LeftToRight:
             for (auto &widget: m_children) {
-                widget->setLayoutLeft(layoutLeft);
                 widget->setLayoutTop(layoutTop);
+                widget->setLayoutLeft(layoutLeft);
                 layoutLeft += widget->layoutWidth();
             }
             break;
         case LayoutDirection::TopToBottom:
-            size_t i = 0;
-            for (; i < m_children.size(); ++i) {
-                auto &widget = m_children[i];
-                if (SizePolicy::FlexibleSize == widget->heightPolicy())
-                    break;
+            for (auto &widget: m_children) {
                 widget->setLayoutLeft(layoutLeft);
                 widget->setLayoutTop(layoutTop);
                 layoutTop += widget->layoutHeight();
-            }
-            for (int j = (int)m_children.size() - 1; j > i; --j) {
-                auto &widget = m_children[j];
-                widget->setLayoutLeft(layoutLeft);
-                widget->setLayoutTop(layoutBottom - widget->layoutHeight());
-                layoutBottom -= widget->layoutHeight();
             }
             break;
         }
@@ -289,6 +346,7 @@ protected:
     double m_layoutTop = 0.0;
     double m_layoutWidth = 0.0;
     double m_layoutHeight = 0.0;
+    double m_expandingWeight = 0.0;
     bool layoutChanged = true;
     const Widget *m_parent = nullptr;
     uint64_t m_renderHints = 0;

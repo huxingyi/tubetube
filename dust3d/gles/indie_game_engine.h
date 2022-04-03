@@ -834,6 +834,7 @@ public:
         m_idMap.setSize(m_windowWidth, m_windowHeight);
         m_rootWidget->setSizePolicy(Widget::FixedSize);
         m_rootWidget->setSize(m_windowWidth, m_windowHeight);
+        dirty();
     }
     
     void setKeyPressedQueryHandler(std::function<bool (char key)> keyPressedQueryHander)

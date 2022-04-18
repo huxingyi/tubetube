@@ -360,7 +360,7 @@ public:
         m_shadowMap.setSize(1024, 1024);
         m_shadowMap.initialize();
         m_fontMap.initialize();
-        m_fontMap.setFont("OpenSans-Bold.ttf");
+        m_fontMap.setFont("OpenSans_Condensed-SemiBold.ttf");
         m_iconMap.initialize();
         m_iconMap.setIconBitmapSize(16);
         m_particles.initialize();
@@ -369,7 +369,6 @@ public:
         m_positionMap.initialize();
         m_idMap.setSamples(1);
         m_idMap.initialize();
-        //m_uiMap.setSamples(1);
         m_uiMap.initialize();
         m_cameraSpaceDepthMap.initialize();
 
@@ -474,13 +473,13 @@ public:
     void renderWidget(Widget *widget)
     {
         // Render background
-        //glBlendFunc(GL_ONE, GL_ZERO);
-        //m_frameShader.use();
-        //m_frameShader.setUniformColor("objectColor", widget->backgroundColor());
-        //if (Widget::RenderHint::Container & widget->renderHints())
-        //    renderFrame(widget->layoutLeft(), widget->layoutTop(), widget->layoutWidth(), widget->layoutHeight(), 0.0);
-        //else if (Widget::RenderHint::Element & widget->renderHints())
-        //    renderFrame(widget->layoutLeft(), widget->layoutTop(), widget->layoutWidth(), widget->layoutHeight(), 0.0);
+        glBlendFunc(GL_ONE, GL_ZERO);
+        m_frameShader.use();
+        m_frameShader.setUniformColor("objectColor", widget->backgroundColor());
+        if (Widget::RenderHint::Container & widget->renderHints())
+            renderFrame(widget->layoutLeft(), widget->layoutTop(), widget->layoutWidth(), widget->layoutHeight(), 0.0);
+        else if (Widget::RenderHint::Element & widget->renderHints())
+            renderFrame(widget->layoutLeft(), widget->layoutTop(), widget->layoutWidth(), widget->layoutHeight(), 0.0);
 
         // Render button
         if (Widget::RenderHint::Button & widget->renderHints()) {

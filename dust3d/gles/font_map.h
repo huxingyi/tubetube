@@ -308,7 +308,7 @@ private:
             if (nullptr == clip)
                 continue;
             shape.normalize();
-            auto bounds = shape.getBounds();
+            auto bounds = shape.getBounds(3.0);
             clip->advanceX = advanceX;
             clip->bitmapLeft = bounds.l;
             clip->bitmapBottomMove = -bounds.b;

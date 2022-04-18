@@ -36,7 +36,7 @@ public:
         m_heightPolicy = SizePolicy::FixedSize;
         m_height = 16.0;
         m_widthPolicy = SizePolicy::FixedSize;
-        m_width = 600.0;
+        m_width = 120.0;
         m_renderHints = RenderHint::Element | RenderHint::Button;
     }
     

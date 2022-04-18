@@ -485,7 +485,7 @@ int main(int argc, char* argv[])
     toolBoxWidget->addSpacing(5.0);
     auto openReferenceSheetButton = std::make_unique<Button>();
     openReferenceSheetButton->setBackgroundColor(Color("#fc6621"));
-    openReferenceSheetButton->setColor(Color("#ffffff")); //f7d9c8
+    openReferenceSheetButton->setColor(Color("#000000")); //f7d9c8
     openReferenceSheetButton->setText("Open Image..");
     openReferenceSheetButton->setIcon("toolbar_pointer.svg");
     toolBoxWidget->addWidget(std::move(openReferenceSheetButton));
@@ -499,7 +499,7 @@ int main(int argc, char* argv[])
     
     auto mainLayout = std::make_unique<Widget>();
     mainLayout->setLayoutDirection(Widget::LayoutDirection::TopToBottom);
-    mainLayout->addSpacing(5.0);
+    mainLayout->addSpacing(50.0);
     mainLayout->addWidget(std::move(toolBoxWidget));
     
     //IndieGameEngine::indie()->rootWidget()->addSpacing(5.0);

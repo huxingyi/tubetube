@@ -360,9 +360,9 @@ public:
         m_shadowMap.setSize(1024, 1024);
         m_shadowMap.initialize();
         m_fontMap.initialize();
-        m_fontMap.setFont("abel/abel-regular.ttf", 12);
+        m_fontMap.setFont("OpenSans-Bold.ttf");
         m_iconMap.initialize();
-        m_iconMap.setIconBitmapSize(64);
+        m_iconMap.setIconBitmapSize(16);
         m_particles.initialize();
         m_cameraSpaceColorMap.initialize();
         m_positionMap.setSamples(1);
@@ -466,6 +466,7 @@ public:
     {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, m_iconMap.textureId());
+        glUniform1i(m_iconMap.shader().getUniformLocation("iconMap"), 0);
         m_iconMap.renderSvg(icon, left, m_windowHeight - (top + height), height, height);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
@@ -473,28 +474,26 @@ public:
     void renderWidget(Widget *widget)
     {
         // Render background
-        glBlendFunc(GL_ONE, GL_ZERO);
-        m_frameShader.use();
-        m_frameShader.setUniformColor("objectColor", widget->backgroundColor());
-        if (Widget::RenderHint::Container & widget->renderHints())
-            renderFrame(widget->layoutLeft(), widget->layoutTop(), widget->layoutWidth(), widget->layoutHeight(), 8.0);
-        else if (Widget::RenderHint::Element & widget->renderHints())
-            renderFrame(widget->layoutLeft(), widget->layoutTop(), widget->layoutWidth(), widget->layoutHeight(), 4.0);
+        //glBlendFunc(GL_ONE, GL_ZERO);
+        //m_frameShader.use();
+        //m_frameShader.setUniformColor("objectColor", widget->backgroundColor());
+        //if (Widget::RenderHint::Container & widget->renderHints())
+        //    renderFrame(widget->layoutLeft(), widget->layoutTop(), widget->layoutWidth(), widget->layoutHeight(), 0.0);
+        //else if (Widget::RenderHint::Element & widget->renderHints())
+        //    renderFrame(widget->layoutLeft(), widget->layoutTop(), widget->layoutWidth(), widget->layoutHeight(), 0.0);
 
         // Render button
         if (Widget::RenderHint::Button & widget->renderHints()) {
             Button *button = dynamic_cast<Button *>(widget);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            m_fontMap.shader().use();
-            auto textSize = m_fontMap.measureString(button->text());
-            double padding = textSize.second * 0.3;
+            double padding = widget->layoutHeight() * 0.3;
             double leftOffset = padding;
             if (!button->icon().empty()) {
-                double iconSize = textSize.second;
-                m_fontMap.shader().use();
-                m_fontMap.shader().setUniformColor("objectColor", widget->color());
+                double iconSize = widget->layoutHeight();
+                m_iconMap.shader().use();
+                m_iconMap.shader().setUniformColor("objectColor", widget->color());
                 renderIcon(button->icon(), widget->layoutLeft() + leftOffset, widget->layoutTop() + (widget->layoutHeight() - iconSize) * 0.5, iconSize);
-                leftOffset += textSize.second + padding;
+                leftOffset += iconSize + padding;
             }
             m_fontMap.shader().use();
             m_fontMap.shader().setUniformColor("objectColor", widget->color());
@@ -712,7 +711,6 @@ public:
                 
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, m_fontMap.textureId());
-                glUniform1i(m_fontMap.shader().getUniformLocation("fontMap"), 0);
                 m_fontMap.shader().setUniformMatrix("projectionMatrix", m_screenProjectionMatrix);
                 //glUniform4f(m_fontMap.shader().getUniformLocation("objectColor"), 1.0, 0.0, 0.0, 1.0);
                 
@@ -722,13 +720,9 @@ public:
                 
                 glBindTexture(GL_TEXTURE_2D, 0);
                 
-                //glBindTexture(GL_TEXTURE_2D, m_iconMap.textureId());
-                //glUniform4f(m_fontMap.shader().getUniformLocation("objectColor"), 0.0, 0.0, 0.0, 1.0);
-                //m_iconMap.setIconBitmapSize(64);
-                //m_iconMap.renderSvg("toolbar_add.svg", 10.0, m_windowHeight - 13, 13, 13);
-                //glBindTexture(GL_TEXTURE_2D, 0);
-                
                 if (nullptr != m_rootWidget) {
+                    m_iconMap.shader().use();
+                    m_iconMap.shader().setUniformMatrix("projectionMatrix", m_screenProjectionMatrix);
                     m_frameShader.use();
                     m_frameShader.setUniformMatrix("projectionMatrix", m_screenProjectionMatrix);
                     m_rootWidget->layout();

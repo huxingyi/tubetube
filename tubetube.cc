@@ -85,7 +85,7 @@ static HWND createWindow(int width, int height) {
 
     RegisterClassEx(&wcex);
     RECT rect = { 0, 0, width, height };
-    int style = WS_BORDER | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME;
+    int style = WS_BORDER | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_OVERLAPPEDWINDOW/* | WS_MAXIMIZE*/;
     AdjustWindowRect(&rect, style, FALSE);
 
     HWND hwnd = CreateWindow("eglsamplewnd", 
@@ -396,6 +396,8 @@ public:
 
 int main(int argc, char* argv[])
 {
+    SetProcessDPIAware(); // Avoid window scaling
+    
     windowHandle = createWindow(windowWidth, windowHeight);
     HDC hdc = GetDC(windowHandle);
 
@@ -409,9 +411,9 @@ int main(int argc, char* argv[])
     eglInitialize(eglDisplay, &eglVersionMajor, &eglVersionMinor);
     
     EGLint configAttributes[] = {
-        EGL_RED_SIZE,       5,
-        EGL_GREEN_SIZE,     6,
-        EGL_BLUE_SIZE,      5,
+        EGL_RED_SIZE,       8,
+        EGL_GREEN_SIZE,     8,
+        EGL_BLUE_SIZE,      8,
         EGL_ALPHA_SIZE,     8,
         EGL_DEPTH_SIZE,     24,
         EGL_STENCIL_SIZE,   8,
@@ -452,6 +454,7 @@ int main(int argc, char* argv[])
     IndieGameEngine::indie()->setWindowSize(static_cast<double>(windowWidth), static_cast<double>(windowHeight));
     IndieGameEngine::indie()->setVertexBufferListLoadHandler(loadResouceVertexBufferList);
     //IndieGameEngine::indie()->setKeyPressedQueryHandler(queryKeyPressed);
+
     {
         Matrix4x4 modelMatrix;
         IndieGameEngine::indie()->addObject("defaultGround", "Ground", modelMatrix, IndieGameEngine::RenderType::Ground);
@@ -473,7 +476,6 @@ int main(int argc, char* argv[])
         playerState->followedByCamera = true;
         IndieGameEngine::indie()->addLocationState("palyer0", std::move(playerState));
     }
-    
     IndieGameEngine::indie()->addGeneralState("", std::make_unique<WorldState>());
     
     IndieGameEngine::indie()->setBackgroundColor(Color("#252525"));
@@ -483,9 +485,9 @@ int main(int argc, char* argv[])
     toolBoxWidget->addSpacing(5.0);
     auto openReferenceSheetButton = std::make_unique<Button>();
     openReferenceSheetButton->setBackgroundColor(Color("#fc6621"));
-    openReferenceSheetButton->setColor(Color("#000000")); //f7d9c8
-    openReferenceSheetButton->setText("Open Reference Image..");
-    openReferenceSheetButton->setIcon("toolbar_add.svg");
+    openReferenceSheetButton->setColor(Color("#ffffff")); //f7d9c8
+    openReferenceSheetButton->setText("Open Image..");
+    openReferenceSheetButton->setIcon("toolbar_pointer.svg");
     toolBoxWidget->addWidget(std::move(openReferenceSheetButton));
     toolBoxWidget->addExpanding(0.5);
     toolBoxWidget->addSpacing(5.0);

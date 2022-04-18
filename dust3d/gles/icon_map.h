@@ -47,6 +47,16 @@ public:
     
     void initialize()
     {
+        if (nullptr == m_shader) {
+            const GLchar *vertexShaderSource =
+                #include <dust3d/gles/shaders/icon.vert>
+                ;
+            const GLchar *fragmentShaderSource = 
+                #include <dust3d/gles/shaders/icon.frag>
+                ;
+            m_shader = std::unique_ptr<Shader>(new Shader(vertexShaderSource, fragmentShaderSource));
+        }
+        
         if (0 == m_textureId) {
             GLint lastTextureId = 0;
             glGetIntegerv(GL_TEXTURE_BINDING_2D, &lastTextureId);
@@ -135,10 +145,16 @@ public:
         glDisableVertexAttribArray(0);
     }
     
+    Shader &shader()
+    {
+        return *m_shader;
+    }
+    
 private:
     GLuint m_textureWidth = 1024;
     GLuint m_textureHeight = 1024;
     GLuint m_textureId = 0;
+    std::unique_ptr<Shader> m_shader;
     int m_iconBitmapSize = 0;
     int m_columns = 0;
     int m_rows = 0;

@@ -51,6 +51,7 @@ public:
         FixedSize = 0x00000001,
         RelativeSize = 0x00000002,
         FlexibleSize = 0x00000004,
+        MinimalSize = 0x00000008,
     };
     
     enum RenderHint
@@ -129,6 +130,14 @@ public:
         if (m_layoutDirection == layoutDirection)
             return;
         m_layoutDirection = layoutDirection;
+        switch (m_layoutDirection) {
+        case LayoutDirection::LeftToRight:
+            setHeightPolicy(SizePolicy::MinimalSize);
+            break;
+        case LayoutDirection::TopToBottom:
+            setWidthPolicy(SizePolicy::MinimalSize);
+            break;
+        }
         m_layoutChanged = true;
     }
     
@@ -277,14 +286,19 @@ public:
         }
     }
     
-    void layoutSize()
+    void layoutSizeBottomUp()
     {
+        for (auto &widget: m_children)
+            widget->layoutSizeBottomUp();
+        
         switch (m_widthPolicy) {
         case SizePolicy::FixedSize:
             m_layoutWidth = m_width;
             break;
-        case SizePolicy::RelativeSize:
-            m_layoutWidth = parentLayoutWidth() * m_width;
+        case SizePolicy::MinimalSize:
+            m_layoutWidth = 0;
+            for (auto &widget: m_children)
+                m_layoutWidth = std::max(m_layoutWidth, widget->layoutWidth());
             break;
         }
         
@@ -292,13 +306,30 @@ public:
         case SizePolicy::FixedSize:
             m_layoutHeight = m_height;
             break;
+        case SizePolicy::MinimalSize:
+            m_layoutHeight = 0;
+            for (auto &widget: m_children)
+                m_layoutHeight = std::max(m_layoutHeight, widget->layoutHeight());
+            break;
+        }
+    }
+    
+    void layoutSizeTopDown()
+    {
+        switch (m_widthPolicy) {
+        case SizePolicy::RelativeSize:
+            m_layoutWidth = parentLayoutWidth() * m_width;
+            break;
+        }
+        
+        switch (m_heightPolicy) {
         case SizePolicy::RelativeSize:
             m_layoutHeight = parentLayoutHeight() * m_height;
             break;
         }
         
         for (auto &widget: m_children)
-            widget->layoutSize();
+            widget->layoutSizeTopDown();
         
         layoutExpandingChildrenSize();
     }
@@ -333,7 +364,8 @@ public:
         if (!m_layoutChanged)
             return;
         
-        layoutSize();
+        layoutSizeBottomUp();
+        layoutSizeTopDown();
         layoutLocation();
         
         m_layoutChanged = false;
@@ -378,9 +410,21 @@ public:
         return m_layoutChanged;
     }
     
+    const std::string &backgroundImageResourceName() const
+    {
+        return m_backgroundImageResourceName;
+    }
+    
+    void setBackgroundImageResourceName(const std::string &name)
+    {
+        if (m_backgroundImageResourceName == name)
+            return;
+        m_backgroundImageResourceName = name;
+    }
+    
 protected:
     double m_width = 1.0;
-    double m_height = 1.0;
+    double m_height = 0.0;
     double m_layoutLeft = 0.0;
     double m_layoutTop = 0.0;
     double m_layoutWidth = 0.0;
@@ -391,9 +435,10 @@ protected:
     uint64_t m_renderHints = 0;
     Color m_backgroundColor;
     Color m_color;
+    std::string m_backgroundImageResourceName;
     LayoutDirection m_layoutDirection = LayoutDirection::LeftToRight;
     SizePolicy m_widthPolicy = SizePolicy::RelativeSize;
-    SizePolicy m_heightPolicy = SizePolicy::RelativeSize;
+    SizePolicy m_heightPolicy = SizePolicy::MinimalSize;
     std::vector<std::unique_ptr<Widget>> m_children;
 };
 

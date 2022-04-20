@@ -141,7 +141,7 @@ void main()
     float border = depthDiff();
     color = mix(color, vec3(0.45, 0.31, 0.15), border * (1.0 - depth));
     vec4 uiColor = texture(uiMap, pointTexCoords).rgba;
-    color = uiColor.rgb + color.rgb * (1.0 - uiColor.a);
+    color = uiColor.rgb * uiColor.a + color.rgb * (1.0 - uiColor.a);
     //fragColor = vec4(vec3(foam()), 1.0);
     fragColor = vec4(color, 1.0);
     //fragColor = texture(idMap, pointTexCoords);

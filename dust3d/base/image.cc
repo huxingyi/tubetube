@@ -20,56 +20,6 @@
  *  SOFTWARE.
  */
 
-#ifndef DUST3D_WIDGET_BUTTON_H_
-#define DUST3D_WIDGET_BUTTON_H_
-
-#include <dust3d/widget/widget.h>
-
-namespace dust3d
-{
-    
-class Button: public Widget
-{
-public:
-    Button()
-    {
-        m_heightPolicy = SizePolicy::FixedSize;
-        m_height = 16.0;
-        m_widthPolicy = SizePolicy::FixedSize;
-        m_width = 420.0;
-        m_renderHints = RenderHint::Element | RenderHint::Button;
-    }
-    
-    void setIcon(const std::string &icon)
-    {
-        if (m_icon == icon)
-            return;
-        m_icon = icon;
-    }
-    
-    void setText(const std::string &text)
-    {
-        if (m_text == text)
-            return;
-        m_text = text;
-    }
-    
-    const std::string &icon()
-    {
-        return m_icon;
-    }
-    
-    const std::string &text()
-    {
-        return m_text;
-    }
-    
-private:
-    std::string m_icon;
-    std::string m_text;
-};
-
-}
-
-#endif
-
+#include <dust3d/base/image.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include <third_party/stb/stb_image.h>

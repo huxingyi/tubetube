@@ -40,6 +40,7 @@
 #include <dust3d/gles/depth_map.h>
 #include <dust3d/gles/font_map.h>
 #include <dust3d/gles/icon_map.h>
+#include <dust3d/gles/image_map.h>
 #include <dust3d/gles/particles.h>
 
 namespace dust3d
@@ -298,9 +299,9 @@ public:
                 #include <dust3d/gles/shaders/quad.vert>
                 ;
             const GLchar *fragmentShaderSource = 
-                #include <dust3d/gles/shaders/debug-quad.frag>
+                #include <dust3d/gles/shaders/quad.frag>
                 ;
-            m_debugQuadShader = Shader(vertexShaderSource, fragmentShaderSource);
+            m_quadShader = Shader(vertexShaderSource, fragmentShaderSource);
         }
         {
             const GLchar *vertexShaderSource =
@@ -363,6 +364,7 @@ public:
         m_fontMap.setFont("OpenSans_Condensed-SemiBold.ttf");
         m_iconMap.initialize();
         m_iconMap.setIconBitmapSize(16);
+        m_imageMap.initialize();
         m_particles.initialize();
         m_cameraSpaceColorMap.initialize();
         m_positionMap.setSamples(1);
@@ -380,10 +382,10 @@ public:
         glViewport(0, 0, m_windowWidth, m_windowHeight);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        m_debugQuadShader.use();
+        m_quadShader.use();
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textureId);
-        glUniform1i(m_debugQuadShader.getUniformLocation("debugMap"), 0);
+        glUniform1i(m_quadShader.getUniformLocation("colorMap"), 0);
         drawVertexBuffer(m_quadBuffer);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
@@ -480,7 +482,13 @@ public:
             renderFrame(widget->layoutLeft(), widget->layoutTop(), widget->layoutWidth(), widget->layoutHeight(), 0.0);
         else if (Widget::RenderHint::Element & widget->renderHints())
             renderFrame(widget->layoutLeft(), widget->layoutTop(), widget->layoutWidth(), widget->layoutHeight(), 0.0);
-
+        
+        const auto &backgroundImageResourceName = widget->backgroundImageResourceName();
+        if (!backgroundImageResourceName.empty()) {
+            m_imageMap.shader().use();
+            m_imageMap.renderImage(backgroundImageResourceName, widget->layoutLeft(), widget->layoutTop(), widget->layoutWidth(), widget->layoutHeight());
+        }
+        
         // Render button
         if (Widget::RenderHint::Button & widget->renderHints()) {
             Button *button = dynamic_cast<Button *>(widget);
@@ -724,6 +732,8 @@ public:
                     m_iconMap.shader().setUniformMatrix("projectionMatrix", m_screenProjectionMatrix);
                     m_frameShader.use();
                     m_frameShader.setUniformMatrix("projectionMatrix", m_screenProjectionMatrix);
+                    m_imageMap.shader().use();
+                    m_imageMap.shader().setUniformMatrix("projectionMatrix", m_screenProjectionMatrix);
                     m_rootWidget->layout();
                     renderWidget(m_rootWidget.get());
                 }
@@ -921,7 +931,7 @@ private:
     Shader m_modelShader;
     Shader m_singleColorShader;
     Shader m_lightShader;
-    Shader m_debugQuadShader;
+    Shader m_quadShader;
     Shader m_postProcessingShader;
     Shader m_positionShader;
     Shader m_idShader;
@@ -932,6 +942,7 @@ private:
     DepthMap m_cameraSpaceDepthMap;
     FontMap m_fontMap;
     IconMap m_iconMap;
+    ImageMap m_imageMap;
     ColorMap m_cameraSpaceColorMap;
     ColorMap m_uiMap;
     ColorMap m_positionMap;

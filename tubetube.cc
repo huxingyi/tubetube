@@ -1,5 +1,6 @@
 #define NOMINMAX
 #include <dust3d/base/matrix4x4.h>
+#include <dust3d/base/image.h>
 #include <dust3d/gles/vertex_buffer.h>
 #include <dust3d/gles/vertex_buffer_utils.h>
 #include <dust3d/gles/indie_game_engine.h>
@@ -454,7 +455,7 @@ int main(int argc, char* argv[])
     IndieGameEngine::indie()->setWindowSize(static_cast<double>(windowWidth), static_cast<double>(windowHeight));
     IndieGameEngine::indie()->setVertexBufferListLoadHandler(loadResouceVertexBufferList);
     //IndieGameEngine::indie()->setKeyPressedQueryHandler(queryKeyPressed);
-
+    
     {
         Matrix4x4 modelMatrix;
         IndieGameEngine::indie()->addObject("defaultGround", "Ground", modelMatrix, IndieGameEngine::RenderType::Ground);
@@ -497,14 +498,26 @@ int main(int argc, char* argv[])
     toolBoxWidget->addSpacing(5.0);
     toolBoxWidget->addExpanding(1.5);
     
+    auto logoWidget = std::make_unique<Widget>();
+    logoWidget->setSizePolicy(Widget::SizePolicy::FixedSize);
+    logoWidget->setWidth(25.0);
+    logoWidget->setHeight(71.0);
+    logoWidget->setBackgroundImageResourceName("dust3d-vertical.png");
+    
     auto mainLayout = std::make_unique<Widget>();
     mainLayout->setLayoutDirection(Widget::LayoutDirection::TopToBottom);
-    mainLayout->addSpacing(50.0);
+    mainLayout->setHeightPolicy(Widget::SizePolicy::RelativeSize);
+    mainLayout->setHeight(1.0);
+    mainLayout->addExpanding();
+    mainLayout->addSpacing(5.0);
     mainLayout->addWidget(std::move(toolBoxWidget));
+    mainLayout->addWidget(std::move(logoWidget));
+    mainLayout->addSpacing(5.0);
+    mainLayout->addExpanding();
     
     //IndieGameEngine::indie()->rootWidget()->addSpacing(5.0);
     IndieGameEngine::indie()->rootWidget()->addWidget(std::move(mainLayout));
-
+    
     SetTimer(windowHandle, 1, 1000 / 300, updateTimer);
     SetTimer(windowHandle, 2, 1000 / 60, renderTimer);
     while (!quit)  {

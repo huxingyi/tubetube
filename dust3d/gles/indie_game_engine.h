@@ -486,7 +486,14 @@ public:
         const auto &backgroundImageResourceName = widget->backgroundImageResourceName();
         if (!backgroundImageResourceName.empty()) {
             m_imageMap.shader().use();
-            m_imageMap.renderImage(backgroundImageResourceName, widget->layoutLeft(), widget->layoutTop(), widget->layoutWidth(), widget->layoutHeight());
+            glUniform1f(m_imageMap.shader().getUniformLocation("opacity"), widget->backgroundImageOpacity());
+            m_imageMap.renderImage(backgroundImageResourceName, [](const std::string &name) {
+                    auto image = std::make_unique<Image>();
+                    if (!image->load(name.c_str())) {
+                        return (std::unique_ptr<Image>)nullptr;
+                    }
+                    return std::move(image);
+                }, widget->layoutLeft(), m_windowHeight - (widget->layoutTop() + widget->layoutHeight()), widget->layoutWidth(), widget->layoutHeight());
         }
         
         // Render button

@@ -30,7 +30,7 @@ auto rand01 = std::bind(randomReal, randomEngine);
 
 using namespace dust3d;
 
-static LRESULT CALLBACK wndProc(HWND hwnd, unsigned int msg, WPARAM wParam, LPARAM lParam) {
+static LRESULT CALLBACK windowMessageHandler(HWND hwnd, unsigned int msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
         case WM_CLOSE : {
                 quit = true;
@@ -72,7 +72,6 @@ static HWND createWindow(int width, int height) {
     
     wcex.cbSize = sizeof(WNDCLASSEX);
     wcex.style = CS_OWNDC;
-    wcex.lpfnWndProc = &DefWindowProc;
     wcex.cbClsExtra = 0;
     wcex.cbWndExtra = 0;
     wcex.hInstance = hInstance;
@@ -82,7 +81,7 @@ static HWND createWindow(int width, int height) {
     wcex.lpszMenuName = NULL;
     wcex.lpszClassName = "eglsamplewnd";
     wcex.hIconSm = NULL;
-    wcex.lpfnWndProc = wndProc;
+    wcex.lpfnWndProc = windowMessageHandler;
 
     RegisterClassEx(&wcex);
     RECT rect = { 0, 0, width, height };
@@ -456,6 +455,7 @@ int main(int argc, char* argv[])
     IndieGameEngine::indie()->setVertexBufferListLoadHandler(loadResouceVertexBufferList);
     //IndieGameEngine::indie()->setKeyPressedQueryHandler(queryKeyPressed);
     
+    /*
     {
         Matrix4x4 modelMatrix;
         IndieGameEngine::indie()->addObject("defaultGround", "Ground", modelMatrix, IndieGameEngine::RenderType::Ground);
@@ -478,13 +478,16 @@ int main(int argc, char* argv[])
         IndieGameEngine::indie()->addLocationState("palyer0", std::move(playerState));
     }
     IndieGameEngine::indie()->addGeneralState("", std::make_unique<WorldState>());
+    */
     
     IndieGameEngine::indie()->setBackgroundColor(Color("#252525"));
     
     auto toolBoxWidget = std::make_unique<Widget>();
+    toolBoxWidget->setName("toolBoxWidget");
     toolBoxWidget->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
     toolBoxWidget->addSpacing(5.0);
     auto openReferenceSheetButton = std::make_unique<Button>();
+    openReferenceSheetButton->setName("openReferenceSheetButton");
     openReferenceSheetButton->setBackgroundColor(Color("#fc6621"));
     openReferenceSheetButton->setColor(Color("#000000")); //f7d9c8
     openReferenceSheetButton->setText("Open Image..");
@@ -498,24 +501,43 @@ int main(int argc, char* argv[])
     toolBoxWidget->addSpacing(5.0);
     toolBoxWidget->addExpanding(1.5);
     
+    auto backgroundImageWidget = std::make_unique<Widget>();
+    backgroundImageWidget->setName("backgroundImageWidget");
+    backgroundImageWidget->setHeightPolicy(Widget::SizePolicy::RelativeSize);
+    backgroundImageWidget->setHeight(1.0);
+    backgroundImageWidget->setWidthPolicy(Widget::SizePolicy::FlexibleSize);
+    backgroundImageWidget->setExpandingWeight(1.0);
+    backgroundImageWidget->setBackgroundImageResourceName("reference-image.jpg");
+    backgroundImageWidget->setBackgroundImageOpacity(0.25);
+    
     auto logoWidget = std::make_unique<Widget>();
+    logoWidget->setName("logoWidget");
     logoWidget->setSizePolicy(Widget::SizePolicy::FixedSize);
     logoWidget->setWidth(25.0);
     logoWidget->setHeight(71.0);
     logoWidget->setBackgroundImageResourceName("dust3d-vertical.png");
     
+    auto leftBarLayout = std::make_unique<Widget>();
+    leftBarLayout->setName("leftBarLayout");
+    leftBarLayout->setLayoutDirection(Widget::LayoutDirection::TopToBottom);
+    leftBarLayout->setHeightPolicy(Widget::SizePolicy::RelativeSize);
+    leftBarLayout->setHeight(1.0);
+    leftBarLayout->addExpanding();
+    leftBarLayout->addSpacing(5.0);
+    //leftBarLayout->addWidget(std::move(toolBoxWidget));
+    leftBarLayout->addWidget(std::move(logoWidget));
+    leftBarLayout->addSpacing(5.0);
+    
     auto mainLayout = std::make_unique<Widget>();
-    mainLayout->setLayoutDirection(Widget::LayoutDirection::TopToBottom);
+    mainLayout->setName("mainLayout");
+    mainLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
     mainLayout->setHeightPolicy(Widget::SizePolicy::RelativeSize);
     mainLayout->setHeight(1.0);
-    mainLayout->addExpanding();
-    mainLayout->addSpacing(5.0);
-    mainLayout->addWidget(std::move(toolBoxWidget));
-    mainLayout->addWidget(std::move(logoWidget));
-    mainLayout->addSpacing(5.0);
-    mainLayout->addExpanding();
+    mainLayout->addWidget(std::move(leftBarLayout));
+    mainLayout->addWidget(std::move(backgroundImageWidget));
     
     //IndieGameEngine::indie()->rootWidget()->addSpacing(5.0);
+    IndieGameEngine::indie()->rootWidget()->setName("rootWidget");
     IndieGameEngine::indie()->rootWidget()->addWidget(std::move(mainLayout));
     
     SetTimer(windowHandle, 1, 1000 / 300, updateTimer);

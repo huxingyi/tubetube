@@ -23,6 +23,7 @@
 #ifndef DUST3D_WIDGET_WIDGET_H_
 #define DUST3D_WIDGET_WIDGET_H_
 
+#include <format>
 #include <dust3d/base/math.h>
 #include <dust3d/base/color.h>
 
@@ -60,6 +61,20 @@ public:
         Element = 0x00000002,
         Button = 0x00000004,
     };
+    
+    std::string SizePolicyToString(SizePolicy sizePolicy)
+    {
+        std::string string;
+        if (sizePolicy & FixedSize)
+            string += "FixedSize ";
+        if (sizePolicy & RelativeSize)
+            string += "RelativeSize ";
+        if (sizePolicy & FlexibleSize)
+            string += "FlexibleSize ";
+        if (sizePolicy & MinimalSize)
+            string += "MinimalSize ";
+        return string;
+    }
 
     const double &width() const
     {
@@ -125,6 +140,11 @@ public:
         setHeight(height);
     }
     
+    void setSize(double size)
+    {
+        setSize(size, size);
+    }
+    
     void setLayoutDirection(LayoutDirection layoutDirection)
     {
         if (m_layoutDirection == layoutDirection)
@@ -159,6 +179,7 @@ public:
     void addSpacing(double fixedSize)
     {
         auto widget = std::make_unique<Widget>();
+        widget->setName(std::format("Spacing {}", fixedSize));
         widget->setSizePolicy(SizePolicy::FixedSize);
         widget->setSize(fixedSize, fixedSize);
         addWidget(std::move(widget));
@@ -167,6 +188,7 @@ public:
     void addExpanding(double weight=1.0)
     {
         auto widget = std::make_unique<Widget>();
+        widget->setName(std::format("Expanding {}", weight));
         widget->setSizePolicy(SizePolicy::FlexibleSize);
         widget->setExpandingWeight(weight);
         addWidget(std::move(widget));
@@ -255,11 +277,13 @@ public:
             }
             break;
         case LayoutDirection::TopToBottom:
+            //std::cout << "layoutExpandingChildrenSize [" << name() << "] TopToBottom layoutHeight:" << layoutHeight() << std::endl;
             for (const auto &widget: m_children) {
                 if (SizePolicy::FlexibleSize == widget->heightPolicy()) {
                     totalExpandingWeights += widget->expandingWeight();
                     continue;
                 }
+                //std::cout << "    [" << widget->name() << "] layoutHeight:" << widget->layoutHeight() << " heightPolicy:" << SizePolicyToString(widget->heightPolicy()) << std::endl;
                 usedSize += widget->layoutHeight();
             }
             break;
@@ -277,6 +301,7 @@ public:
             }
             break;
         case LayoutDirection::TopToBottom:
+            
             expandingSize = (m_layoutHeight - usedSize) / totalExpandingWeights;
             for (auto &widget: m_children) {
                 if (SizePolicy::FlexibleSize == widget->heightPolicy())
@@ -286,30 +311,46 @@ public:
         }
     }
     
-    void layoutSizeBottomUp()
+    void layoutSizeFixed()
     {
-        for (auto &widget: m_children)
-            widget->layoutSizeBottomUp();
-        
         switch (m_widthPolicy) {
         case SizePolicy::FixedSize:
             m_layoutWidth = m_width;
-            break;
-        case SizePolicy::MinimalSize:
-            m_layoutWidth = 0;
-            for (auto &widget: m_children)
-                m_layoutWidth = std::max(m_layoutWidth, widget->layoutWidth());
+            //std::cout << "layoutSizeFixed    [" << name() << "] m_layoutWidth:" << m_layoutWidth << " widthPolicy:" << SizePolicyToString(widthPolicy()) << std::endl;
             break;
         }
         
         switch (m_heightPolicy) {
         case SizePolicy::FixedSize:
             m_layoutHeight = m_height;
+            //std::cout << "layoutSizeFixed    [" << name() << "] m_layoutHeight:" << m_layoutHeight << " heightPolicy:" << SizePolicyToString(heightPolicy()) << std::endl;
             break;
+        }
+        
+        for (auto &widget: m_children)
+            widget->layoutSizeFixed();
+    }
+    
+    void layoutSizeBottomUp()
+    {
+        for (auto &widget: m_children)
+            widget->layoutSizeBottomUp();
+        
+        switch (m_widthPolicy) {
+        case SizePolicy::MinimalSize:
+            m_layoutWidth = 0;
+            for (auto &widget: m_children)
+                m_layoutWidth = std::max(m_layoutWidth, widget->layoutWidth());
+            //std::cout << "layoutSizeBottomUp    [" << name() << "] m_layoutWidth:" << m_layoutWidth << " widthPolicy:" << SizePolicyToString(widthPolicy()) << std::endl;
+            break;
+        }
+        
+        switch (m_heightPolicy) {
         case SizePolicy::MinimalSize:
             m_layoutHeight = 0;
             for (auto &widget: m_children)
                 m_layoutHeight = std::max(m_layoutHeight, widget->layoutHeight());
+            //std::cout << "layoutSizeBottomUp    [" << name() << "] m_layoutHeight:" << m_layoutHeight << " heightPolicy:" << SizePolicyToString(heightPolicy()) << std::endl;
             break;
         }
     }
@@ -319,12 +360,14 @@ public:
         switch (m_widthPolicy) {
         case SizePolicy::RelativeSize:
             m_layoutWidth = parentLayoutWidth() * m_width;
+            //std::cout << "layoutSizeTopDown    [" << name() << "] m_layoutWidth:" << m_layoutWidth << " widthPolicy:" << SizePolicyToString(widthPolicy()) << std::endl;
             break;
         }
         
         switch (m_heightPolicy) {
         case SizePolicy::RelativeSize:
             m_layoutHeight = parentLayoutHeight() * m_height;
+            //std::cout << "layoutSizeTopDown    [" << name() << "] m_layoutHeight:" << m_layoutHeight << " heightPolicy:" << SizePolicyToString(heightPolicy()) << std::endl;
             break;
         }
         
@@ -340,16 +383,20 @@ public:
         double layoutTop = m_layoutTop;
         switch (m_layoutDirection) {
         case LayoutDirection::LeftToRight:
+            //std::cout << "[" << name() << "] LeftToRight:" << std::endl;
             for (auto &widget: m_children) {
                 widget->setLayoutTop(layoutTop);
                 widget->setLayoutLeft(layoutLeft);
+                //std::cout << "    [" << widget->name() << "] layoutWidth:" << widget->layoutWidth() << std::endl;
                 layoutLeft += widget->layoutWidth();
             }
             break;
         case LayoutDirection::TopToBottom:
+            //std::cout << "[" << name() << "] TopToBottom:" << std::endl;
             for (auto &widget: m_children) {
                 widget->setLayoutLeft(layoutLeft);
                 widget->setLayoutTop(layoutTop);
+                //std::cout << "    [" << widget->name() << "] layoutHeight:" << widget->layoutHeight() << " heightPolicy:" << SizePolicyToString(widget->heightPolicy()) << std::endl;
                 layoutTop += widget->layoutHeight();
             }
             break;
@@ -364,6 +411,7 @@ public:
         if (!m_layoutChanged)
             return;
         
+        layoutSizeFixed();
         layoutSizeBottomUp();
         layoutSizeTopDown();
         layoutLocation();
@@ -422,6 +470,30 @@ public:
         m_backgroundImageResourceName = name;
     }
     
+    const double &backgroundImageOpacity() const
+    {
+        return m_backgroundImageOpacity;
+    }
+    
+    void setBackgroundImageOpacity(double opacity)
+    {
+        if (Math::isEqual(m_backgroundImageOpacity, opacity))
+            return;
+        m_backgroundImageOpacity = opacity;
+    }
+    
+    const std::string &name() const
+    {
+        return m_name;
+    }
+    
+    void setName(const std::string &name)
+    {
+        if (m_name == name)
+            return;
+        m_name = name;
+    }
+    
 protected:
     double m_width = 1.0;
     double m_height = 0.0;
@@ -435,7 +507,9 @@ protected:
     uint64_t m_renderHints = 0;
     Color m_backgroundColor;
     Color m_color;
+    std::string m_name;
     std::string m_backgroundImageResourceName;
+    double m_backgroundImageOpacity = 1.0;
     LayoutDirection m_layoutDirection = LayoutDirection::LeftToRight;
     SizePolicy m_widthPolicy = SizePolicy::RelativeSize;
     SizePolicy m_heightPolicy = SizePolicy::MinimalSize;

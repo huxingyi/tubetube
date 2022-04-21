@@ -50,9 +50,9 @@ public:
         }
     }
     
-    void renderImage(const std::string &resourceName, double left, double top, double width, double height)
+    void renderImage(const std::string &resourceName, std::function<std::unique_ptr<Image> (const std::string &)> resourceLoader, double left, double top, double width, double height)
     {
-        GLint imageTextureId = toTexture(resourceName);
+        GLint imageTextureId = toTexture(resourceName, resourceLoader);
         if (0 == imageTextureId)
             return;
         
@@ -120,17 +120,15 @@ private:
     std::map<std::string, Cache> m_caches;
     std::unique_ptr<Shader> m_shader;
     
-    GLint toTexture(const std::string &resourceName)
+    GLint toTexture(const std::string &resourceName, std::function<std::unique_ptr<Image> (const std::string &)> resourceLoader)
     {
         auto findCache = m_caches.find(resourceName);
         if (findCache != m_caches.end())
             return findCache->second.textureId;
         
-        Image image;
-        if (!image.load(resourceName.c_str())) {
-            dust3dDebug << "Load image failed, resource name:" << resourceName;
+        std::unique_ptr<Image> image = resourceLoader(resourceName);
+        if (nullptr == image)
             return 0;
-        }
         
         auto &cache = m_caches[resourceName];
         
@@ -143,7 +141,7 @@ private:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width(), image.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, image.data());
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image->width(), image->height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, image->data());
         
         glBindTexture(GL_TEXTURE_2D, lastTextureId);
         

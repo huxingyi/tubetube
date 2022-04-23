@@ -515,7 +515,7 @@ public:
         }
         
         for (auto &child: widget->children())
-            renderWidget(child.get());
+            renderWidget(child);
     }
     
     void renderScene()
@@ -728,7 +728,7 @@ public:
                 m_fontMap.shader().setUniformMatrix("projectionMatrix", m_screenProjectionMatrix);
                 //glUniform4f(m_fontMap.shader().getUniformLocation("objectColor"), 1.0, 0.0, 0.0, 1.0);
                 
-                //m_uiTaskList.update();
+                m_uiTaskList.update();
 
                 //m_fontMap.renderString(particlesIsDirty ? "Partices rendered:[" + std::to_string(m_particles.aliveElementCount()) + "]" : "Partices NOT rendered", m_windowWidth / 2.0, m_windowHeight / 2.0);
                 
@@ -917,6 +917,16 @@ public:
     void setBackgroundColor(const Color &color)
     {
         m_backgroundColor = color;
+    }
+    
+    void run(std::unique_ptr<Task> task)
+    {
+        m_uiTaskList.post(std::move(task));
+    }
+    
+    void run(std::function<void (void)> work, std::function<void (void)> after=nullptr)
+    {
+        m_uiTaskList.post(work, after);
     }
     
 private:

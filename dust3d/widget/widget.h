@@ -24,6 +24,8 @@
 #define DUST3D_WIDGET_WIDGET_H_
 
 #include <format>
+#include <map>
+#include <vector>
 #include <dust3d/base/math.h>
 #include <dust3d/base/color.h>
 
@@ -33,8 +35,18 @@ namespace dust3d
 class Widget
 {
 public:
-    Widget()
+    Widget(const std::string &id=std::string()):
+        m_id(id)
     {
+        if (m_id.empty())
+            m_id = std::format("{}_unamed", m_nextWidgetId++);
+        
+        m_widgets.insert({m_id, this});
+    }
+    
+    const std::string &id() const
+    {
+        return m_id;
     }
     
     virtual ~Widget()
@@ -169,29 +181,29 @@ public:
         m_layoutChanged = true;
     }
     
-    void addWidget(std::unique_ptr<Widget> widget)
+    void addWidget(Widget *widget)
     {
         widget->setParent(this);
-        m_children.push_back(std::move(widget));
+        m_children.push_back(widget);
         m_layoutChanged = true;
     }
     
     void addSpacing(double fixedSize)
     {
-        auto widget = std::make_unique<Widget>();
+        auto widget = new Widget;
         widget->setName(std::format("Spacing {}", fixedSize));
         widget->setSizePolicy(SizePolicy::FixedSize);
         widget->setSize(fixedSize, fixedSize);
-        addWidget(std::move(widget));
+        addWidget(widget);
     }
     
     void addExpanding(double weight=1.0)
     {
-        auto widget = std::make_unique<Widget>();
+        auto widget = new Widget;
         widget->setName(std::format("Expanding {}", weight));
         widget->setSizePolicy(SizePolicy::FlexibleSize);
         widget->setExpandingWeight(weight);
-        addWidget(std::move(widget));
+        addWidget(widget);
     }
     
     double expandingWeight() const
@@ -419,7 +431,7 @@ public:
         m_layoutChanged = false;
     }
     
-    std::vector<std::unique_ptr<Widget>> &children()
+    std::vector<Widget *> &children()
     {
         return m_children;
     }
@@ -494,6 +506,16 @@ public:
         m_name = name;
     }
     
+    static Widget *get(const std::string &id)
+    {
+        auto findWidget = m_widgets.find(id);
+        if (findWidget == m_widgets.end())
+            return nullptr;
+        return findWidget->second;
+    }
+    
+    static std::map<std::string, Widget *> m_widgets;
+    static uint64_t m_nextWidgetId;
 protected:
     double m_width = 1.0;
     double m_height = 0.0;
@@ -513,7 +535,8 @@ protected:
     LayoutDirection m_layoutDirection = LayoutDirection::LeftToRight;
     SizePolicy m_widthPolicy = SizePolicy::RelativeSize;
     SizePolicy m_heightPolicy = SizePolicy::MinimalSize;
-    std::vector<std::unique_ptr<Widget>> m_children;
+    std::vector<Widget *> m_children;
+    std::string m_id;
 };
 
 }

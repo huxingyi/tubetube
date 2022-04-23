@@ -482,63 +482,70 @@ int main(int argc, char* argv[])
     
     IndieGameEngine::indie()->setBackgroundColor(Color("#252525"));
     
-    auto toolBoxWidget = std::make_unique<Widget>();
+    auto toolBoxWidget = new Widget;
     toolBoxWidget->setName("toolBoxWidget");
     toolBoxWidget->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
     toolBoxWidget->addSpacing(5.0);
-    auto openReferenceSheetButton = std::make_unique<Button>();
+    auto openReferenceSheetButton = new Button;
     openReferenceSheetButton->setName("openReferenceSheetButton");
     openReferenceSheetButton->setBackgroundColor(Color("#fc6621"));
     openReferenceSheetButton->setColor(Color("#000000")); //f7d9c8
     openReferenceSheetButton->setText("Open Image..");
     openReferenceSheetButton->setIcon("toolbar_pointer.svg");
-    toolBoxWidget->addWidget(std::move(openReferenceSheetButton));
+    toolBoxWidget->addWidget(openReferenceSheetButton);
     toolBoxWidget->addExpanding(0.5);
     toolBoxWidget->addSpacing(5.0);
-    toolBoxWidget->addWidget(std::make_unique<Button>());
+    toolBoxWidget->addWidget(new Button);
     toolBoxWidget->addSpacing(5.0);
-    toolBoxWidget->addWidget(std::make_unique<Button>());
+    toolBoxWidget->addWidget(new Button);
     toolBoxWidget->addSpacing(5.0);
     toolBoxWidget->addExpanding(1.5);
     
-    auto backgroundImageWidget = std::make_unique<Widget>();
+    auto backgroundImageWidget = new Widget("Turnaround");
     backgroundImageWidget->setName("backgroundImageWidget");
     backgroundImageWidget->setHeightPolicy(Widget::SizePolicy::RelativeSize);
     backgroundImageWidget->setHeight(1.0);
     backgroundImageWidget->setWidthPolicy(Widget::SizePolicy::FlexibleSize);
     backgroundImageWidget->setExpandingWeight(1.0);
-    backgroundImageWidget->setBackgroundImageResourceName("reference-image.jpg");
+    //backgroundImageWidget->setBackgroundImageResourceName("reference-image.jpg");
     backgroundImageWidget->setBackgroundImageOpacity(0.25);
     
-    auto logoWidget = std::make_unique<Widget>();
+    auto logoWidget = new Widget;
     logoWidget->setName("logoWidget");
     logoWidget->setSizePolicy(Widget::SizePolicy::FixedSize);
     logoWidget->setWidth(25.0);
     logoWidget->setHeight(71.0);
     logoWidget->setBackgroundImageResourceName("dust3d-vertical.png");
     
-    auto leftBarLayout = std::make_unique<Widget>();
+    auto leftBarLayout = new Widget;
     leftBarLayout->setName("leftBarLayout");
     leftBarLayout->setLayoutDirection(Widget::LayoutDirection::TopToBottom);
     leftBarLayout->setHeightPolicy(Widget::SizePolicy::RelativeSize);
     leftBarLayout->setHeight(1.0);
     leftBarLayout->addExpanding();
     leftBarLayout->addSpacing(5.0);
-    //leftBarLayout->addWidget(std::move(toolBoxWidget));
-    leftBarLayout->addWidget(std::move(logoWidget));
+    //leftBarLayout->addWidget(toolBoxWidget);
+    leftBarLayout->addWidget(logoWidget);
     leftBarLayout->addSpacing(5.0);
     
-    auto mainLayout = std::make_unique<Widget>();
+    auto mainLayout = new Widget;
     mainLayout->setName("mainLayout");
     mainLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
     mainLayout->setHeightPolicy(Widget::SizePolicy::RelativeSize);
     mainLayout->setHeight(1.0);
-    mainLayout->addWidget(std::move(leftBarLayout));
-    mainLayout->addWidget(std::move(backgroundImageWidget));
+    mainLayout->addWidget(leftBarLayout);
+    mainLayout->addWidget(backgroundImageWidget);
     
     //IndieGameEngine::indie()->rootWidget()->addSpacing(5.0);
     IndieGameEngine::indie()->rootWidget()->setName("rootWidget");
-    IndieGameEngine::indie()->rootWidget()->addWidget(std::move(mainLayout));
+    IndieGameEngine::indie()->rootWidget()->addWidget(mainLayout);
+    
+    IndieGameEngine::indie()->run([]() {
+            std::this_thread::sleep_for(std::chrono::seconds(10));
+        }, []() {
+            //IndieGameEngine::indie()->setBackgroundColor(Color("#ffffff"));
+            Widget::get("Turnaround")->setBackgroundImageResourceName("reference-image.jpg");
+        });
     
     SetTimer(windowHandle, 1, 1000 / 300, updateTimer);
     SetTimer(windowHandle, 2, 1000 / 60, renderTimer);

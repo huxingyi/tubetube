@@ -31,6 +31,7 @@
 #include <dust3d/base/quaternion.h>
 #include <dust3d/base/task.h>
 #include <dust3d/base/task_list.h>
+#include <dust3d/base/signal.h>
 #include <dust3d/widget/widget.h>
 #include <dust3d/widget/button.h>
 #include <dust3d/gles/color_map.h>
@@ -49,6 +50,8 @@ namespace dust3d
 class IndieGameEngine
 {
 public:
+    Signal<> windowSizeChanged;
+
     static class IndieGameEngine *indie()
     {
         static IndieGameEngine *s_indie = new IndieGameEngine;
@@ -776,6 +779,7 @@ public:
         m_rootWidget->setSize(m_windowWidth, m_windowHeight);
         m_screenProjectionMatrix = Matrix4x4();
         m_screenProjectionMatrix.orthographicProject(0.0, m_windowWidth, 0.0, m_windowHeight);
+        windowSizeChanged.emit();
         dirty();
     }
     

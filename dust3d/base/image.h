@@ -32,6 +32,48 @@ namespace dust3d
 class Image
 {
 public:
+    Image() = default;
+    
+    Image(size_t width, size_t height):
+        m_width(width),
+        m_height(height)
+    {
+        m_data = (unsigned char *)malloc(width * height * 4);
+    }
+    
+    void clear(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
+    {
+        size_t offset = 0;
+        for (size_t y = 0; y < m_height; ++y) {
+            for (size_t x = 0; x < m_width; ++x) {
+                m_data[offset++] = r;
+                m_data[offset++] = g;
+                m_data[offset++] = b;
+                m_data[offset++] = a;
+            }
+        }
+    }
+    
+    void copy(const Image &source, size_t sourceLeft, size_t sourceTop, size_t targetLeft, size_t targetTop, size_t width, size_t height)
+    {
+        const unsigned char *sourceData = source.data();
+        size_t sourceCopyHeight = sourceTop >= source.height() ? 0 : std::min(height, source.height() - sourceTop);
+        size_t sourceCopyWidth = sourceLeft >= source.width() ? 0 : std::min(width, source.width() - sourceLeft);
+        size_t targetCopyHeight = targetTop >= this->height() ? 0 : std::min(height, this->height() - targetTop);
+        size_t targetCopyWidth = targetLeft >= this->width() ? 0 : std::min(width, this->width() - targetLeft);
+        height = std::min(sourceCopyHeight, targetCopyHeight);
+        width = std::min(sourceCopyWidth, targetCopyWidth);
+        for (size_t y = 0; y < height; ++y) {
+            size_t sourceOffset = ((sourceTop + y) * source.width() + sourceLeft) * 4;
+            size_t targetOffset = ((targetTop + y) * this->width() + targetLeft) * 4;
+            for (size_t x = 0; x < width; ++x) {
+                memcpy(&m_data[targetOffset], &sourceData[sourceOffset], 4);
+                targetOffset += 4;
+                sourceOffset += 4;
+            }
+        }
+    }
+
     ~Image()
     {
         release();
@@ -84,6 +126,11 @@ public:
     }
     
     const unsigned char *data() const
+    {
+        return m_data;
+    }
+    
+    unsigned char *data()
     {
         return m_data;
     }

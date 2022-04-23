@@ -547,7 +547,6 @@ int main(int argc, char* argv[])
     }
     
     IndieGameEngine::indie()->run([]() {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
             Image *image = new Image;
             image->load("reference-image.jpg");
             return (void *)image;
@@ -558,17 +557,32 @@ int main(int argc, char* argv[])
             Widget::get("Turnaround")->setBackgroundImageResourceName("reference-image.jpg");
         });
         
-    IndieGameEngine::indie()->run([]() {
+    IndieGameEngine::indie()->windowSizeChanged.connect([]() {
+        Widget *turnaroundWidget = Widget::get("Turnaround");
+        size_t targetWidth = turnaroundWidget->layoutWidth();
+        size_t targetHeight = turnaroundWidget->layoutHeight();
+        IndieGameEngine::indie()->run([=]() {
             Image *image = new Image;
-            image->load("reference-image.gif");
-            return (void *)image;
+            image->load("reference-image.jpg");
+            size_t toWidth = image->width();
+            size_t toHeight = toWidth * targetHeight / targetWidth;
+            if (toHeight < image->height()) {
+                toHeight = image->height();
+                toWidth = toHeight * targetWidth / targetHeight;
+            }
+            Image *resizedImage = new Image(toWidth, toHeight);
+            resizedImage->clear(255, 255, 255, 255);
+            resizedImage->copy(*image, 0, 0, (resizedImage->width() - image->width()) / 2, (resizedImage->height() - image->height()) / 2, image->width(), image->height());
+            delete image;
+            return (void *)resizedImage;
         }, [](void *result) {
             Image *image = (Image *)result;
-            IndieGameEngine::indie()->setImageResource("reference-image.gif", image->width(), image->height(), image->data());
+            IndieGameEngine::indie()->setImageResource("reference-image.jpg", image->width(), image->height(), image->data());
             delete image;
-            Widget::get("Turnaround")->setBackgroundImageResourceName("reference-image.gif");
+            Widget::get("Turnaround")->setBackgroundImageResourceName("reference-image.jpg");
         });
-    
+    });
+
     SetTimer(windowHandle, 1, 1000 / 300, updateTimer);
     SetTimer(windowHandle, 2, 1000 / 60, renderTimer);
     while (!quit)  {

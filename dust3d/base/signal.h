@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016-2021 Jeremy HU <jeremy-at-dust3d dot org>. All rights reserved. 
+ *  Copyright (c) 2022 Jeremy HU <jeremy-at-dust3d dot org>. All rights reserved. 
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -33,9 +33,9 @@ template <typename... Args>
 class Signal
 {
 public:
-    int connect(const std::function<void (Args...)> &slot)
+    int64_t connect(const std::function<void (Args...)> &slot)
     {
-        int slotId = m_nextSlotId++;
+        int64_t slotId = m_nextSlotId++;
         m_slots.insert({slotId, slot});
         return slotId;
     }
@@ -48,8 +48,8 @@ public:
     }
     
 private:
-    std::map<int, std::function<void (Args...)>> m_slots;
-    int m_nextSlotId = 1;
+    std::map<int64_t, std::function<void (Args...)>> m_slots;
+    int64_t m_nextSlotId = 1;
 };
     
 }

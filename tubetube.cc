@@ -571,7 +571,7 @@ int main(int argc, char* argv[])
                 toWidth = toHeight * targetWidth / targetHeight;
             }
             Image *resizedImage = new Image(toWidth, toHeight);
-            resizedImage->clear(255, 255, 255, 255);
+            resizedImage->clear(255, 255, 255, 0);
             resizedImage->copy(*image, 0, 0, (resizedImage->width() - image->width()) / 2, (resizedImage->height() - image->height()) / 2, image->width(), image->height());
             delete image;
             return (void *)resizedImage;

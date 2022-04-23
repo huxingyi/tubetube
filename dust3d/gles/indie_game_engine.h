@@ -487,13 +487,7 @@ public:
         if (!backgroundImageResourceName.empty()) {
             m_imageMap.shader().use();
             glUniform1f(m_imageMap.shader().getUniformLocation("opacity"), widget->backgroundImageOpacity());
-            m_imageMap.renderImage(backgroundImageResourceName, [](const std::string &name) {
-                    auto image = std::make_unique<Image>();
-                    if (!image->load(name.c_str())) {
-                        return (std::unique_ptr<Image>)nullptr;
-                    }
-                    return std::move(image);
-                }, widget->layoutLeft(), m_windowHeight - (widget->layoutTop() + widget->layoutHeight()), widget->layoutWidth(), widget->layoutHeight());
+            m_imageMap.renderImage(backgroundImageResourceName, widget->layoutLeft(), m_windowHeight - (widget->layoutTop() + widget->layoutHeight()), widget->layoutWidth(), widget->layoutHeight());
         }
         
         // Render button
@@ -532,8 +526,10 @@ public:
         if (m_uiTaskList.anyWorkDone())
             m_screenIsDirty = true;
         
-        if (m_rootWidget->layoutChanged())
+        if (Widget::layoutChanged() || Widget::m_appearanceChanged) {
             m_screenIsDirty = true;
+            Widget::m_appearanceChanged = false;
+        }
         
         if (m_screenIsDirty) {
             
@@ -741,7 +737,8 @@ public:
                     m_frameShader.setUniformMatrix("projectionMatrix", m_screenProjectionMatrix);
                     m_imageMap.shader().use();
                     m_imageMap.shader().setUniformMatrix("projectionMatrix", m_screenProjectionMatrix);
-                    m_rootWidget->layout();
+                    if (Widget::layoutChanged())
+                        m_rootWidget->layout();
                     renderWidget(m_rootWidget.get());
                 }
 
@@ -916,7 +913,10 @@ public:
     
     void setBackgroundColor(const Color &color)
     {
+        if (m_backgroundColor == color)
+            return;
         m_backgroundColor = color;
+        Widget::m_appearanceChanged = true;
     }
     
     void run(std::unique_ptr<Task> task)
@@ -924,9 +924,14 @@ public:
         m_uiTaskList.post(std::move(task));
     }
     
-    void run(std::function<void (void)> work, std::function<void (void)> after=nullptr)
+    void run(std::function<void *(void)> work, std::function<void (void *)> after=nullptr)
     {
         m_uiTaskList.post(work, after);
+    }
+    
+    void setImageResource(const std::string &resourceName, size_t width, size_t height, const unsigned char *data)
+    {
+        m_imageMap.setImage(resourceName, width, height, data);
     }
     
 private:

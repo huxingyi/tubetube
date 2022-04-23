@@ -50,9 +50,32 @@ public:
         }
     }
     
-    void renderImage(const std::string &resourceName, std::function<std::unique_ptr<Image> (const std::string &)> resourceLoader, double left, double top, double width, double height)
+    void setImage(const std::string &resourceName, size_t width, size_t height, const unsigned char *data)
     {
-        GLint imageTextureId = toTexture(resourceName, resourceLoader);
+        auto &cache = m_caches[resourceName];
+        
+        GLint lastTextureId = 0;
+        glGetIntegerv(GL_TEXTURE_BINDING_2D, &lastTextureId);
+        
+        if (0 == cache.textureId) {
+            glGenTextures(1, &cache.textureId);
+            glBindTexture(GL_TEXTURE_2D, cache.textureId);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        } else {
+            glBindTexture(GL_TEXTURE_2D, cache.textureId);
+        }
+        
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        
+        glBindTexture(GL_TEXTURE_2D, lastTextureId);
+    }
+    
+    void renderImage(const std::string &resourceName, double left, double top, double width, double height)
+    {
+        GLint imageTextureId = toTexture(resourceName);
         if (0 == imageTextureId)
             return;
         
@@ -120,32 +143,12 @@ private:
     std::map<std::string, Cache> m_caches;
     std::unique_ptr<Shader> m_shader;
     
-    GLint toTexture(const std::string &resourceName, std::function<std::unique_ptr<Image> (const std::string &)> resourceLoader)
+    GLint toTexture(const std::string &resourceName)
     {
         auto findCache = m_caches.find(resourceName);
         if (findCache != m_caches.end())
             return findCache->second.textureId;
-        
-        std::unique_ptr<Image> image = resourceLoader(resourceName);
-        if (nullptr == image)
-            return 0;
-        
-        auto &cache = m_caches[resourceName];
-        
-        GLint lastTextureId = 0;
-        glGetIntegerv(GL_TEXTURE_BINDING_2D, &lastTextureId);
-        
-        glGenTextures(1, &cache.textureId);
-        glBindTexture(GL_TEXTURE_2D, cache.textureId);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image->width(), image->height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, image->data());
-        
-        glBindTexture(GL_TEXTURE_2D, lastTextureId);
-        
-        return cache.textureId;
+        return 0;
     }
 };
 

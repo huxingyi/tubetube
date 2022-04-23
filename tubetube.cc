@@ -540,11 +540,33 @@ int main(int argc, char* argv[])
     IndieGameEngine::indie()->rootWidget()->setName("rootWidget");
     IndieGameEngine::indie()->rootWidget()->addWidget(mainLayout);
     
+    {
+        auto image = std::make_unique<Image>();
+        image->load("dust3d-vertical.png");
+        IndieGameEngine::indie()->setImageResource("dust3d-vertical.png", image->width(), image->height(), image->data());
+    }
+    
     IndieGameEngine::indie()->run([]() {
-            std::this_thread::sleep_for(std::chrono::seconds(10));
-        }, []() {
-            //IndieGameEngine::indie()->setBackgroundColor(Color("#ffffff"));
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            Image *image = new Image;
+            image->load("reference-image.jpg");
+            return (void *)image;
+        }, [](void *result) {
+            Image *image = (Image *)result;
+            IndieGameEngine::indie()->setImageResource("reference-image.jpg", image->width(), image->height(), image->data());
+            delete image;
             Widget::get("Turnaround")->setBackgroundImageResourceName("reference-image.jpg");
+        });
+        
+    IndieGameEngine::indie()->run([]() {
+            Image *image = new Image;
+            image->load("reference-image.gif");
+            return (void *)image;
+        }, [](void *result) {
+            Image *image = (Image *)result;
+            IndieGameEngine::indie()->setImageResource("reference-image.gif", image->width(), image->height(), image->data());
+            delete image;
+            Widget::get("Turnaround")->setBackgroundImageResourceName("reference-image.gif");
         });
     
     SetTimer(windowHandle, 1, 1000 / 300, updateTimer);

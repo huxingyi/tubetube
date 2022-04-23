@@ -41,12 +41,12 @@ public:
         TaskRunner(std::unique_ptr<Task> task):
             m_task(std::move(task)),
             m_workFunction(std::bind(&Task::work, m_task.get())),
-            m_afterFunction(std::bind(&Task::after, m_task.get())),
+            m_afterFunction(std::bind(&Task::after, m_task.get(), std::placeholders::_1)),
             std::thread(std::bind(&TaskRunner::run, this))
         {
         }
         
-        TaskRunner(std::function<void (void)> work, std::function<void (void)> after=nullptr):
+        TaskRunner(std::function<void *(void)> work, std::function<void (void *)> after=nullptr):
             m_workFunction(work),
             m_afterFunction(after),
             std::thread(std::bind(&TaskRunner::run, this))
@@ -62,18 +62,19 @@ public:
         {
             join();
             if (nullptr != m_afterFunction)
-                m_afterFunction();
+                m_afterFunction(m_result);
         }
         
     private:
         std::unique_ptr<Task> m_task;
-        std::function<void (void)> m_workFunction = nullptr;
-        std::function<void (void)> m_afterFunction = nullptr;
+        std::function<void *(void)> m_workFunction = nullptr;
+        std::function<void (void *)> m_afterFunction = nullptr;
         std::atomic<bool> m_workDone = false;
+        void *m_result = nullptr;
         
         void run()
         {
-            m_workFunction();
+            m_result = m_workFunction();
             m_workDone = true;
         }
     };
@@ -83,7 +84,7 @@ public:
         m_list.push_back(std::make_unique<TaskRunner>(std::move(task)));
     }
     
-    void post(std::function<void (void)> work, std::function<void (void)> after=nullptr)
+    void post(std::function<void *(void)> work, std::function<void (void *)> after=nullptr)
     {
         m_list.push_back(std::make_unique<TaskRunner>(work, after));
     }

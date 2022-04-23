@@ -29,9 +29,9 @@ namespace dust3d
 class Task
 {
 public:
-    virtual void work() = 0;
+    virtual void *work() = 0;
     
-    virtual void after()
+    virtual void after(void *result)
     {
     }
 };

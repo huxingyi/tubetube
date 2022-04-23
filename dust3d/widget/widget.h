@@ -451,6 +451,7 @@ public:
         if (m_backgroundColor == color)
             return;
         m_backgroundColor = color;
+        m_appearanceChanged = true;
     }
     
     const Color &color()
@@ -463,11 +464,7 @@ public:
         if (m_color == color)
             return;
         m_color = color;
-    }
-    
-    bool layoutChanged() const
-    {
-        return m_layoutChanged;
+        m_appearanceChanged = true;
     }
     
     const std::string &backgroundImageResourceName() const
@@ -480,6 +477,7 @@ public:
         if (m_backgroundImageResourceName == name)
             return;
         m_backgroundImageResourceName = name;
+        m_appearanceChanged = true;
     }
     
     const double &backgroundImageOpacity() const
@@ -492,6 +490,7 @@ public:
         if (Math::isEqual(m_backgroundImageOpacity, opacity))
             return;
         m_backgroundImageOpacity = opacity;
+        m_appearanceChanged = true;
     }
     
     const std::string &name() const
@@ -504,6 +503,7 @@ public:
         if (m_name == name)
             return;
         m_name = name;
+        m_appearanceChanged = true;
     }
     
     static Widget *get(const std::string &id)
@@ -514,8 +514,15 @@ public:
         return findWidget->second;
     }
     
+    static bool layoutChanged()
+    {
+        return m_layoutChanged;
+    }
+    
     static std::map<std::string, Widget *> m_widgets;
     static uint64_t m_nextWidgetId;
+    static bool m_layoutChanged;
+    static bool m_appearanceChanged;
 protected:
     double m_width = 1.0;
     double m_height = 0.0;
@@ -524,7 +531,6 @@ protected:
     double m_layoutWidth = 0.0;
     double m_layoutHeight = 0.0;
     double m_expandingWeight = 0.0;
-    bool m_layoutChanged = true;
     const Widget *m_parent = nullptr;
     uint64_t m_renderHints = 0;
     Color m_backgroundColor;

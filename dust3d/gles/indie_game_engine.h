@@ -740,8 +740,10 @@ public:
                     m_frameShader.setUniformMatrix("projectionMatrix", m_screenProjectionMatrix);
                     m_imageMap.shader().use();
                     m_imageMap.shader().setUniformMatrix("projectionMatrix", m_screenProjectionMatrix);
-                    if (Widget::layoutChanged())
+                    if (Widget::layoutChanged()) {
                         m_rootWidget->layout();
+                        windowSizeChanged.emit();
+                    }
                     renderWidget(m_rootWidget.get());
                 }
 
@@ -779,7 +781,6 @@ public:
         m_rootWidget->setSize(m_windowWidth, m_windowHeight);
         m_screenProjectionMatrix = Matrix4x4();
         m_screenProjectionMatrix.orthographicProject(0.0, m_windowWidth, 0.0, m_windowHeight);
-        windowSizeChanged.emit();
         dirty();
     }
     

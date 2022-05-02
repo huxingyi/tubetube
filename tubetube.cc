@@ -5,11 +5,10 @@
 #include <dust3d/gles/vertex_buffer_utils.h>
 #include <dust3d/gles/indie_game_engine.h>
 #include <dust3d/gles/terrain_generator.h>
+#include <dust3d/gles/window.h>
 #include <dust3d/mesh/tube_mesh_builder.h>
 #include <dust3d/mesh/mesh_utils.h>
 #include <dust3d/widget/button.h>
-#include <Windows.h>
-#include <Windowsx.h>
 #include <EGL/egl.h>
 #include <EGL/eglplatform.h>
 #include <GLES2/gl2.h>
@@ -17,8 +16,6 @@
 
 static int windowWidth = 640;
 static int windowHeight = 360;
-static HWND windowHandle = nullptr;
-static bool quit = false;
 EGLDisplay eglDisplay = EGL_NO_DISPLAY;
 EGLSurface eglSurface = EGL_NO_SURFACE;
 //std::random_device randomSeeder;
@@ -29,80 +26,6 @@ auto spawn = std::bind(randomSpawn, randomEngine);
 auto rand01 = std::bind(randomReal, randomEngine);
 
 using namespace dust3d;
-
-static LRESULT CALLBACK windowMessageHandler(HWND hwnd, unsigned int msg, WPARAM wParam, LPARAM lParam) {
-    switch (msg) {
-        case WM_CLOSE : {
-                quit = true;
-                DestroyWindow(hwnd);
-                PostQuitMessage(0);
-                return 0;
-            } 
-            break;
-        case WM_SIZE: {
-                windowWidth = LOWORD(lParam);
-                windowHeight = HIWORD(lParam);
-                IndieGameEngine::indie()->setWindowSize(windowWidth, windowHeight);
-                return 0;
-            } 
-            break;
-        case WM_MOUSEWHEEL: {
-                //auto zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-                //fov += zDelta > 0.0 ? -5.0 : 5.0;
-                //if (fov < 1.0f)
-                //    fov = 1.0f;
-                //if (fov > 45.0f)
-                //    fov = 45.0f; 
-            } 
-            break;
-        case WM_MOUSEMOVE: {
-                auto x = GET_X_LPARAM(lParam); 
-                auto y = GET_Y_LPARAM(lParam);
-                //IndieGameEngine::indie()->handleMouseMove(x, y);
-            } 
-            break;
-    }
-
-    return (DefWindowProc(hwnd, msg, wParam, lParam));
-}
-
-static HWND createWindow(int width, int height) {
-    HINSTANCE hInstance = GetModuleHandle(NULL);
-    WNDCLASSEX wcex;
-    
-    wcex.cbSize = sizeof(WNDCLASSEX);
-    wcex.style = CS_OWNDC;
-    wcex.cbClsExtra = 0;
-    wcex.cbWndExtra = 0;
-    wcex.hInstance = hInstance;
-    wcex.hIcon = NULL;
-    wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wcex.hbrBackground = 0;
-    wcex.lpszMenuName = NULL;
-    wcex.lpszClassName = "eglsamplewnd";
-    wcex.hIconSm = NULL;
-    wcex.lpfnWndProc = windowMessageHandler;
-
-    RegisterClassEx(&wcex);
-    RECT rect = { 0, 0, width, height };
-    int style = WS_BORDER | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_OVERLAPPEDWINDOW/* | WS_MAXIMIZE*/;
-    AdjustWindowRect(&rect, style, FALSE);
-
-    HWND hwnd = CreateWindow("eglsamplewnd", 
-        "Tubetube", 
-        style, 
-        CW_USEDEFAULT, 
-        CW_USEDEFAULT, 
-        rect.right - rect.left, 
-        rect.bottom - rect.top, 
-        NULL, 
-        NULL, 
-        GetModuleHandle(NULL), 
-        NULL);
-    ShowWindow(hwnd, SW_SHOW);
-
-    return hwnd;
-}
 
 static EGLint getContextRenderableType(EGLDisplay eglDisplay)
 {
@@ -230,25 +153,14 @@ static std::unique_ptr<std::vector<VertexBuffer>> loadResouceVertexBufferList(co
     return nullptr;
 }
 
-static bool queryKeyPressed(char key)
-{
-    return GetKeyState(key) & 0x8000;
-}
-
-static void updateTimer(HWND hwnd, UINT msg, UINT_PTR timerId, DWORD time)
-{
-    IndieGameEngine::indie()->update();
-}
-
-static void renderTimer(HWND hwnd, UINT msg, UINT_PTR timerId, DWORD time)
-{
-    IndieGameEngine::indie()->renderScene();
-    eglSwapBuffers(eglDisplay, eglSurface);
-}
-
 class DummyPlaneLocationState: public IndieGameEngine::LocationState
 {
 public:
+    DummyPlaneLocationState(IndieGameEngine &engine) :
+        IndieGameEngine::LocationState(engine)
+    {
+    }
+    
     bool update()
     {
         if (Math::isZero(speed))
@@ -258,7 +170,7 @@ public:
             m_forwardAcceleration -= 0.01;
         
         if (m_forwardAcceleration > 0)
-            speed += m_forwardAcceleration * IndieGameEngine::indie()->elapsedSecondsSinceLastUpdate();
+            speed += m_forwardAcceleration * engine().elapsedSecondsSinceLastUpdate();
 
         //worldLocation += velocity() * IndieGameEngine::indie()->elapsedSecondsSinceLastUpdate();
         //const double tailFlameRadius = 0.015;
@@ -279,21 +191,26 @@ private:
 class PlayerLocationState: public IndieGameEngine::LocationState
 {
 public:
+    PlayerLocationState(IndieGameEngine &engine) :
+        IndieGameEngine::LocationState(engine)
+    {
+    }
+    
     bool update()
     {
         bool updated = false;
         
         if (!Math::isZero(m_forwardAcceleration))
-            speed += m_forwardAcceleration * IndieGameEngine::indie()->elapsedSecondsSinceLastUpdate();
+            speed += m_forwardAcceleration * engine().elapsedSecondsSinceLastUpdate();
 
-        worldLocation += velocity() * IndieGameEngine::indie()->elapsedSecondsSinceLastUpdate();
+        worldLocation += velocity() * engine().elapsedSecondsSinceLastUpdate();
 
-        const double responseSpeed = 1.0 * IndieGameEngine::indie()->elapsedSecondsSinceLastUpdate();
+        const double responseSpeed = 1.0 * engine().elapsedSecondsSinceLastUpdate();
         
-        if (queryKeyPressed(' ') || queryKeyPressed('W')) {
+        if (Window::isKeyPressed(' ') || Window::isKeyPressed('W')) {
             m_forwardAcceleration = std::min(m_forwardAcceleration + 1.0 * responseSpeed, m_maxForwardAcceleration);
             updated = true;
-        } else if (queryKeyPressed('S')) {
+        } else if (Window::isKeyPressed('S')) {
             m_forwardAcceleration = std::max(m_forwardAcceleration - 1.0 * responseSpeed, -m_maxForwardAcceleration);
             updated = true;
         } else {
@@ -303,7 +220,7 @@ public:
             }
         }
         
-        if (queryKeyPressed('E')) {
+        if (Window::isKeyPressed('E')) {
             Matrix4x4 rotationMatrix;
             rotationMatrix.rotate(Quaternion::fromAxisAndAngle(Vector3(1.0, 0.0, 0.0), responseSpeed * Math::radiansFromDegrees(10.0)));
             Vector3 newDirection = rotationMatrix * forwardDirection;
@@ -312,7 +229,7 @@ public:
                 forwardDirection = newDirection;
                 updated = true;
             }
-        } else if (queryKeyPressed('R')) {
+        } else if (Window::isKeyPressed('R')) {
             Matrix4x4 rotationMatrix;
             rotationMatrix.rotate(Quaternion::fromAxisAndAngle(Vector3(-1.0, 0.0, 0.0), responseSpeed * Math::radiansFromDegrees(10.0)));
             Vector3 newDirection = rotationMatrix * forwardDirection;
@@ -323,14 +240,14 @@ public:
             }
         }
 
-        if (queryKeyPressed('A')) {
+        if (Window::isKeyPressed('A')) {
             Matrix4x4 rotationMatrix;
             rotationMatrix.rotate(Quaternion::fromAxisAndAngle(Vector3(0.0, 1.0, 0.0), responseSpeed * Math::radiansFromDegrees(10.0) * speed));
             forwardDirection = rotationMatrix * forwardDirection;
             m_roll = std::max(m_roll - responseSpeed * Math::radiansFromDegrees(45.0), -Math::radiansFromDegrees(60.0));
             upDirection = Vector3(0.0, 1.0, 0.0).rotated(forwardDirection, m_roll);
             updated = true;
-        } else if (queryKeyPressed('D')) {
+        } else if (Window::isKeyPressed('D')) {
             Matrix4x4 rotationMatrix;
             rotationMatrix.rotate(Quaternion::fromAxisAndAngle(Vector3(0.0, -1.0, 0.0), responseSpeed * Math::radiansFromDegrees(10.0) * speed));
             forwardDirection = rotationMatrix * forwardDirection;
@@ -339,7 +256,7 @@ public:
             updated = true;
         } else {
             if (upDirection != Vector3(0.0, 1.0, 0.0)) {
-                double t = IndieGameEngine::indie()->elapsedSecondsSinceLastUpdate();
+                double t = engine().elapsedSecondsSinceLastUpdate();
                 Matrix4x4 rotationMatrix;
                 rotationMatrix.rotate(Quaternion::slerp(Quaternion(), Quaternion::rotationTo(upDirection, Vector3(0.0, 1.0, 0.0)), t));
                 upDirection = rotationMatrix * upDirection;
@@ -353,9 +270,9 @@ public:
         const double tailFlameRadius = 0.015;
         double tailFlameSpeed = speed * 0.5;
         uint64_t emitInterval = (tailFlameRadius * 0.5 / tailFlameSpeed) * 1000;
-        if (m_lastEmitTime + emitInterval < IndieGameEngine::indie()->millisecondsSinceStart()) {
-            IndieGameEngine::indie()->addParticle(0.5, tailFlameRadius, worldLocation - forwardDirection * 0.1 + Vector3(0.0, 0.01, 0.0), forwardDirection * tailFlameSpeed, Vector3(0.95, 0.9, 0.27), Vector3(0.58, 0.31, 0.22));
-            m_lastEmitTime = IndieGameEngine::indie()->millisecondsSinceStart();
+        if (m_lastEmitTime + emitInterval < engine().millisecondsSinceStart()) {
+            engine().addParticle(0.5, tailFlameRadius, worldLocation - forwardDirection * 0.1 + Vector3(0.0, 0.01, 0.0), forwardDirection * tailFlameSpeed, Vector3(0.95, 0.9, 0.27), Vector3(0.58, 0.31, 0.22));
+            m_lastEmitTime = engine().millisecondsSinceStart();
         }
         
         if (!Math::isZero(speed))
@@ -374,34 +291,34 @@ private:
 class WorldState: public IndieGameEngine::State
 {
 public:
+    WorldState(IndieGameEngine &engine) :
+        IndieGameEngine::State(engine)
+    {
+    }
+    
     bool update()
     {
-        /*
-        if (IndieGameEngine::indie()->objectCount() < 50) {
-            auto objectId = "plane" + std::to_string(IndieGameEngine::indie()->objectCount());
-            Matrix4x4 modelMatrix;
-            modelMatrix.scale(Vector3(0.5, 0.5, 0.5));
-            IndieGameEngine::indie()->addObject(objectId, "Plane", modelMatrix, IndieGameEngine::RenderType::Default);
-            auto dummyPlaneState = std::make_unique<DummyPlaneLocationState>();
-            dummyPlaneState->worldLocation = Vector3(spawn(), spawn() + 3.0, spawn());
-            dummyPlaneState->forwardDirection = Vector3(0.0, 0.0, -1.0);
-            dummyPlaneState->speed = spawn() * 0.15;
-            IndieGameEngine::indie()->addLocationState(objectId, std::move(dummyPlaneState));
-            return true;
-        }
-        */
+        // if (IndieGameEngine::indie()->objectCount() < 50) {
+            // auto objectId = "plane" + std::to_string(IndieGameEngine::indie()->objectCount());
+            // Matrix4x4 modelMatrix;
+            // modelMatrix.scale(Vector3(0.5, 0.5, 0.5));
+            // IndieGameEngine::indie()->addObject(objectId, "Plane", modelMatrix, IndieGameEngine::RenderType::Default);
+            // auto dummyPlaneState = std::make_unique<DummyPlaneLocationState>();
+            // dummyPlaneState->worldLocation = Vector3(spawn(), spawn() + 3.0, spawn());
+            // dummyPlaneState->forwardDirection = Vector3(0.0, 0.0, -1.0);
+            // dummyPlaneState->speed = spawn() * 0.15;
+            // IndieGameEngine::indie()->addLocationState(objectId, std::move(dummyPlaneState));
+            // return true;
+        // }
         return false;
     }
 };
 
 int main(int argc, char* argv[])
 {
-    SetProcessDPIAware(); // Avoid window scaling
-    
-    windowHandle = createWindow(windowWidth, windowHeight);
-    HDC hdc = GetDC(windowHandle);
+    Window *window = new Window(windowWidth, windowHeight);
 
-    eglDisplay = eglGetDisplay(hdc);
+    eglDisplay = eglGetDisplay(window->internal().display);
     if (eglDisplay == EGL_NO_DISPLAY) {
         std::cout << "Could not get egl display!" << std::endl;
         return 1;
@@ -409,26 +326,30 @@ int main(int argc, char* argv[])
 
     EGLint eglVersionMajor, eglVersionMinor;
     eglInitialize(eglDisplay, &eglVersionMajor, &eglVersionMinor);
-    
+
     EGLint configAttributes[] = {
-        EGL_RED_SIZE,       8,
-        EGL_GREEN_SIZE,     8,
-        EGL_BLUE_SIZE,      8,
-        EGL_ALPHA_SIZE,     8,
-        EGL_DEPTH_SIZE,     24,
-        EGL_STENCIL_SIZE,   8,
-        EGL_SAMPLE_BUFFERS, 1,
-        EGL_SAMPLES,        4,
-        EGL_RENDERABLE_TYPE, getContextRenderableType(eglDisplay),
+        EGL_RED_SIZE,           8,
+        EGL_GREEN_SIZE,         8,
+        EGL_BLUE_SIZE,          8,
+        EGL_ALPHA_SIZE,         8,
+        EGL_DEPTH_SIZE,         24,
+        EGL_STENCIL_SIZE,       8,
+        EGL_SAMPLE_BUFFERS,     1,
+        EGL_SAMPLES,            4,
+        EGL_RENDERABLE_TYPE,    getContextRenderableType(eglDisplay),
         EGL_NONE
     };
 
-    EGLint contextAttributes[] = { EGL_CONTEXT_CLIENT_VERSION, 3, EGL_NONE };
+    EGLint contextAttributes[] = {
+        EGL_CONTEXT_CLIENT_VERSION, 
+        3, 
+        EGL_NONE
+    };
     
-    EGLint nrOfConfigs;
+    EGLint numConfigs;
     EGLConfig windowConfig;
-    eglChooseConfig(eglDisplay, configAttributes, &windowConfig, 1, &nrOfConfigs);
-    eglSurface = eglCreateWindowSurface(eglDisplay, windowConfig, windowHandle, NULL);
+    eglChooseConfig(eglDisplay, configAttributes, &windowConfig, 1, &numConfigs);
+    eglSurface = eglCreateWindowSurface(eglDisplay, windowConfig, window->internal().handle, NULL);
     if (eglSurface == EGL_NO_SURFACE) {
         std::cerr << "Could not create EGL surface : " << eglGetError() << std::endl;
         return 1;
@@ -442,45 +363,39 @@ int main(int argc, char* argv[])
     }
     
     eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext);
+
+    window->setEngine(new IndieGameEngine);
     
-    LARGE_INTEGER frequency;
-    QueryPerformanceFrequency(&frequency);
-    uint64_t numPerMilliseconds = frequency.QuadPart / 1000;
-    IndieGameEngine::indie()->setMillisecondsQueryHandler([=]() {
-        LARGE_INTEGER ticks;
-        QueryPerformanceCounter(&ticks);
-        return (uint64_t)ticks.QuadPart / numPerMilliseconds;
+    window->engine()->setMillisecondsQueryHandler([]() {
+        return Window::getMilliseconds();
     });
-    IndieGameEngine::indie()->setWindowSize(static_cast<double>(windowWidth), static_cast<double>(windowHeight));
-    IndieGameEngine::indie()->setVertexBufferListLoadHandler(loadResouceVertexBufferList);
-    //IndieGameEngine::indie()->setKeyPressedQueryHandler(queryKeyPressed);
+    window->engine()->setWindowSize(static_cast<double>(windowWidth), static_cast<double>(windowHeight));
+    window->engine()->setVertexBufferListLoadHandler(loadResouceVertexBufferList);
     
-    /*
     {
         Matrix4x4 modelMatrix;
-        IndieGameEngine::indie()->addObject("defaultGround", "Ground", modelMatrix, IndieGameEngine::RenderType::Ground);
+        window->engine()->addObject("defaultGround", "Ground", modelMatrix, IndieGameEngine::RenderType::Ground);
     }
     {
         Matrix4x4 modelMatrix;
         modelMatrix.translate(Vector3(0.0, -0.001, 0.0));
         modelMatrix.scale(Vector3(1000.0, 0.0, 1000.0));
-        IndieGameEngine::indie()->addObject("defaultSea", "Sea", modelMatrix, IndieGameEngine::RenderType::Water);
+        window->engine()->addObject("defaultSea", "Sea", modelMatrix, IndieGameEngine::RenderType::Water);
     }
     {
         Matrix4x4 modelMatrix;
         modelMatrix.scale(Vector3(0.5, 0.5, 0.5));
-        IndieGameEngine::indie()->addObject("palyer0", "Plane", modelMatrix, IndieGameEngine::RenderType::Default);
-        auto playerState = std::make_unique<PlayerLocationState>();
-        playerState->worldLocation = IndieGameEngine::indie()->cameraPosition();
-        playerState->forwardDirection = IndieGameEngine::indie()->cameraFront();
-        playerState->upDirection = IndieGameEngine::indie()->cameraUp();
+        window->engine()->addObject("palyer0", "Plane", modelMatrix, IndieGameEngine::RenderType::Default);
+        auto playerState = std::make_unique<PlayerLocationState>(*window->engine());
+        playerState->worldLocation = window->engine()->cameraPosition();
+        playerState->forwardDirection = window->engine()->cameraFront();
+        playerState->upDirection = window->engine()->cameraUp();
         playerState->followedByCamera = true;
-        IndieGameEngine::indie()->addLocationState("palyer0", std::move(playerState));
+        window->engine()->addLocationState("palyer0", std::move(playerState));
     }
-    IndieGameEngine::indie()->addGeneralState("", std::make_unique<WorldState>());
-    */
+    window->engine()->addGeneralState("", std::make_unique<WorldState>(*window->engine()));
     
-    IndieGameEngine::indie()->setBackgroundColor(Color("#252525"));
+    window->engine()->setBackgroundColor(Color("#252525"));
     
     auto toolBoxWidget = new Widget;
     toolBoxWidget->setName("toolBoxWidget");
@@ -537,31 +452,31 @@ int main(int argc, char* argv[])
     mainLayout->addWidget(backgroundImageWidget);
     
     //IndieGameEngine::indie()->rootWidget()->addSpacing(5.0);
-    IndieGameEngine::indie()->rootWidget()->setName("rootWidget");
-    IndieGameEngine::indie()->rootWidget()->addWidget(mainLayout);
+    window->engine()->rootWidget()->setName("rootWidget");
+    window->engine()->rootWidget()->addWidget(mainLayout);
     
     {
         auto image = std::make_unique<Image>();
         image->load("dust3d-vertical.png");
-        IndieGameEngine::indie()->setImageResource("dust3d-vertical.png", image->width(), image->height(), image->data());
+        window->engine()->setImageResource("dust3d-vertical.png", image->width(), image->height(), image->data());
     }
     
-    IndieGameEngine::indie()->run([]() {
+    window->engine()->run([=]() {
             Image *image = new Image;
             image->load("reference-image.jpg");
             return (void *)image;
-        }, [](void *result) {
+        }, [=](void *result) {
             Image *image = (Image *)result;
-            IndieGameEngine::indie()->setImageResource("reference-image.jpg", image->width(), image->height(), image->data());
+            window->engine()->setImageResource("reference-image.jpg", image->width(), image->height(), image->data());
             delete image;
             Widget::get("Turnaround")->setBackgroundImageResourceName("reference-image.jpg");
         });
         
-    IndieGameEngine::indie()->windowSizeChanged.connect([]() {
+    window->engine()->windowSizeChanged.connect([=]() {
         Widget *turnaroundWidget = Widget::get("Turnaround");
         size_t targetWidth = turnaroundWidget->layoutWidth();
         size_t targetHeight = turnaroundWidget->layoutHeight();
-        IndieGameEngine::indie()->run([=]() {
+        window->engine()->run([=]() {
             Image *image = new Image;
             image->load("reference-image.jpg");
             size_t toWidth = image->width();
@@ -575,23 +490,25 @@ int main(int argc, char* argv[])
             resizedImage->copy(*image, 0, 0, (resizedImage->width() - image->width()) / 2, (resizedImage->height() - image->height()) / 2, image->width(), image->height());
             delete image;
             return (void *)resizedImage;
-        }, [](void *result) {
+        }, [=](void *result) {
             Image *image = (Image *)result;
-            IndieGameEngine::indie()->setImageResource("reference-image.jpg", image->width(), image->height(), image->data());
+            window->engine()->setImageResource("reference-image.jpg", image->width(), image->height(), image->data());
             delete image;
             Widget::get("Turnaround")->setBackgroundImageResourceName("reference-image.jpg");
         });
     });
+    
+    window->addTimer(1000 / 300, [=]() {
+        window->engine()->update();
+    });
+    window->addTimer(1000 / 60, [=]() {
+        window->engine()->renderScene();
+        eglSwapBuffers(eglDisplay, eglSurface);
+    });
 
-    SetTimer(windowHandle, 1, 1000 / 300, updateTimer);
-    SetTimer(windowHandle, 2, 1000 / 60, renderTimer);
-    while (!quit)  {
-        MSG msg;
-        while (GetMessage(&msg, NULL, 0, 0)) {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-    }
+    window->setVisible(true);
+
+    Window::mainLoop();
     
     return 0;
 }

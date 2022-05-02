@@ -51,12 +51,6 @@ class IndieGameEngine
 {
 public:
     Signal<> windowSizeChanged;
-
-    static class IndieGameEngine *indie()
-    {
-        static IndieGameEngine *s_indie = new IndieGameEngine;
-        return s_indie;
-    }
     
     enum RenderType
     {
@@ -80,15 +74,33 @@ public:
     class State
     {
     public:
+        State(IndieGameEngine &engine) :
+            m_engine(engine)
+        {
+        }
+        
         virtual bool update()
         {
             return false;
         }
+        
+        IndieGameEngine &engine()
+        {
+            return m_engine;
+        }
+        
+    private:
+        IndieGameEngine &m_engine;
     };
     
     class LocationState: public State
     {
     public:
+        LocationState(IndieGameEngine &engine) :
+            State(engine)
+        {
+        }
+        
         Vector3 worldLocation;
         Vector3 forwardDirection;
         Vector3 upDirection = Vector3(0.0, 1.0, 0.0);
@@ -112,19 +124,20 @@ public:
         Object(const Object &) = delete;
         Object &operator=(const Object &) = delete;
   
-        Object(const std::string &id, const std::string &resourceName, const Matrix4x4 &modelMatrix, RenderType renderType=RenderType::Default) :
+        Object(IndieGameEngine &engine, const std::string &id, const std::string &resourceName, const Matrix4x4 &modelMatrix, RenderType renderType=RenderType::Default) :
+            m_engine(engine),
             m_id(id), 
             m_resourceName(resourceName),
             m_localMatrix(modelMatrix),
             m_worldMatrix(modelMatrix),
             m_renderType(renderType)
         {
-            m_vertexBufferList = indie()->createObjectVertexBufferList(resourceName);
+            m_vertexBufferList = m_engine.createObjectVertexBufferList(resourceName);
         }
         
         ~Object()
         {
-            indie()->deleteObjectVertexBufferList(m_resourceName);
+            m_engine.deleteObjectVertexBufferList(m_resourceName);
         }
         
         const Matrix4x4 &worldMatrix() const
@@ -153,6 +166,7 @@ public:
         }
         
     private:
+        IndieGameEngine &m_engine;
         RenderType m_renderType = RenderType::Default;
         Matrix4x4 m_localMatrix;
         Matrix4x4 m_worldMatrix;
@@ -167,7 +181,7 @@ public:
             dust3dDebug << "Add object failed, id already existed:" << id;
             return false;
         }
-        m_objects.insert({id, std::make_unique<Object>(id, resourceName, modelMatrix, renderType)});
+        m_objects.insert({id, std::make_unique<Object>(*this, id, resourceName, modelMatrix, renderType)});
         return true;
     }
     

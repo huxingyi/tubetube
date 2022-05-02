@@ -24,11 +24,10 @@
 #define DUST3D_GLES_ICON_MAP_H_
 
 #include <dust3d/base/debug.h>
+#include <dust3d/gles/shader.h>
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
-#define NANOSVG_IMPLEMENTATION
 #include <nanosvg.h>
-#define NANOSVGRAST_IMPLEMENTATION
 #include <nanosvgrast.h>
 
 namespace dust3d

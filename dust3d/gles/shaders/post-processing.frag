@@ -131,6 +131,7 @@ vec3 hslToRgb(vec3 color)
 void main()
 {
     vec3 color = texture(colorMap, pointTexCoords).rgb;
+    float alpha = texture(colorMap, pointTexCoords).a;
     vec3 blurColor = blur();
     float depth = texture(depthMap, pointTexCoords).r * 0.5 + 0.5;
     depth = smoothstep(0.995, 1.0, depth);
@@ -141,7 +142,9 @@ void main()
     float border = depthDiff();
     color = mix(color, vec3(0.45, 0.31, 0.15), border * (1.0 - depth));
     vec4 uiColor = texture(uiMap, pointTexCoords).rgba;
-    color = uiColor.rgb * uiColor.a + color.rgb * (1.0 - uiColor.a);
+    //color = uiColor.rgb * uiColor.a + color.rgb * (1.0 - uiColor.a);
+    //color = vec3(alpha);
+    color = color.rgb * alpha + uiColor.rgb * (1.0 - alpha) * uiColor.a;
     //fragColor = vec4(vec3(foam()), 1.0);
     fragColor = vec4(color, 1.0);
     //fragColor = texture(idMap, pointTexCoords);

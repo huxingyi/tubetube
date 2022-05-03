@@ -14,8 +14,8 @@
 #include <GLES2/gl2.h>
 #include <random>
 
-static int windowWidth = 640;
-static int windowHeight = 360;
+static int g_mainWindowWidth = 640;
+static int g_mainWindowHeight = 360;
 EGLDisplay eglDisplay = EGL_NO_DISPLAY;
 EGLSurface eglSurface = EGL_NO_SURFACE;
 //std::random_device randomSeeder;
@@ -316,9 +316,9 @@ public:
 
 int main(int argc, char* argv[])
 {
-    Window *window = new Window(windowWidth, windowHeight);
+    Window *mainWindow = new Window(g_mainWindowWidth, g_mainWindowHeight);
 
-    eglDisplay = eglGetDisplay(window->internal().display);
+    eglDisplay = eglGetDisplay(mainWindow->internal().display);
     if (eglDisplay == EGL_NO_DISPLAY) {
         std::cout << "Could not get egl display!" << std::endl;
         return 1;
@@ -349,7 +349,7 @@ int main(int argc, char* argv[])
     EGLint numConfigs;
     EGLConfig windowConfig;
     eglChooseConfig(eglDisplay, configAttributes, &windowConfig, 1, &numConfigs);
-    eglSurface = eglCreateWindowSurface(eglDisplay, windowConfig, window->internal().handle, NULL);
+    eglSurface = eglCreateWindowSurface(eglDisplay, windowConfig, mainWindow->internal().handle, NULL);
     if (eglSurface == EGL_NO_SURFACE) {
         std::cerr << "Could not create EGL surface : " << eglGetError() << std::endl;
         return 1;
@@ -364,41 +364,41 @@ int main(int argc, char* argv[])
     
     eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext);
 
-    window->setEngine(new IndieGameEngine);
-    window->setTitle("Tubetube汉字test");
+    mainWindow->setEngine(new IndieGameEngine);
+    mainWindow->setTitle("Tubetube汉字test");
     
-    window->engine()->setMillisecondsQueryHandler([]() {
+    mainWindow->engine()->setMillisecondsQueryHandler([]() {
         return Window::getMilliseconds();
     });
-    window->engine()->setWindowSize(static_cast<double>(windowWidth), static_cast<double>(windowHeight));
-    window->engine()->setVertexBufferListLoadHandler(loadResouceVertexBufferList);
+    mainWindow->engine()->setWindowSize(static_cast<double>(g_mainWindowWidth), static_cast<double>(g_mainWindowHeight));
+    mainWindow->engine()->setVertexBufferListLoadHandler(loadResouceVertexBufferList);
     
     /*
     {
         Matrix4x4 modelMatrix;
-        window->engine()->addObject("defaultGround", "Ground", modelMatrix, IndieGameEngine::RenderType::Ground);
+        mainWindow->engine()->addObject("defaultGround", "Ground", modelMatrix, IndieGameEngine::RenderType::Ground);
     }
     {
         Matrix4x4 modelMatrix;
         modelMatrix.translate(Vector3(0.0, -0.001, 0.0));
         modelMatrix.scale(Vector3(1000.0, 0.0, 1000.0));
-        window->engine()->addObject("defaultSea", "Sea", modelMatrix, IndieGameEngine::RenderType::Water);
+        mainWindow->engine()->addObject("defaultSea", "Sea", modelMatrix, IndieGameEngine::RenderType::Water);
     }
+    */
     {
         Matrix4x4 modelMatrix;
         modelMatrix.scale(Vector3(0.5, 0.5, 0.5));
-        window->engine()->addObject("palyer0", "Plane", modelMatrix, IndieGameEngine::RenderType::Default);
-        auto playerState = std::make_unique<PlayerLocationState>(*window->engine());
-        playerState->worldLocation = window->engine()->cameraPosition();
-        playerState->forwardDirection = window->engine()->cameraFront();
-        playerState->upDirection = window->engine()->cameraUp();
+        mainWindow->engine()->addObject("palyer0", "Plane", modelMatrix, IndieGameEngine::RenderType::Default);
+        auto playerState = std::make_unique<PlayerLocationState>(*mainWindow->engine());
+        playerState->worldLocation = mainWindow->engine()->cameraPosition();
+        playerState->forwardDirection = mainWindow->engine()->cameraFront();
+        playerState->upDirection = mainWindow->engine()->cameraUp();
         playerState->followedByCamera = true;
-        window->engine()->addLocationState("palyer0", std::move(playerState));
+        mainWindow->engine()->addLocationState("palyer0", std::move(playerState));
     }
-    window->engine()->addGeneralState("", std::make_unique<WorldState>(*window->engine()));
-    */
+    mainWindow->engine()->addGeneralState("", std::make_unique<WorldState>(*mainWindow->engine()));
     
-    window->engine()->setBackgroundColor(Color("#252525"));
+    mainWindow->engine()->setBackgroundColor(Color("#00252525"));
     
     auto toolBoxWidget = new Widget;
     toolBoxWidget->setName("toolBoxWidget");
@@ -455,31 +455,31 @@ int main(int argc, char* argv[])
     mainLayout->addWidget(backgroundImageWidget);
     
     //IndieGameEngine::indie()->rootWidget()->addSpacing(5.0);
-    window->engine()->rootWidget()->setName("rootWidget");
-    window->engine()->rootWidget()->addWidget(mainLayout);
+    mainWindow->engine()->rootWidget()->setName("rootWidget");
+    mainWindow->engine()->rootWidget()->addWidget(mainLayout);
     
     {
         auto image = std::make_unique<Image>();
         image->load("dust3d-vertical.png");
-        window->engine()->setImageResource("dust3d-vertical.png", image->width(), image->height(), image->data());
+        mainWindow->engine()->setImageResource("dust3d-vertical.png", image->width(), image->height(), image->data());
     }
     
-    window->engine()->run([=]() {
+    mainWindow->engine()->run([=]() {
             Image *image = new Image;
             image->load("reference-image.jpg");
             return (void *)image;
         }, [=](void *result) {
             Image *image = (Image *)result;
-            window->engine()->setImageResource("reference-image.jpg", image->width(), image->height(), image->data());
+            mainWindow->engine()->setImageResource("reference-image.jpg", image->width(), image->height(), image->data());
             delete image;
             Widget::get("Turnaround")->setBackgroundImageResourceName("reference-image.jpg");
         });
         
-    window->engine()->windowSizeChanged.connect([=]() {
+    mainWindow->engine()->windowSizeChanged.connect([=]() {
         Widget *turnaroundWidget = Widget::get("Turnaround");
         size_t targetWidth = turnaroundWidget->layoutWidth();
         size_t targetHeight = turnaroundWidget->layoutHeight();
-        window->engine()->run([=]() {
+        mainWindow->engine()->run([=]() {
             Image *image = new Image;
             image->load("reference-image.jpg");
             size_t toWidth = image->width();
@@ -495,22 +495,22 @@ int main(int argc, char* argv[])
             return (void *)resizedImage;
         }, [=](void *result) {
             Image *image = (Image *)result;
-            window->engine()->setImageResource("reference-image.jpg", image->width(), image->height(), image->data());
+            mainWindow->engine()->setImageResource("reference-image.jpg", image->width(), image->height(), image->data());
             delete image;
             Widget::get("Turnaround")->setBackgroundImageResourceName("reference-image.jpg");
         });
     });
     
-    window->addTimer(1000 / 300, [=]() {
-        window->engine()->update();
+    mainWindow->addTimer(1000 / 300, [=]() {
+        mainWindow->engine()->update();
     });
-    window->addTimer(1000 / 60, [=]() {
+    mainWindow->addTimer(1000 / 60, [=]() {
         eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext);
-        window->engine()->renderScene();
+        mainWindow->engine()->renderScene();
         eglSwapBuffers(eglDisplay, eglSurface);
     });
 
-    window->setVisible(true);
+    mainWindow->setVisible(true);
 
     Window::mainLoop();
     

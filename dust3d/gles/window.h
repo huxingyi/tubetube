@@ -33,7 +33,13 @@ class IndieGameEngine;
 class Window
 {
 public:
-    Window(int width, int height);
+    enum Type
+    {
+        Main,
+        Popup
+    };
+
+    Window(int width, int height, Type type=Type::Main);
     void setVisible(bool visible);
     void setEngine(IndieGameEngine *engine);
     IndieGameEngine *engine() const;
@@ -42,6 +48,7 @@ public:
     static void mainLoop();
     static bool isKeyPressed(char key);
     static uint64_t getMilliseconds();
+    void setTitle(const std::string &string);
 private:
     WindowInternal m_internal;
     IndieGameEngine *m_engine = nullptr;

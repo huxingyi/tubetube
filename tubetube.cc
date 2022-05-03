@@ -365,6 +365,7 @@ int main(int argc, char* argv[])
     eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext);
 
     window->setEngine(new IndieGameEngine);
+    window->setTitle("Tubetube汉字test");
     
     window->engine()->setMillisecondsQueryHandler([]() {
         return Window::getMilliseconds();
@@ -372,6 +373,7 @@ int main(int argc, char* argv[])
     window->engine()->setWindowSize(static_cast<double>(windowWidth), static_cast<double>(windowHeight));
     window->engine()->setVertexBufferListLoadHandler(loadResouceVertexBufferList);
     
+    /*
     {
         Matrix4x4 modelMatrix;
         window->engine()->addObject("defaultGround", "Ground", modelMatrix, IndieGameEngine::RenderType::Ground);
@@ -394,6 +396,7 @@ int main(int argc, char* argv[])
         window->engine()->addLocationState("palyer0", std::move(playerState));
     }
     window->engine()->addGeneralState("", std::make_unique<WorldState>(*window->engine()));
+    */
     
     window->engine()->setBackgroundColor(Color("#252525"));
     
@@ -502,6 +505,7 @@ int main(int argc, char* argv[])
         window->engine()->update();
     });
     window->addTimer(1000 / 60, [=]() {
+        eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext);
         window->engine()->renderScene();
         eglSwapBuffers(eglDisplay, eglSurface);
     });

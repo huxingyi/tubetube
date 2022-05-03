@@ -21,6 +21,8 @@
  */
 
 #define NOMINMAX
+#include <locale>
+#include <codecvt>
 #include <dust3d/gles/indie_game_engine.h>
 #include <dust3d/gles/window.h>
 
@@ -77,36 +79,43 @@ static LRESULT CALLBACK windowMessageHandler(HWND hwnd, unsigned int msg, WPARAM
     return (DefWindowProc(hwnd, msg, wParam, lParam));
 }
 
-Window::Window(int width, int height)
+Window::Window(int width, int height, Type type)
 {
     if (0 == g_windowCount) {
         SetProcessDPIAware(); // Avoid window scaling
+        
+        WNDCLASSEX windowClass;
+        windowClass.cbSize = sizeof(WNDCLASSEX);
+        windowClass.style = CS_OWNDC;
+        windowClass.cbClsExtra = 0;
+        windowClass.cbWndExtra = 0;
+        windowClass.hInstance = GetModuleHandle(NULL);
+        windowClass.hIcon = NULL;
+        windowClass.hCursor = LoadCursor(NULL, IDC_ARROW);
+        windowClass.hbrBackground = 0;
+        windowClass.lpszMenuName = NULL;
+        windowClass.lpszClassName = L"dust3dGlesWindow";
+        windowClass.hIconSm = NULL;
+        windowClass.lpfnWndProc = windowMessageHandler;
+        RegisterClassEx(&windowClass);
+    }
+
+    RECT rect = {0, 0, width, height};
+    int style = 0;
+    switch (type) {
+    case Type::Main:
+        style = WS_BORDER | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_OVERLAPPEDWINDOW; // | WS_MAXIMIZE;
+        break;
+    case Type::Popup:
+        style = WS_POPUP;
+        break;
     }
     
-    HINSTANCE instance = GetModuleHandle(NULL);
-    
-    WNDCLASSEX windowClass;
-    windowClass.cbSize = sizeof(WNDCLASSEX);
-    windowClass.style = CS_OWNDC;
-    windowClass.cbClsExtra = 0;
-    windowClass.cbWndExtra = 0;
-    windowClass.hInstance = instance;
-    windowClass.hIcon = NULL;
-    windowClass.hCursor = LoadCursor(NULL, IDC_ARROW);
-    windowClass.hbrBackground = 0;
-    windowClass.lpszMenuName = NULL;
-    windowClass.lpszClassName = "dust3dGlesWindow";
-    windowClass.hIconSm = NULL;
-    windowClass.lpfnWndProc = windowMessageHandler;
-
-    RegisterClassEx(&windowClass);
-    RECT rect = {0, 0, width, height};
-    int style = WS_BORDER | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_OVERLAPPEDWINDOW; // | WS_MAXIMIZE;
     AdjustWindowRect(&rect, style, FALSE);
 
     m_internal.handle = CreateWindowEx(0,
-        "dust3dGlesWindow", 
-        "Tubetube", 
+        L"dust3dGlesWindow", 
+        L"", 
         style, 
         CW_USEDEFAULT, 
         CW_USEDEFAULT, 
@@ -114,9 +123,17 @@ Window::Window(int width, int height)
         rect.bottom - rect.top, 
         NULL, 
         NULL, 
-        instance, 
+        GetModuleHandle(NULL), 
         this);
     m_internal.display = GetDC(m_internal.handle);
+}
+
+void Window::setTitle(const std::string &string)
+{
+    std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> utf16conv;
+    std::u16string utf16String = utf16conv.from_bytes(string);
+    
+    SetWindowTextW(m_internal.handle, reinterpret_cast<LPCWSTR>(utf16String.c_str()));
 }
 
 void Window::setVisible(bool visible)

@@ -1,6 +1,7 @@
 #define NOMINMAX
 #include <dust3d/base/matrix4x4.h>
 #include <dust3d/base/image.h>
+#include <dust3d/data/dust3d_vertical_png.h>
 #include <dust3d/gles/vertex_buffer.h>
 #include <dust3d/gles/vertex_buffer_utils.h>
 #include <dust3d/gles/indie_game_engine.h>
@@ -433,7 +434,7 @@ int main(int argc, char* argv[])
     logoWidget->setSizePolicy(Widget::SizePolicy::FixedSize);
     logoWidget->setWidth(25.0);
     logoWidget->setHeight(71.0);
-    logoWidget->setBackgroundImageResourceName("dust3d-vertical.png");
+    logoWidget->setBackgroundImageResourceName("dust3d/data/dust3d_vertical.png");
     
     auto leftBarLayout = new Widget;
     leftBarLayout->setName("leftBarLayout");
@@ -458,11 +459,16 @@ int main(int argc, char* argv[])
     mainWindow->engine()->rootWidget()->setName("rootWidget");
     mainWindow->engine()->rootWidget()->addWidget(mainLayout);
     
-    {
-        auto image = std::make_unique<Image>();
-        image->load("dust3d-vertical.png");
-        mainWindow->engine()->setImageResource("dust3d-vertical.png", image->width(), image->height(), image->data());
-    }
+    mainWindow->engine()->run([=]() {
+            Image *image = new Image;
+            image->load(Data::dust3d_vertical_png, sizeof(Data::dust3d_vertical_png));
+            return (void *)image;
+        }, [=](void *result) {
+            Image *image = (Image *)result;
+            mainWindow->engine()->setImageResource("dust3d/data/dust3d_vertical.png", image->width(), image->height(), image->data());
+            delete image;
+        }
+    );
     
     mainWindow->engine()->run([=]() {
             Image *image = new Image;
@@ -473,32 +479,34 @@ int main(int argc, char* argv[])
             mainWindow->engine()->setImageResource("reference-image.jpg", image->width(), image->height(), image->data());
             delete image;
             Widget::get("Turnaround")->setBackgroundImageResourceName("reference-image.jpg");
-        });
-        
+        }
+    );
+    
     mainWindow->engine()->windowSizeChanged.connect([=]() {
         Widget *turnaroundWidget = Widget::get("Turnaround");
         size_t targetWidth = turnaroundWidget->layoutWidth();
         size_t targetHeight = turnaroundWidget->layoutHeight();
         mainWindow->engine()->run([=]() {
-            Image *image = new Image;
-            image->load("reference-image.jpg");
-            size_t toWidth = image->width();
-            size_t toHeight = toWidth * targetHeight / targetWidth;
-            if (toHeight < image->height()) {
-                toHeight = image->height();
-                toWidth = toHeight * targetWidth / targetHeight;
+                Image *image = new Image;
+                image->load("reference-image.jpg");
+                size_t toWidth = image->width();
+                size_t toHeight = toWidth * targetHeight / targetWidth;
+                if (toHeight < image->height()) {
+                    toHeight = image->height();
+                    toWidth = toHeight * targetWidth / targetHeight;
+                }
+                Image *resizedImage = new Image(toWidth, toHeight);
+                resizedImage->clear(255, 255, 255, 0);
+                resizedImage->copy(*image, 0, 0, (resizedImage->width() - image->width()) / 2, (resizedImage->height() - image->height()) / 2, image->width(), image->height());
+                delete image;
+                return (void *)resizedImage;
+            }, [=](void *result) {
+                Image *image = (Image *)result;
+                mainWindow->engine()->setImageResource("reference-image.jpg", image->width(), image->height(), image->data());
+                delete image;
+                Widget::get("Turnaround")->setBackgroundImageResourceName("reference-image.jpg");
             }
-            Image *resizedImage = new Image(toWidth, toHeight);
-            resizedImage->clear(255, 255, 255, 0);
-            resizedImage->copy(*image, 0, 0, (resizedImage->width() - image->width()) / 2, (resizedImage->height() - image->height()) / 2, image->width(), image->height());
-            delete image;
-            return (void *)resizedImage;
-        }, [=](void *result) {
-            Image *image = (Image *)result;
-            mainWindow->engine()->setImageResource("reference-image.jpg", image->width(), image->height(), image->data());
-            delete image;
-            Widget::get("Turnaround")->setBackgroundImageResourceName("reference-image.jpg");
-        });
+        );
     });
     
     mainWindow->addTimer(1000 / 300, [=]() {

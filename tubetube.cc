@@ -154,41 +154,6 @@ static std::unique_ptr<std::vector<VertexBuffer>> loadResouceVertexBufferList(co
     return nullptr;
 }
 
-class DummyPlaneLocationState: public IndieGameEngine::LocationState
-{
-public:
-    DummyPlaneLocationState(IndieGameEngine &engine) :
-        IndieGameEngine::LocationState(engine)
-    {
-    }
-    
-    bool update()
-    {
-        if (Math::isZero(speed))
-            return false;
-        
-        if (m_forwardAcceleration > 0)
-            m_forwardAcceleration -= 0.01;
-        
-        if (m_forwardAcceleration > 0)
-            speed += m_forwardAcceleration * engine().elapsedSecondsSinceLastUpdate();
-
-        //worldLocation += velocity() * IndieGameEngine::indie()->elapsedSecondsSinceLastUpdate();
-        //const double tailFlameRadius = 0.015;
-        //double tailFlameSpeed = speed * 0.1;
-        //uint64_t emitInterval = (tailFlameRadius * 0.5 / speed) * 1000;
-        //if (m_lastEmitTime + emitInterval < IndieGameEngine::indie()->millisecondsSinceStart()) {
-        //    IndieGameEngine::indie()->addParticle(1.5, tailFlameRadius, worldLocation - forwardDirection * 0.2 + Vector3(0.0, 0.02, 0.0), forwardDirection * tailFlameSpeed, Vector3(0.95, 0.9, 0.27), Vector3(0.58, 0.31, 0.22));
-        //    m_lastEmitTime = IndieGameEngine::indie()->millisecondsSinceStart();
-        //}
-        return true;
-    }
-
-private:
-    uint64_t m_lastEmitTime = 0;
-    double m_forwardAcceleration = rand01();
-};
-
 class PlayerLocationState: public IndieGameEngine::LocationState
 {
 public:
@@ -366,7 +331,7 @@ int main(int argc, char* argv[])
     eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext);
 
     mainWindow->setEngine(new IndieGameEngine);
-    mainWindow->setTitle("Tubetube汉字test");
+    mainWindow->setTitle("Tubetube");
     
     mainWindow->engine()->setMillisecondsQueryHandler([]() {
         return Window::getMilliseconds();

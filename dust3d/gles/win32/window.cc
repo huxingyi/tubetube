@@ -74,6 +74,10 @@ static LRESULT CALLBACK windowMessageHandler(HWND hwnd, unsigned int msg, WPARAM
             //    engine->handleMouseMove(x, y);
         }
         break;
+    case WM_CONTEXTMENU: {
+            // TODO:
+        }
+        break;
     }
 
     return (DefWindowProc(hwnd, msg, wParam, lParam));

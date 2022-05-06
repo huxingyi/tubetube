@@ -20,12 +20,22 @@
  *  SOFTWARE.
  */
 
-#ifndef DUST3D_DATA_DUST3D_VERTICAL_PNG_H_
-#define DUST3D_DATA_DUST3D_VERTICAL_PNG_H_
+#ifndef HU_BASE_TASK_H_
+#define HU_BASE_TASK_H_
 
-struct Data
+namespace Hu
 {
-    static unsigned char dust3d_vertical_png[1650];
+
+class Task
+{
+public:
+    virtual void *work() = 0;
+    
+    virtual void after(void *result)
+    {
+    }
 };
+
+}
 
 #endif

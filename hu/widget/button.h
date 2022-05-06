@@ -20,12 +20,56 @@
  *  SOFTWARE.
  */
 
-#ifndef DUST3D_DATA_DUST3D_VERTICAL_PNG_H_
-#define DUST3D_DATA_DUST3D_VERTICAL_PNG_H_
+#ifndef HU_WIDGET_BUTTON_H_
+#define HU_WIDGET_BUTTON_H_
 
-struct Data
+#include <hu/widget/widget.h>
+
+namespace Hu
 {
-    static unsigned char dust3d_vertical_png[1650];
+    
+class Button: public Widget
+{
+public:
+    Button()
+    {
+        m_heightPolicy = SizePolicy::FixedSize;
+        m_height = 16.0;
+        m_widthPolicy = SizePolicy::FixedSize;
+        m_width = 420.0;
+        m_renderHints = RenderHint::Element | RenderHint::Button;
+    }
+    
+    void setIcon(const std::string &icon)
+    {
+        if (m_icon == icon)
+            return;
+        m_icon = icon;
+    }
+    
+    void setText(const std::string &text)
+    {
+        if (m_text == text)
+            return;
+        m_text = text;
+    }
+    
+    const std::string &icon()
+    {
+        return m_icon;
+    }
+    
+    const std::string &text()
+    {
+        return m_text;
+    }
+    
+private:
+    std::string m_icon;
+    std::string m_text;
 };
 
+}
+
 #endif
+

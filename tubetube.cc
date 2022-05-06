@@ -1,22 +1,21 @@
 #define NOMINMAX
-#include <dust3d/base/matrix4x4.h>
-#include <dust3d/base/image.h>
+#include <hu/base/matrix4x4.h>
+#include <hu/base/image.h>
+#include <hu/base/settings.h>
+#include <hu/gles/vertex_buffer.h>
+#include <hu/gles/vertex_buffer_utils.h>
+#include <hu/gles/indie_game_engine.h>
+#include <hu/gles/terrain_generator.h>
+#include <hu/gles/window.h>
+#include <hu/mesh/tube_mesh_builder.h>
+#include <hu/mesh/mesh_utils.h>
+#include <hu/widget/button.h>
 #include <dust3d/data/dust3d_vertical_png.h>
-#include <dust3d/gles/vertex_buffer.h>
-#include <dust3d/gles/vertex_buffer_utils.h>
-#include <dust3d/gles/indie_game_engine.h>
-#include <dust3d/gles/terrain_generator.h>
-#include <dust3d/gles/window.h>
-#include <dust3d/mesh/tube_mesh_builder.h>
-#include <dust3d/mesh/mesh_utils.h>
-#include <dust3d/widget/button.h>
 #include <EGL/egl.h>
 #include <EGL/eglplatform.h>
 #include <GLES2/gl2.h>
 #include <random>
 
-static int g_mainWindowWidth = 640;
-static int g_mainWindowHeight = 360;
 EGLDisplay eglDisplay = EGL_NO_DISPLAY;
 EGLSurface eglSurface = EGL_NO_SURFACE;
 //std::random_device randomSeeder;
@@ -26,7 +25,7 @@ std::uniform_real_distribution<double> randomReal(0.0, 1.0);
 auto spawn = std::bind(randomSpawn, randomEngine);
 auto rand01 = std::bind(randomReal, randomEngine);
 
-using namespace dust3d;
+using namespace Hu;
 
 static EGLint getContextRenderableType(EGLDisplay eglDisplay)
 {
@@ -282,7 +281,10 @@ public:
 
 int main(int argc, char* argv[])
 {
-    Window *mainWindow = new Window(g_mainWindowWidth, g_mainWindowHeight);
+    Hu::Settings settings("tubetube.ini");
+    int windowWidth = String::toInt(settings.value("window.width", 640));
+    int windowHeight = String::toInt(settings.value("window.height", 360));
+    Window *mainWindow = new Window(windowWidth, windowHeight);
 
     eglDisplay = eglGetDisplay(mainWindow->internal().display);
     if (eglDisplay == EGL_NO_DISPLAY) {
@@ -336,7 +338,7 @@ int main(int argc, char* argv[])
     mainWindow->engine()->setMillisecondsQueryHandler([]() {
         return Window::getMilliseconds();
     });
-    mainWindow->engine()->setWindowSize(static_cast<double>(g_mainWindowWidth), static_cast<double>(g_mainWindowHeight));
+    mainWindow->engine()->setWindowSize(static_cast<double>(windowWidth), static_cast<double>(windowHeight));
     mainWindow->engine()->setVertexBufferListLoadHandler(loadResouceVertexBufferList);
     
     /*

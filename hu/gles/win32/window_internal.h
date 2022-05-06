@@ -20,12 +20,24 @@
  *  SOFTWARE.
  */
 
-#ifndef DUST3D_DATA_DUST3D_VERTICAL_PNG_H_
-#define DUST3D_DATA_DUST3D_VERTICAL_PNG_H_
+#ifndef HU_GLES_WINDOW_INTERNAL_H_
+#define HU_GLES_WINDOW_INTERNAL_H_
 
-struct Data
+#include <vector>
+#include <functional>
+#include <Windows.h>
+#include <Windowsx.h>
+
+namespace Hu
 {
-    static unsigned char dust3d_vertical_png[1650];
+
+struct WindowInternal
+{
+    HWND handle = nullptr;
+    HDC display = nullptr;
+    std::vector<std::function<void (void)>> timers;
 };
+
+}
 
 #endif

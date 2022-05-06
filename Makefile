@@ -4,11 +4,11 @@ BIN_DIRECTORY = bin
 
 OBJ_FILES = \
 	$(OBJ_DIRECTORY)\tubetube.obj \
-	$(OBJ_DIRECTORY)\dust3d\base\image.obj \
-	$(OBJ_DIRECTORY)\dust3d\gles\icon_map.obj \
-	$(OBJ_DIRECTORY)\dust3d\gles\win32\window.obj \
-	$(OBJ_DIRECTORY)\dust3d\data\dust3d_vertical_png.obj \
-	$(OBJ_DIRECTORY)\dust3d\widget\widget.obj
+	$(OBJ_DIRECTORY)\hu\base\image.obj \
+	$(OBJ_DIRECTORY)\hu\gles\icon_map.obj \
+	$(OBJ_DIRECTORY)\hu\gles\win32\window.obj \
+	$(OBJ_DIRECTORY)\hu\widget\widget.obj \
+	$(OBJ_DIRECTORY)\dust3d\data\dust3d_vertical_png.obj
 
 INCLUDE_DIRECTORIES_OPTIONS = \
 	/I "C:\\Libraries\\freetype-windows-binaries-2.11.1\\include" \
@@ -30,39 +30,42 @@ COMPILE_OPTIONS = \
 	/EHsc \
 	/DUNICODE \
 	/D_UNICODE \
+	/nologo \
 	$(INCLUDE_DIRECTORIES_OPTIONS)
 
 LINK_OPTIONS = \
-	/DEBUG:FULL	\
+	/DEBUG:FULL \
+	/LTCG \
+	/nologo \
 	$(LIB_DIRECTORIES_OPTIONS)
 
 {}.cc{$(OBJ_DIRECTORY)}.obj::
 	@for %%a in ($(OBJ_DIRECTORY)\$<) do @if not exist "%~dpa" mkdir "%~dpa"
 	@cl /c /Fo$(OBJ_DIRECTORY)\ $(COMPILE_OPTIONS) $<
 
-{dust3d\base\}.cc{$(OBJ_DIRECTORY)\dust3d\base\}.obj::
+{hu\base\}.cc{$(OBJ_DIRECTORY)\hu\base\}.obj::
 	@for %%a in ($(OBJ_DIRECTORY)\$<) do @if not exist "%~dpa" mkdir "%~dpa"
-	@cl /c /Fo$(OBJ_DIRECTORY)\dust3d\base\ $(COMPILE_OPTIONS) $<
+	@cl /c /Fo$(OBJ_DIRECTORY)\hu\base\ $(COMPILE_OPTIONS) $<
 
 {dust3d\data\}.cc{$(OBJ_DIRECTORY)\dust3d\data\}.obj::
 	@for %%a in ($(OBJ_DIRECTORY)\$<) do @if not exist "%~dpa" mkdir "%~dpa"
 	@cl /c /Fo$(OBJ_DIRECTORY)\dust3d\data\ $(COMPILE_OPTIONS) $<
 
-{dust3d\gles\}.cc{$(OBJ_DIRECTORY)\dust3d\gles\}.obj::
+{hu\gles\}.cc{$(OBJ_DIRECTORY)\hu\gles\}.obj::
 	@for %%a in ($(OBJ_DIRECTORY)\$<) do @if not exist "%~dpa" mkdir "%~dpa"
-	@cl /c /Fo$(OBJ_DIRECTORY)\dust3d\gles\ $(COMPILE_OPTIONS) $<
+	@cl /c /Fo$(OBJ_DIRECTORY)\hu\gles\ $(COMPILE_OPTIONS) $<
 
-{dust3d\gles\win32\}.cc{$(OBJ_DIRECTORY)\dust3d\gles\win32\}.obj::
+{hu\gles\win32\}.cc{$(OBJ_DIRECTORY)\hu\gles\win32\}.obj::
 	@for %%a in ($(OBJ_DIRECTORY)\$<) do @if not exist "%~dpa" mkdir "%~dpa"
-	@cl /c /Fo$(OBJ_DIRECTORY)\dust3d\gles\win32\ $(COMPILE_OPTIONS) $<
+	@cl /c /Fo$(OBJ_DIRECTORY)\hu\gles\win32\ $(COMPILE_OPTIONS) $<
 
-{dust3d\mesh\}.cc{$(OBJ_DIRECTORY)\dust3d\mesh\}.obj::
+{hu\mesh\}.cc{$(OBJ_DIRECTORY)\hu\mesh\}.obj::
 	@for %%a in ($(OBJ_DIRECTORY)\$<) do @if not exist "%~dpa" mkdir "%~dpa"
-	@cl /c /Fo$(OBJ_DIRECTORY)\dust3d\mesh\ $(COMPILE_OPTIONS) $<
+	@cl /c /Fo$(OBJ_DIRECTORY)\hu\mesh\ $(COMPILE_OPTIONS) $<
 
-{dust3d\widget\}.cc{$(OBJ_DIRECTORY)\dust3d\widget\}.obj::
+{hu\widget\}.cc{$(OBJ_DIRECTORY)\hu\widget\}.obj::
 	@for %%a in ($(OBJ_DIRECTORY)\$<) do @if not exist "%~dpa" mkdir "%~dpa"
-	@cl /c /Fo$(OBJ_DIRECTORY)\dust3d\widget\ $(COMPILE_OPTIONS) $<
+	@cl /c /Fo$(OBJ_DIRECTORY)\hu\widget\ $(COMPILE_OPTIONS) $<
 
 $(EXECUTABLE_NAME): $(OBJ_FILES)
 	@if not exist $(BIN_DIRECTORY) mkdir $(BIN_DIRECTORY)

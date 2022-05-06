@@ -19,13 +19,39 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *  SOFTWARE.
  */
+ 
+#ifndef HU_BASE_SIGNAL_H_
+#define HU_BASE_SIGNAL_H_
 
-#ifndef DUST3D_DATA_DUST3D_VERTICAL_PNG_H_
-#define DUST3D_DATA_DUST3D_VERTICAL_PNG_H_
+#include <map>
+#include <functional>
 
-struct Data
+namespace Hu
 {
-    static unsigned char dust3d_vertical_png[1650];
+
+template <typename... Args>
+class Signal
+{
+public:
+    int64_t connect(const std::function<void (Args...)> &slot)
+    {
+        int64_t slotId = m_nextSlotId++;
+        m_slots.insert({slotId, slot});
+        return slotId;
+    }
+    
+    void emit(Args... parameters) 
+    {
+        for (const auto &it: m_slots) {
+            it.second(parameters...);
+        }
+    }
+    
+private:
+    std::map<int64_t, std::function<void (Args...)>> m_slots;
+    int64_t m_nextSlotId = 1;
 };
+    
+}
 
 #endif

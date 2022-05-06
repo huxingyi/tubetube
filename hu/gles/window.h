@@ -20,12 +20,40 @@
  *  SOFTWARE.
  */
 
-#ifndef DUST3D_DATA_DUST3D_VERTICAL_PNG_H_
-#define DUST3D_DATA_DUST3D_VERTICAL_PNG_H_
+#ifndef HU_GLES_WINDOW_H_
+#define HU_GLES_WINDOW_H_
 
-struct Data
+#include <hu/gles/win32/window_internal.h>
+
+namespace Hu
 {
-    static unsigned char dust3d_vertical_png[1650];
+    
+class IndieGameEngine;
+    
+class Window
+{
+public:
+    enum Type
+    {
+        Main,
+        Popup
+    };
+
+    Window(int width, int height, Type type=Type::Main);
+    void setVisible(bool visible);
+    void setEngine(IndieGameEngine *engine);
+    IndieGameEngine *engine() const;
+    void addTimer(uint32_t milliseconds, std::function<void (void)> handler);
+    WindowInternal &internal();
+    static void mainLoop();
+    static bool isKeyPressed(char key);
+    static uint64_t getMilliseconds();
+    void setTitle(const std::string &string);
+private:
+    WindowInternal m_internal;
+    IndieGameEngine *m_engine = nullptr;
 };
+    
+}
 
 #endif

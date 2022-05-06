@@ -20,12 +20,6 @@
  *  SOFTWARE.
  */
 
-#ifndef DUST3D_DATA_DUST3D_VERTICAL_PNG_H_
-#define DUST3D_DATA_DUST3D_VERTICAL_PNG_H_
-
-struct Data
-{
-    static unsigned char dust3d_vertical_png[1650];
-};
-
-#endif
+#include <hu/base/image.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include <third_party/stb/stb_image.h>

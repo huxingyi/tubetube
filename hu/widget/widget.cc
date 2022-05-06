@@ -20,12 +20,15 @@
  *  SOFTWARE.
  */
 
-#ifndef DUST3D_DATA_DUST3D_VERTICAL_PNG_H_
-#define DUST3D_DATA_DUST3D_VERTICAL_PNG_H_
+#include <hu/widget/widget.h>
 
-struct Data
+namespace Hu
 {
-    static unsigned char dust3d_vertical_png[1650];
-};
 
-#endif
+std::map<std::string, Widget *> Widget::m_widgets;
+uint64_t Widget::m_nextWidgetId = 1;
+bool Widget::m_layoutChanged = false;
+bool Widget::m_appearanceChanged = false;
+
+}
+

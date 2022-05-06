@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2022 Jeremy HU <jeremy-at-dust3d dot org>. All rights reserved. 
+ *  Copyright (c) 2016-2021 Jeremy HU <jeremy-at-dust3d dot org>. All rights reserved. 
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -19,13 +19,41 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *  SOFTWARE.
  */
+ 
+#ifndef HU_BASE_MATH_H_
+#define HU_BASE_MATH_H_
 
-#ifndef DUST3D_DATA_DUST3D_VERTICAL_PNG_H_
-#define DUST3D_DATA_DUST3D_VERTICAL_PNG_H_
+#include <cmath>
+#include <limits>
 
-struct Data
+namespace Hu
 {
-    static unsigned char dust3d_vertical_png[1650];
-};
+namespace Math
+{
+    
+const double Pi = 3.14159265358979323846;
+    
+inline bool isZero(double number)
+{
+    return std::abs(number) <= std::numeric_limits<double>::epsilon();
+}
+
+inline bool isEqual(double a, double b)
+{
+    return isZero(a - b);
+}
+
+inline double radiansFromDegrees(double degrees)
+{
+    return degrees * (Pi / 180.0);
+}
+
+inline double radiansToDegrees(double radians)
+{
+    return radians * (180.0 / Pi);
+}
+
+}
+}
 
 #endif

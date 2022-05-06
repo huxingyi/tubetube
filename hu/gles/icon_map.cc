@@ -20,12 +20,11 @@
  *  SOFTWARE.
  */
 
-#ifndef DUST3D_DATA_DUST3D_VERTICAL_PNG_H_
-#define DUST3D_DATA_DUST3D_VERTICAL_PNG_H_
+#include <hu/gles/icon_map.h>
 
-struct Data
-{
-    static unsigned char dust3d_vertical_png[1650];
-};
+#define NANOSVG_IMPLEMENTATION
+#include <nanosvg.h>
+#define NANOSVGRAST_IMPLEMENTATION
+#include <nanosvgrast.h>
 
-#endif
+

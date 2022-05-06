@@ -20,12 +20,46 @@
  *  SOFTWARE.
  */
 
-#ifndef DUST3D_DATA_DUST3D_VERTICAL_PNG_H_
-#define DUST3D_DATA_DUST3D_VERTICAL_PNG_H_
+#ifndef HU_BASE_STRING_H_
+#define HU_BASE_STRING_H_
 
-struct Data
+#include <string>
+#include <sstream>
+#include <vector>
+
+namespace Hu
 {
-    static unsigned char dust3d_vertical_png[1650];
-};
+namespace String
+{
+
+inline std::vector<std::string> split(const std::string &string, char seperator)
+{
+    std::vector<std::string> tokens;
+    std::stringstream stream(string);
+    std::string token;
+    while (std::getline(stream, token, seperator))
+        tokens.push_back(token);
+    return std::move(tokens);
+}
+
+inline std::string trimmed(std::string string)
+{
+    string.erase(string.begin(), std::find_if(string.begin(), string.end(), [](int ch) {
+        return !std::isspace(ch);
+    }));
+    string.erase(std::find_if(string.rbegin(), string.rend(), [](int ch) {
+        return !std::isspace(ch);
+    }).base(), string.end());
+    return std::move(string);
+}
+
+int toInt(const std::string &string)
+{
+    return std::strtol(string.c_str(), nullptr, 10);
+}
+
+}
+}
 
 #endif
+

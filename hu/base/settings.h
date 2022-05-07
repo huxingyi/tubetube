@@ -28,6 +28,7 @@
 #include <fstream>
 #include <iostream>
 #include <format>
+#include <hu/base/debug.h>
 #include <hu/base/string.h>
 
 namespace Hu

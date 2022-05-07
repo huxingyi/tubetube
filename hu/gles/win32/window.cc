@@ -83,6 +83,17 @@ static LRESULT CALLBACK windowMessageHandler(HWND hwnd, unsigned int msg, WPARAM
     return (DefWindowProc(hwnd, msg, wParam, lParam));
 }
 
+static EGLint getContextRenderableType(EGLDisplay eglDisplay)
+{
+#ifdef EGL_KHR_create_context
+    const char *extensions = eglQueryString(eglDisplay, EGL_EXTENSIONS);
+    if (extensions != NULL && strstr(extensions, "EGL_KHR_create_context")) {
+        return EGL_OPENGL_ES3_BIT_KHR;
+    }
+#endif
+   return EGL_OPENGL_ES2_BIT;
+}
+
 Window::Window(int width, int height, Type type)
 {
     if (0 == g_windowCount) {
@@ -130,6 +141,60 @@ Window::Window(int width, int height, Type type)
         GetModuleHandle(NULL), 
         this);
     m_internal.display = GetDC(m_internal.handle);
+    
+    m_eglDisplay = eglGetDisplay(m_internal.display);
+    if (EGL_NO_DISPLAY == m_eglDisplay)
+        huDebug << "eglGetDisplay returns EGL_NO_DISPLAY";
+    
+    EGLint eglVersionMajor, eglVersionMinor;
+    eglInitialize(m_eglDisplay, &eglVersionMajor, &eglVersionMinor);
+    
+    EGLint configAttributes[] = {
+        EGL_RED_SIZE,           8,
+        EGL_GREEN_SIZE,         8,
+        EGL_BLUE_SIZE,          8,
+        EGL_ALPHA_SIZE,         8,
+        EGL_DEPTH_SIZE,         24,
+        EGL_STENCIL_SIZE,       8,
+        EGL_SAMPLE_BUFFERS,     1,
+        EGL_SAMPLES,            4,
+        EGL_RENDERABLE_TYPE,    getContextRenderableType(m_eglDisplay),
+        EGL_NONE
+    };
+
+    EGLint contextAttributes[] = {
+        EGL_CONTEXT_CLIENT_VERSION, 
+        3, 
+        EGL_NONE
+    };
+    
+    EGLint numConfigs;
+    EGLConfig windowConfig;
+    eglChooseConfig(m_eglDisplay, configAttributes, &windowConfig, 1, &numConfigs);
+    m_eglSurface = eglCreateWindowSurface(m_eglDisplay, windowConfig, m_internal.handle, NULL);
+    if (EGL_NO_SURFACE == m_eglSurface)
+        huDebug << "eglCreateWindowSurface returns EGL_NO_SURFACE:" << eglGetError();
+    
+    m_eglContext = eglCreateContext(m_eglDisplay, windowConfig, EGL_NO_CONTEXT, contextAttributes);
+    if (EGL_NO_CONTEXT == m_eglContext)
+        huDebug << "eglCreateContext returns EGL_NO_SURFACE:" << eglGetError();
+    
+    eglMakeCurrent(m_eglDisplay, m_eglSurface, m_eglSurface, m_eglContext);
+    
+    setEngine(new IndieGameEngine);
+    m_engine->setMillisecondsQueryHandler([]() {
+        return Window::getMilliseconds();
+    });
+    m_engine->setWindowSize(static_cast<double>(width), static_cast<double>(height));
+    
+    addTimer(1000 / 300, [=]() {
+        this->engine()->update();
+    });
+    addTimer(1000 / 60, [=]() {
+        eglMakeCurrent(this->eglDisplay(), this->eglSurface(), this->eglSurface(), this->eglContext());
+        this->engine()->renderScene();
+        eglSwapBuffers(this->eglDisplay(), this->eglSurface());
+    });
 }
 
 void Window::setTitle(const std::string &string)
@@ -148,6 +213,21 @@ void Window::setVisible(bool visible)
 void Window::setEngine(IndieGameEngine *engine)
 {
     m_engine = engine;
+}
+
+EGLDisplay Window::eglDisplay() const
+{
+    return m_eglDisplay;
+}
+
+EGLDisplay Window::eglSurface() const
+{
+    return m_eglSurface;
+}
+
+EGLDisplay Window::eglContext() const
+{
+    return m_eglContext;
 }
 
 IndieGameEngine *Window::engine() const

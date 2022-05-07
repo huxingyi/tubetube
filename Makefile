@@ -3,11 +3,12 @@ OBJ_DIRECTORY = tmp
 BIN_DIRECTORY = bin
 
 OBJ_FILES = \
-	$(OBJ_DIRECTORY)\tubetube.obj \
 	$(OBJ_DIRECTORY)\hu\base\image.obj \
 	$(OBJ_DIRECTORY)\hu\gles\icon_map.obj \
 	$(OBJ_DIRECTORY)\hu\gles\win32\window.obj \
 	$(OBJ_DIRECTORY)\hu\widget\widget.obj \
+	$(OBJ_DIRECTORY)\dust3d\document_window.obj \
+	$(OBJ_DIRECTORY)\dust3d\main.obj \
 	$(OBJ_DIRECTORY)\dust3d\data\dust3d_vertical_png.obj
 
 INCLUDE_DIRECTORIES_OPTIONS = \
@@ -50,6 +51,10 @@ LINK_OPTIONS = \
 {dust3d\data\}.cc{$(OBJ_DIRECTORY)\dust3d\data\}.obj::
 	@for %%a in ($(OBJ_DIRECTORY)\$<) do @if not exist "%~dpa" mkdir "%~dpa"
 	@cl /c /Fo$(OBJ_DIRECTORY)\dust3d\data\ $(COMPILE_OPTIONS) $<
+
+{dust3d\}.cc{$(OBJ_DIRECTORY)\dust3d\}.obj::
+	@for %%a in ($(OBJ_DIRECTORY)\$<) do @if not exist "%~dpa" mkdir "%~dpa"
+	@cl /c /Fo$(OBJ_DIRECTORY)\dust3d\ $(COMPILE_OPTIONS) $<
 
 {hu\gles\}.cc{$(OBJ_DIRECTORY)\hu\gles\}.obj::
 	@for %%a in ($(OBJ_DIRECTORY)\$<) do @if not exist "%~dpa" mkdir "%~dpa"

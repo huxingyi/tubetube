@@ -24,6 +24,8 @@
 #define HU_GLES_WINDOW_H_
 
 #include <hu/gles/win32/window_internal.h>
+#include <EGL/egl.h>
+#include <EGL/eglplatform.h>
 
 namespace Hu
 {
@@ -43,15 +45,21 @@ public:
     void setVisible(bool visible);
     void setEngine(IndieGameEngine *engine);
     IndieGameEngine *engine() const;
+    EGLDisplay eglDisplay() const;
+    EGLDisplay eglSurface() const;
+    EGLDisplay eglContext() const;
     void addTimer(uint32_t milliseconds, std::function<void (void)> handler);
     WindowInternal &internal();
+    void setTitle(const std::string &string);
     static void mainLoop();
     static bool isKeyPressed(char key);
     static uint64_t getMilliseconds();
-    void setTitle(const std::string &string);
 private:
     WindowInternal m_internal;
     IndieGameEngine *m_engine = nullptr;
+    EGLDisplay m_eglDisplay = EGL_NO_DISPLAY;
+    EGLSurface m_eglSurface = EGL_NO_SURFACE;
+    EGLContext m_eglContext = EGL_NO_CONTEXT;
 };
     
 }

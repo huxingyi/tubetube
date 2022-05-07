@@ -20,46 +20,20 @@
  *  SOFTWARE.
  */
 
-#ifndef HU_BASE_STRING_H_
-#define HU_BASE_STRING_H_
+#ifndef DUST3D_DOCUMENT_WINDOW_H_
+#define DUST3D_DOCUMENT_WINDOW_H_
 
-#include <string>
-#include <sstream>
-#include <vector>
+#include <hu/base/settings.h>
+#include <hu/gles/window.h>
 
-namespace Hu
+using namespace Hu;
+
+class DocumentWindow: public Window
 {
-namespace String
-{
-
-inline std::vector<std::string> split(const std::string &string, char seperator)
-{
-    std::vector<std::string> tokens;
-    std::stringstream stream(string);
-    std::string token;
-    while (std::getline(stream, token, seperator))
-        tokens.push_back(token);
-    return std::move(tokens);
-}
-
-inline std::string trimmed(std::string string)
-{
-    string.erase(string.begin(), std::find_if(string.begin(), string.end(), [](int ch) {
-        return !std::isspace(ch);
-    }));
-    string.erase(std::find_if(string.rbegin(), string.rend(), [](int ch) {
-        return !std::isspace(ch);
-    }).base(), string.end());
-    return std::move(string);
-}
-
-inline int toInt(const std::string &string)
-{
-    return std::strtol(string.c_str(), nullptr, 10);
-}
-
-}
-}
+public:
+    DocumentWindow();
+    
+    static Settings *settings();
+};
 
 #endif
-

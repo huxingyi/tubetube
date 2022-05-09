@@ -46,13 +46,6 @@ DocumentWindow::DocumentWindow():
     toolBoxWidget->setName("toolBoxWidget");
     toolBoxWidget->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
     toolBoxWidget->addSpacing(5.0);
-    auto openReferenceSheetButton = new Button;
-    openReferenceSheetButton->setName("openReferenceSheetButton");
-    openReferenceSheetButton->setBackgroundColor(Color("#fc6621"));
-    openReferenceSheetButton->setColor(Color("#000000")); //f7d9c8
-    openReferenceSheetButton->setText("Open Image..");
-    openReferenceSheetButton->setIcon("toolbar_pointer.svg");
-    toolBoxWidget->addWidget(openReferenceSheetButton);
     toolBoxWidget->addExpanding(0.5);
     toolBoxWidget->addSpacing(5.0);
     toolBoxWidget->addWidget(new Button);
@@ -67,8 +60,17 @@ DocumentWindow::DocumentWindow():
     backgroundImageWidget->setHeight(1.0);
     backgroundImageWidget->setWidthPolicy(Widget::SizePolicy::FlexibleSize);
     backgroundImageWidget->setExpandingWeight(1.0);
-    //backgroundImageWidget->setBackgroundImageResourceName("reference-image.jpg");
     backgroundImageWidget->setBackgroundImageOpacity(0.25);
+    backgroundImageWidget->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
+    
+    auto openReferenceImageButton = new Button;
+    openReferenceImageButton->setName("openReferenceImageButton");
+    openReferenceImageButton->setBackgroundColor(Color("#fc6621"));
+    openReferenceImageButton->setColor(Color("#000000")); //f7d9c8
+    openReferenceImageButton->setText("Open reference image");
+    backgroundImageWidget->addExpanding();
+    //backgroundImageWidget->addWidget(openReferenceImageButton);
+    backgroundImageWidget->addExpanding();
     
     auto logoWidget = new Widget;
     logoWidget->setName("logoWidget");
@@ -96,7 +98,6 @@ DocumentWindow::DocumentWindow():
     mainLayout->addWidget(leftBarLayout);
     mainLayout->addWidget(backgroundImageWidget);
     
-    //IndieGameEngine::indie()->rootWidget()->addSpacing(5.0);
     engine()->rootWidget()->setName("rootWidget");
     engine()->rootWidget()->addWidget(mainLayout);
     
@@ -111,45 +112,73 @@ DocumentWindow::DocumentWindow():
         }
     );
     
-    engine()->run([=]() {
-            Image *image = new Image;
-            image->load("reference-image.jpg");
-            return (void *)image;
-        }, [=](void *result) {
-            Image *image = (Image *)result;
-            this->engine()->setImageResource("reference-image.jpg", image->width(), image->height(), image->data());
-            delete image;
-            Widget::get("Turnaround")->setBackgroundImageResourceName("reference-image.jpg");
-        }
-    );
-    
-    engine()->windowSizeChanged.connect([=]() {
-        Widget *turnaroundWidget = Widget::get("Turnaround");
-        size_t targetWidth = turnaroundWidget->layoutWidth();
-        size_t targetHeight = turnaroundWidget->layoutHeight();
-        this->engine()->run([=]() {
-                Image *image = new Image;
-                image->load("reference-image.jpg");
-                size_t toWidth = image->width();
-                size_t toHeight = toWidth * targetHeight / targetWidth;
-                if (toHeight < image->height()) {
-                    toHeight = image->height();
-                    toWidth = toHeight * targetWidth / targetHeight;
-                }
-                Image *resizedImage = new Image(toWidth, toHeight);
-                resizedImage->clear(255, 255, 255, 0);
-                resizedImage->copy(*image, 0, 0, (resizedImage->width() - image->width()) / 2, (resizedImage->height() - image->height()) / 2, image->width(), image->height());
-                delete image;
-                return (void *)resizedImage;
-            }, [=](void *result) {
-                Image *image = (Image *)result;
-                this->engine()->setImageResource("reference-image.jpg", image->width(), image->height(), image->data());
-                delete image;
-                Widget::get("Turnaround")->setBackgroundImageResourceName("reference-image.jpg");
-            }
-        );
-    });
+    engine()->windowSizeChanged.connect(std::bind(&DocumentWindow::updateReferenceImage, this));
+    engine()->shouldPopupMenu.connect(std::bind(&DocumentWindow::popupMenu, this));
     
     setVisible(true);
+    
+    setReferenceImage("reference-image.jpg");
 }
 
+void DocumentWindow::popupMenu()
+{
+    Window *menu = popupWindow();
+    menu->engine()->setBackgroundColor(Color("#efefef"));
+    menu->setVisible(true);
+}
+
+DirtyFlags &DocumentWindow::referenceImageFlags()
+{
+    return m_referenceImageFlags;
+}
+
+void DocumentWindow::updateReferenceImage()
+{
+    if (m_referenceImageFlags.processing) {
+        m_referenceImageFlags.dirty = true;
+        return;
+    }
+    
+    m_referenceImageFlags.dirty = false;
+    
+    if (nullptr == m_referenceImage)
+        return;
+    
+    m_referenceImageFlags.processing = true;
+    
+    Widget *turnaroundWidget = Widget::get("Turnaround");
+    size_t targetWidth = turnaroundWidget->layoutWidth();
+    size_t targetHeight = turnaroundWidget->layoutHeight();
+    Image *image = new Image(*m_referenceImage);
+    engine()->run([=]() {
+            size_t toWidth = image->width();
+            size_t toHeight = toWidth * targetHeight / targetWidth;
+            if (toHeight < image->height()) {
+                toHeight = image->height();
+                toWidth = toHeight * targetWidth / targetHeight;
+            }
+            Image *resizedImage = new Image(toWidth, toHeight);
+            resizedImage->clear(255, 255, 255, 0);
+            resizedImage->copy(*image, 0, 0, (resizedImage->width() - image->width()) / 2, (resizedImage->height() - image->height()) / 2, image->width(), image->height());
+            delete image;
+            return (void *)resizedImage;
+        }, [=](void *result) {
+            Image *resizedImage = (Image *)result;
+            this->engine()->setImageResource("reference-image", resizedImage->width(), resizedImage->height(), resizedImage->data());
+            delete resizedImage;
+            Widget::get("Turnaround")->setBackgroundImageResourceName("reference-image");
+            this->referenceImageFlags().processing = false;
+            if (this->referenceImageFlags().dirty)
+                this->updateReferenceImage();
+        }
+    );
+}
+
+void DocumentWindow::setReferenceImage(const std::string &path)
+{
+    m_referenceImage = std::make_unique<Image>();
+    m_referenceImage->load(path.c_str());
+    engine()->run([=](void *) {
+        this->updateReferenceImage();
+    });
+}

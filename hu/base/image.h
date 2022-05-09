@@ -34,6 +34,15 @@ class Image
 public:
     Image() = default;
     
+    Image(const Image &other):
+        m_width(other.width()),
+        m_height(other.height())
+    {
+        size_t dataSize = m_width * m_height * 4;
+        m_data = (unsigned char *)malloc(dataSize);
+        memcpy(m_data, other.data(), dataSize);
+    }
+    
     Image(size_t width, size_t height):
         m_width(width),
         m_height(height)

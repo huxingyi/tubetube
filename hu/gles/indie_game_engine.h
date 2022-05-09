@@ -51,6 +51,7 @@ class IndieGameEngine
 {
 public:
     Signal<> windowSizeChanged;
+    Signal<> shouldPopupMenu;
     
     enum RenderType
     {
@@ -943,9 +944,14 @@ public:
         m_uiTaskList.post(std::move(task));
     }
     
-    void run(std::function<void *(void)> work, std::function<void (void *)> after=nullptr)
+    void run(std::function<void *(void)> work, std::function<void (void *)> after)
     {
         m_uiTaskList.post(work, after);
+    }
+    
+    void run(std::function<void (void *)> after)
+    {
+        m_uiTaskList.post([](){return nullptr;}, after);
     }
     
     void setImageResource(const std::string &resourceName, size_t width, size_t height, const unsigned char *data)

@@ -103,9 +103,11 @@ public:
             m_freeTypeHandle = msdfgen::initializeFreetype();
         if (nullptr == m_fontHandle) {
             m_fontHandle = msdfgen::loadFont(m_freeTypeHandle, m_fontFilePath.c_str());
-            msdfgen::FontMetrics metrics = {0};
-            getFontMetrics(metrics, m_fontHandle);
-            m_fontSizeInPixel = metrics.lineHeight;
+            if (nullptr != m_fontHandle) {
+                msdfgen::FontMetrics metrics = {0};
+                getFontMetrics(metrics, m_fontHandle);
+                m_fontSizeInPixel = metrics.lineHeight;
+            }
         }
         
         resetImageClips();

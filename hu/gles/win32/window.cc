@@ -75,7 +75,14 @@ static LRESULT CALLBACK windowMessageHandler(HWND hwnd, unsigned int msg, WPARAM
         }
         break;
     case WM_CONTEXTMENU: {
-            // TODO:
+            window->engine()->shouldPopupMenu.emit();
+        }
+        break;
+    case WM_ACTIVATE: {
+            if (WA_INACTIVE == LOWORD(wParam)) {
+                if (Window::Type::Popup == window->type())
+                    window->setVisible(false);
+            }
         }
         break;
     }
@@ -94,7 +101,8 @@ static EGLint getContextRenderableType(EGLDisplay eglDisplay)
    return EGL_OPENGL_ES2_BIT;
 }
 
-Window::Window(int width, int height, Type type)
+Window::Window(int width, int height, Type type, Window *parent):
+    m_type(type)
 {
     if (0 == g_windowCount) {
         SetProcessDPIAware(); // Avoid window scaling
@@ -117,7 +125,8 @@ Window::Window(int width, int height, Type type)
 
     RECT rect = {0, 0, width, height};
     int style = 0;
-    switch (type) {
+    int styleEx = 0;
+    switch (m_type) {
     case Type::Main:
         style = WS_BORDER | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_OVERLAPPEDWINDOW; // | WS_MAXIMIZE;
         break;
@@ -128,7 +137,7 @@ Window::Window(int width, int height, Type type)
     
     AdjustWindowRect(&rect, style, FALSE);
 
-    m_internal.handle = CreateWindowEx(0,
+    m_internal.handle = CreateWindowEx(styleEx,
         L"dust3dGlesWindow", 
         L"", 
         style, 
@@ -136,7 +145,7 @@ Window::Window(int width, int height, Type type)
         CW_USEDEFAULT, 
         rect.right - rect.left, 
         rect.bottom - rect.top, 
-        NULL, 
+        nullptr == parent ? NULL : parent->internal().handle, 
         NULL, 
         GetModuleHandle(NULL), 
         this);
@@ -278,6 +287,32 @@ uint64_t Window::getMilliseconds()
     LARGE_INTEGER ticks;
     QueryPerformanceCounter(&ticks);
     return (uint64_t)ticks.QuadPart / numPerMilliseconds;
+}
+
+std::pair<int, int> Window::getCursorPosition()
+{
+    POINT point;
+    GetCursorPos(&point);
+    return {(int)point.x, (int)point.y};
+}
+
+void Window::setPosition(int x, int y)
+{
+    SetWindowPos(m_internal.handle, NULL, x, y, 0, 0, SWP_NOSIZE);
+}
+
+Window::Type Window::type() const
+{
+    return m_type;
+}
+
+Window *Window::popupWindow()
+{
+    if (nullptr == m_popupWindow)
+        m_popupWindow = new Window(100, 50, Window::Type::Popup, this);
+    auto position = Window::getCursorPosition();
+    m_popupWindow->setPosition(position.first, position.second);
+    return m_popupWindow;
 }
 
 }

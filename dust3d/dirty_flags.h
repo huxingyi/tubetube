@@ -20,28 +20,13 @@
  *  SOFTWARE.
  */
 
-#ifndef DUST3D_DOCUMENT_WINDOW_H_
-#define DUST3D_DOCUMENT_WINDOW_H_
+#ifndef DUST3D_DIRTY_FLAGS_H_
+#define DUST3D_DIRTY_FLAGS_H_
 
-#include <hu/base/image.h>
-#include <hu/base/settings.h>
-#include <hu/gles/window.h>
-#include <dust3d/dirty_flags.h>
-
-using namespace Hu;
-
-class DocumentWindow: public Window
+struct DirtyFlags
 {
-public:
-    DocumentWindow();
-    void setReferenceImage(const std::string &path);
-    static Settings *settings();
-    void updateReferenceImage();
-    void popupMenu();
-    DirtyFlags &referenceImageFlags();
-private:
-    std::unique_ptr<Image> m_referenceImage;
-    DirtyFlags m_referenceImageFlags;
+    uint64_t dirty: 1 = false;
+    uint64_t processing: 1 = false;
 };
 
 #endif

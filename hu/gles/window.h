@@ -41,7 +41,7 @@ public:
         Popup
     };
 
-    Window(int width, int height, Type type=Type::Main);
+    Window(int width, int height, Type type=Type::Main, Window *parent=nullptr);
     void setVisible(bool visible);
     void setEngine(IndieGameEngine *engine);
     IndieGameEngine *engine() const;
@@ -51,15 +51,21 @@ public:
     void addTimer(uint32_t milliseconds, std::function<void (void)> handler);
     WindowInternal &internal();
     void setTitle(const std::string &string);
+    void setPosition(int x, int y);
+    Type type() const;
+    Window *popupWindow();
     static void mainLoop();
     static bool isKeyPressed(char key);
     static uint64_t getMilliseconds();
+    static std::pair<int, int> getCursorPosition();
 private:
     WindowInternal m_internal;
     IndieGameEngine *m_engine = nullptr;
     EGLDisplay m_eglDisplay = EGL_NO_DISPLAY;
     EGLSurface m_eglSurface = EGL_NO_SURFACE;
     EGLContext m_eglContext = EGL_NO_CONTEXT;
+    Type m_type = Type::Main;
+    Window *m_popupWindow = nullptr;
 };
     
 }

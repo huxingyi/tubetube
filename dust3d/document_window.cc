@@ -122,9 +122,9 @@ DocumentWindow::DocumentWindow():
 
 void DocumentWindow::popupMenu()
 {
-    Window *menu = popupWindow();
+    Window *menu = openPopupWindow();
     menu->engine()->setBackgroundColor(Color("#efefef"));
-    menu->setVisible(true);
+    //menu->setVisible(true);
 }
 
 DirtyFlags &DocumentWindow::referenceImageFlags()

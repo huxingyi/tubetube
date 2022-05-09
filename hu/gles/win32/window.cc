@@ -78,10 +78,29 @@ static LRESULT CALLBACK windowMessageHandler(HWND hwnd, unsigned int msg, WPARAM
             window->engine()->shouldPopupMenu.emit();
         }
         break;
+    case WM_LBUTTONDOWN: {
+            Window *popup = window->popupWindow();
+            if (nullptr != popup)
+                popup->setVisible(false);
+        }
+        break;
     case WM_ACTIVATE: {
             if (WA_INACTIVE == LOWORD(wParam)) {
-                if (Window::Type::Popup == window->type())
-                    window->setVisible(false);
+                if (Window::Type::Popup == window->type()) {
+                    window->setVisible(true);
+                } else {
+                    Window *popup = window->popupWindow();
+                    if (nullptr != popup)
+                        popup->setVisible(false);
+                }
+            }
+        }
+        break;
+    case WM_SETFOCUS: {
+            if (Window::Type::Popup == window->type()) {
+                Window *parent = window->parentWindow();
+                if (nullptr != parent)
+                    SetFocus(parent->internal().handle);
             }
         }
         break;
@@ -102,7 +121,8 @@ static EGLint getContextRenderableType(EGLDisplay eglDisplay)
 }
 
 Window::Window(int width, int height, Type type, Window *parent):
-    m_type(type)
+    m_type(type),
+    m_parentWindow(parent)
 {
     if (0 == g_windowCount) {
         SetProcessDPIAware(); // Avoid window scaling
@@ -145,7 +165,7 @@ Window::Window(int width, int height, Type type, Window *parent):
         CW_USEDEFAULT, 
         rect.right - rect.left, 
         rect.bottom - rect.top, 
-        nullptr == parent ? NULL : parent->internal().handle, 
+        nullptr == m_parentWindow ? NULL : m_parentWindow->internal().handle, 
         NULL, 
         GetModuleHandle(NULL), 
         this);
@@ -262,15 +282,6 @@ void Window::addTimer(uint32_t milliseconds, std::function<void (void)> handler)
     SetTimer(m_internal.handle, (UINT_PTR)m_internal.timers.size(), (UINT)milliseconds, windowTimerHandler);
 }
 
-void Window::mainLoop()
-{
-    MSG msg;
-    while (GetMessage(&msg, NULL, 0, 0)) {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-    }
-}
-
 bool Window::isKeyPressed(char key)
 {
     return GetKeyState(key) & 0x8000;
@@ -306,13 +317,32 @@ Window::Type Window::type() const
     return m_type;
 }
 
-Window *Window::popupWindow()
+Window *Window::openPopupWindow()
 {
     if (nullptr == m_popupWindow)
         m_popupWindow = new Window(100, 50, Window::Type::Popup, this);
     auto position = Window::getCursorPosition();
     m_popupWindow->setPosition(position.first, position.second);
     return m_popupWindow;
+}
+
+Window *Window::popupWindow() const
+{
+    return m_popupWindow;
+}
+
+Window *Window::parentWindow() const
+{
+    return m_parentWindow;
+}
+
+void Window::mainLoop()
+{
+    MSG msg;
+    while (GetMessage(&msg, NULL, 0, 0)) {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
 }
 
 }

@@ -53,7 +53,9 @@ public:
     void setTitle(const std::string &string);
     void setPosition(int x, int y);
     Type type() const;
-    Window *popupWindow();
+    Window *openPopupWindow();
+    Window *popupWindow() const;
+    Window *parentWindow() const;
     static void mainLoop();
     static bool isKeyPressed(char key);
     static uint64_t getMilliseconds();
@@ -66,6 +68,7 @@ private:
     EGLContext m_eglContext = EGL_NO_CONTEXT;
     Type m_type = Type::Main;
     Window *m_popupWindow = nullptr;
+    Window *m_parentWindow = nullptr;
 };
     
 }

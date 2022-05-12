@@ -439,10 +439,7 @@ public:
     
     void renderFrame(double left, double top, double width, double height, double cornerRadius)
     {
-        //std::cout << "left:" << left << std::endl;
-        //std::cout << "top:" << top << std::endl;
-        //std::cout << "width:" << width << std::endl;
-        //std::cout << "height:" << height << std::endl;
+        std::cout << "    left:" << left << " top:" << top << " width:" << width << " height:" << height << std::endl;
         
         std::array<GLfloat, 8> vertices;
         size_t targetIndex = 0;
@@ -492,6 +489,8 @@ public:
     
     void renderWidget(Widget *widget)
     {
+        std::cout << "renderWidget name:" << widget->name() << " color:" << widget->backgroundColor().toString() << std::endl;
+        
         // Render background
         glBlendFunc(GL_ONE, GL_ZERO);
         m_frameShader.use();
@@ -785,6 +784,7 @@ public:
     
     void setWindowSize(double width, double height)
     {
+        std::cout << "setWindowSize width:" << width << " height:" << height << std::endl;
         m_windowWidth = width;
         m_windowHeight = height;
         m_cameraSpaceColorMap.setSize(m_windowWidth, m_windowHeight);

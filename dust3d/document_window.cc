@@ -27,6 +27,7 @@
 #include <hu/widget/button.h>
 #include <hu/widget/widget.h>
 #include <dust3d/document_window.h>
+#include <dust3d/reference_image_edit_window.h>
 #include <dust3d/data/dust3d_vertical_png.h>
 
 Settings *DocumentWindow::settings()
@@ -36,7 +37,7 @@ Settings *DocumentWindow::settings()
 }
 
 DocumentWindow::DocumentWindow():
-    Window(String::toInt(settings()->value("window.width", 640)), String::toInt(settings()->value("window.height", 360)))
+    Window(String::toInt(settings()->value("mainWindow.width", 640)), String::toInt(settings()->value("mainWindow.height", 360)))
 {
     setTitle("Tubetube");
 
@@ -59,7 +60,7 @@ DocumentWindow::DocumentWindow():
     backgroundImageWidget->setHeightPolicy(Widget::SizePolicy::RelativeSize);
     backgroundImageWidget->setHeight(1.0);
     backgroundImageWidget->setWidthPolicy(Widget::SizePolicy::FlexibleSize);
-    backgroundImageWidget->setExpandingWeight(1.0);
+    backgroundImageWidget->setWidth(1.0);
     backgroundImageWidget->setBackgroundImageOpacity(0.25);
     backgroundImageWidget->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
     
@@ -122,9 +123,11 @@ DocumentWindow::DocumentWindow():
 
 void DocumentWindow::popupMenu()
 {
-    Window *menu = openPopupWindow();
-    menu->engine()->setBackgroundColor(Color("#efefef"));
+    //Window *menu = openPopupWindow();
+    //menu->engine()->setBackgroundColor(Color("#efefef"));
     //menu->setVisible(true);
+    ReferenceImageEditWindow *editWindow = new ReferenceImageEditWindow();
+    editWindow->setVisible(true);
 }
 
 DirtyFlags &DocumentWindow::referenceImageFlags()

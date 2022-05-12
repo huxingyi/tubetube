@@ -20,14 +20,17 @@
  *  SOFTWARE.
  */
 
-#include <dust3d/document_window.h>
-#include <dust3d/reference_image_edit_window.h>
+#ifndef DUST3D_REFERENCE_IMAGE_EDIT_WINDOW_H_
+#define DUST3D_REFERENCE_IMAGE_EDIT_WINDOW_H_
 
-int main(int argc, char* argv[])
+#include <hu/gles/window.h>
+
+using namespace Hu;
+
+class ReferenceImageEditWindow: public Window
 {
-    new DocumentWindow();
-    
-    Window::mainLoop();
-    
-    return 0;
-}
+public:
+    ReferenceImageEditWindow();
+};
+
+#endif

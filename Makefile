@@ -8,6 +8,7 @@ OBJ_FILES = \
 	$(OBJ_DIRECTORY)\hu\gles\win32\window.obj \
 	$(OBJ_DIRECTORY)\hu\widget\widget.obj \
 	$(OBJ_DIRECTORY)\dust3d\document_window.obj \
+	$(OBJ_DIRECTORY)\dust3d\reference_image_edit_window.obj \
 	$(OBJ_DIRECTORY)\dust3d\main.obj \
 	$(OBJ_DIRECTORY)\dust3d\data\dust3d_vertical_png.obj
 

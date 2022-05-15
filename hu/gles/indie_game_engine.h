@@ -439,7 +439,7 @@ public:
     
     void renderFrame(double left, double top, double width, double height, double cornerRadius)
     {
-        std::cout << "    left:" << left << " top:" << top << " width:" << width << " height:" << height << std::endl;
+        //std::cout << "    left:" << left << " top:" << top << " width:" << width << " height:" << height << std::endl;
         
         std::array<GLfloat, 8> vertices;
         size_t targetIndex = 0;
@@ -489,16 +489,16 @@ public:
     
     void renderWidget(Widget *widget)
     {
-        std::cout << "renderWidget name:" << widget->name() << " color:" << widget->backgroundColor().toString() << std::endl;
+        //std::cout << "renderWidget name:" << widget->name() << " color:" << widget->backgroundColor().toString() << std::endl;
         
         // Render background
         glBlendFunc(GL_ONE, GL_ZERO);
         m_frameShader.use();
         m_frameShader.setUniformColor("objectColor", widget->backgroundColor());
         if (Widget::RenderHint::Container & widget->renderHints())
-            renderFrame(widget->layoutLeft(), widget->layoutTop(), widget->layoutWidth(), widget->layoutHeight(), 0.0);
+            renderFrame(widget->layoutLeft(), widget->layoutTop(), widget->layoutWidth(), widget->layoutHeight(), 8.0);
         else if (Widget::RenderHint::Element & widget->renderHints())
-            renderFrame(widget->layoutLeft(), widget->layoutTop(), widget->layoutWidth(), widget->layoutHeight(), 0.0);
+            renderFrame(widget->layoutLeft(), widget->layoutTop(), widget->layoutWidth(), widget->layoutHeight(), 4.0);
         
         const auto &backgroundImageResourceName = widget->backgroundImageResourceName();
         if (!backgroundImageResourceName.empty()) {
@@ -784,7 +784,6 @@ public:
     
     void setWindowSize(double width, double height)
     {
-        std::cout << "setWindowSize width:" << width << " height:" << height << std::endl;
         m_windowWidth = width;
         m_windowHeight = height;
         m_cameraSpaceColorMap.setSize(m_windowWidth, m_windowHeight);
@@ -797,6 +796,24 @@ public:
         m_screenProjectionMatrix = Matrix4x4();
         m_screenProjectionMatrix.orthographicProject(0.0, m_windowWidth, 0.0, m_windowHeight);
         dirty();
+    }
+    
+    void handleMouseMove(double x, double y)
+    {
+        if (nullptr != m_rootWidget)
+            m_rootWidget->handleMouseMove(x, y);
+    }
+    
+    void handleMouseLeftButtonDown()
+    {
+        if (nullptr != m_rootWidget)
+            m_rootWidget->handleMouseLeftButtonDown();
+    }
+    
+    void handleMouseLeftButtonUp()
+    {
+        if (nullptr != m_rootWidget)
+            m_rootWidget->handleMouseLeftButtonUp();
     }
     
     void setKeyPressedQueryHandler(std::function<bool (char key)> keyPressedQueryHander)

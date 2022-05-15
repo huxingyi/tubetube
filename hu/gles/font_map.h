@@ -213,7 +213,7 @@ public:
             if (i + 1 < clips.size())
                 msdfgen::getKerning(kerning, m_fontHandle, clip.utf16, clips[i + 1]->utf16);
             
-            std::cout << "[" << i << "] advanceX:" << clip.advanceX << " kerning:" << kerning << std::endl;
+            //std::cout << "[" << i << "] advanceX:" << clip.advanceX << " kerning:" << kerning << std::endl;
             
             left += (clip.advanceX + kerning) * scale;
         }

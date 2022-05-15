@@ -49,8 +49,21 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     engine()->windowSizeChanged.connect([=]() {
         loadImageButton->setWidth(engine()->measureFontWidth(loadImageButton->text(), loadImageButton->layoutHeight() - loadImageButton->paddingHeight()) + loadImageButton->paddingWidth(), Widget::SizePolicy::FixedSize);
     });
+    loadImageButton->mouseEntered.connect([=]() {
+        loadImageButton->setBackgroundColor(Color("#fc6621").lighted());
+    });
+    loadImageButton->mouseLeaved.connect([=]() {
+        loadImageButton->setBackgroundColor(Color("#fc6621"));
+    });
+    loadImageButton->mousePressed.connect([=]() {
+        loadImageButton->setBackgroundColor(Color("#fc6621").darked());
+    });
+    loadImageButton->mouseReleased.connect([=]() {
+        loadImageButton->setBackgroundColor(Color("#fc6621"));
+    });
     
     auto loadImageButtonLayout = new Widget;
+    loadImageButtonLayout->setName("loadImageButtonLayout");
     loadImageButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
     loadImageButtonLayout->addExpanding();
     loadImageButtonLayout->addWidget(loadImageButton);

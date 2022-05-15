@@ -26,6 +26,7 @@
 #include <string>
 #include <iostream>
 #include <algorithm>
+#include <array>
 #include <hu/base/debug.h>
 #include <hu/base/math.h>
 
@@ -164,6 +165,72 @@ public:
         return to_string(*this);
     }
     
+    Color lighted(double weight=0.1) const
+    {
+        auto hsl = rgbToHsl({red(), green(), blue()});
+        auto rgb = hslToRgb({hsl[0], hsl[1], std::min(hsl[2] + weight, 1.0)});
+        return Color(rgb[0], rgb[1], rgb[2]);
+    }
+    
+    Color darked(double weight=0.1) const
+    {
+        return lighted(-weight);
+    }
+    
+    inline static std::array<double, 3> rgbToHsl(const std::array<double, 3> &rgb) 
+    {
+        double maxChannel = std::max(std::max(rgb[0], rgb[1]), rgb[2]);
+        double minChannel = std::min(std::min(rgb[0], rgb[1]), rgb[2]);
+        double l = (maxChannel + minChannel) / 2.0;
+        double h = l, s = l;
+        if (maxChannel > minChannel) {
+            double d = maxChannel - minChannel;
+            s = l > 0.5 ? d / (2.0 - (maxChannel + minChannel)) : d / (maxChannel + minChannel);
+            if (rgb[0] >= maxChannel) {
+                h = (rgb[1] - rgb[2]) / d + (rgb[1] < rgb[2] ? 6.0 : 0.0);
+            } else if (rgb[1] >= maxChannel) {
+                h = (rgb[2] - rgb[0]) / d + 2.0;
+            } else {
+                h = (rgb[0] - rgb[1]) / d + 4.0;
+            }
+            h /= 6.0;
+        } else {
+            h = s = 0.0;
+        }
+        return {h, s, l};
+    }
+    
+    inline static float hueToRgb(const std::array<double, 3> &hue)
+    {
+        double z = hue[2];
+        if (z < 0.0)
+            z += 1.0;
+        if (z > 1.0)
+            z -= 1.0;
+        if (z < 1.0 / 6.0)
+            return hue[0] + (hue[1] - hue[0]) * 6.0 * z;
+        if (z < 1.0 / 2.0)
+            return hue[1];
+        if (z < 2.0 / 3.0)
+            return hue[0] + (hue[1] - hue[0]) * (2.0 / 3.0 - z) * 6.0;
+        return hue[0];
+    }
+    
+    inline static std::array<double, 3> hslToRgb(const std::array<double, 3> &hsl) 
+    {
+        double r, g, b;
+        if (hsl[1] > 0.0) {
+            float q = hsl[2] < 0.5 ? hsl[2] * (1.0 + hsl[1]) : hsl[2] + hsl[1] - hsl[2] * hsl[1];
+            float p = 2.0 * hsl[2] - q;
+            r = hueToRgb({p, q, hsl[0] + 1.0 / 3.0});
+            g = hueToRgb({p, q, hsl[0]});
+            b = hueToRgb({p, q, hsl[0] - 1.0 / 3.0});
+        } else {
+            r = g = b = hsl[2];
+        }
+        return {r, g, b};
+    }
+
 private:
     double m_data[4] = {0.0, 0.0, 0.0, 0.0};
 };

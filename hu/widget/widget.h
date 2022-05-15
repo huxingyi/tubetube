@@ -26,8 +26,9 @@
 #include <format>
 #include <map>
 #include <vector>
-#include <hu/base/math.h>
 #include <hu/base/color.h>
+#include <hu/base/math.h>
+#include <hu/base/signal.h>
 
 namespace Hu
 {
@@ -35,6 +36,12 @@ namespace Hu
 class Widget
 {
 public:
+    Signal<> mouseMoved;
+    Signal<> mouseEntered;
+    Signal<> mouseLeaved;
+    Signal<> mousePressed;
+    Signal<> mouseReleased;
+
     Widget(const std::string &id=std::string()):
         m_id(id)
     {
@@ -442,6 +449,61 @@ public:
         m_layoutChanged = false;
     }
     
+    void setMouseHovering(bool hovering)
+    {
+        if (m_mouseHovering == hovering)
+            return;
+        m_mouseHovering = hovering;
+        if (m_mouseHovering)
+            mouseEntered.emit();
+        else
+            mouseLeaved.emit();
+    }
+    
+    void setMousePressing(bool pressing)
+    {
+        if (m_mousePressing == pressing)
+            return;
+        m_mousePressing = pressing;
+        if (!m_mouseHovering)
+            return;
+        if (m_mousePressing)
+            mousePressed.emit();
+        else
+            mouseReleased.emit();
+    }
+    
+    bool handleMouseMove(double x, double y)
+    {
+        if (x >= m_layoutLeft && x < m_layoutLeft + m_layoutWidth &&
+                y >= m_layoutTop && y < m_layoutTop + m_layoutHeight) {
+            setMouseHovering(true);
+            for (auto &widget: m_children)
+                widget->handleMouseMove(x, y);
+            mouseMoved.emit();
+            return true;
+        }
+        for (auto &widget: m_children)
+            widget->handleMouseMove(x, y);
+        setMouseHovering(false);
+        return false;
+    }
+    
+    void handleMouseLeftButtonDown()
+    {
+        if (m_mouseHovering)
+            setMousePressing(true);
+        for (auto &widget: m_children)
+            widget->handleMouseLeftButtonDown();
+    }
+    
+    void handleMouseLeftButtonUp()
+    {
+        for (auto &widget: m_children)
+            widget->handleMouseLeftButtonUp();
+        setMousePressing(false);
+    }
+    
     std::vector<Widget *> &children()
     {
         return m_children;
@@ -589,6 +651,8 @@ protected:
     double m_paddingTop = 0.0;
     double m_paddingRight = 0.0;
     double m_paddingBottom = 0.0;
+    bool m_mouseHovering = false;
+    bool m_mousePressing = false;
     const Widget *m_parent = nullptr;
     uint64_t m_renderHints = RenderHint::Container;
     Color m_backgroundColor;

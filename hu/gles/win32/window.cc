@@ -70,18 +70,26 @@ static LRESULT CALLBACK windowMessageHandler(HWND hwnd, unsigned int msg, WPARAM
     case WM_MOUSEMOVE: {
             auto x = GET_X_LPARAM(lParam);
             auto y = GET_Y_LPARAM(lParam);
-            //if (nullptr != engine)
-            //    engine->handleMouseMove(x, y);
+            if (nullptr != window && nullptr != window->engine())
+                window->engine()->handleMouseMove(x, y);
         }
         break;
     case WM_CONTEXTMENU: {
-            window->engine()->shouldPopupMenu.emit();
+            if (nullptr != window && nullptr != window->engine())
+                window->engine()->shouldPopupMenu.emit();
         }
         break;
     case WM_LBUTTONDOWN: {
             Window *popup = window->popupWindow();
             if (nullptr != popup)
                 popup->setVisible(false);
+            if (nullptr != window && nullptr != window->engine())
+                window->engine()->handleMouseLeftButtonDown();
+        }
+        break;
+    case WM_LBUTTONUP: {
+            if (nullptr != window && nullptr != window->engine())
+                window->engine()->handleMouseLeftButtonUp();
         }
         break;
     case WM_ACTIVATE: {

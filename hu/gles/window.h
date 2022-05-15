@@ -56,6 +56,7 @@ public:
     Window *openPopupWindow();
     Window *popupWindow() const;
     Window *parentWindow() const;
+    std::string selectSingleFileByUser(const std::vector<std::string> &filterSurfixList={}) const;
     static void mainLoop();
     static bool isKeyPressed(char key);
     static uint64_t getMilliseconds();

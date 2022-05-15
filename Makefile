@@ -21,7 +21,8 @@ INCLUDE_DIRECTORIES_OPTIONS = \
 	/I "."
 
 LIB_DIRECTORIES_OPTIONS = \
-	/LIBPATH:"C:\Users\Jeremy\Repositories\angle\out\Release" User32.lib libEGL.dll.lib libGLESv2.dll.lib \
+	User32.lib Comdlg32.lib \
+	/LIBPATH:"C:\Users\Jeremy\Repositories\angle\out\Release" libEGL.dll.lib libGLESv2.dll.lib \
 	/LIBPATH:"C:\Libraries\freetype-windows-binaries-2.11.1\release dll\win64" freetype.lib \
 	/LIBPATH:"C:\Users\Jeremy\Repositories\msdfgen\x64\Release Library" msdfgen.lib
 

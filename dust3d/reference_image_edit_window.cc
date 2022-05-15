@@ -61,6 +61,8 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     });
     loadImageButton->mouseReleased.connect([=]() {
         loadImageButton->setBackgroundColor(Color("#fc6621"));
+        auto selectedFile = this->selectSingleFileByUser({"jpg", "jpeg", "png"});
+        std::cout << "selectedFile:" << selectedFile << std::endl;
     });
     
     auto loadImageButtonLayout = new Widget;
@@ -70,7 +72,7 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     loadImageButtonLayout->addWidget(loadImageButton);
     loadImageButtonLayout->addExpanding();
     
-    rightLayout->addSpacing(10.0);
+    rightLayout->addSpacing(30.0);
     rightLayout->addWidget(loadImageButtonLayout);
     rightLayout->addExpanding();
     

@@ -23,6 +23,7 @@
 #define NOMINMAX
 #include <locale>
 #include <codecvt>
+#include <Windows.h>
 #include <hu/gles/indie_game_engine.h>
 #include <hu/gles/window.h>
 
@@ -342,6 +343,51 @@ Window *Window::popupWindow() const
 Window *Window::parentWindow() const
 {
     return m_parentWindow;
+}
+
+std::string Window::selectSingleFileByUser(const std::vector<std::string> &filterSurfixList) const
+{
+    OPENFILENAMEW ofn;
+    wchar_t path[260] = {0};
+    
+    std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> utf16conv;
+    
+    std::wstring filterString;
+    if (filterSurfixList.empty()) {
+        filterString = L"All\0*.*\0\0";
+    } else {
+        for (const auto &surfix: filterSurfixList) {
+            if (!filterString.empty())
+                filterString += L";";
+            auto wideSurfix = utf16conv.from_bytes(surfix);
+            filterString += L"*.";
+            filterString += reinterpret_cast<LPCWSTR>(wideSurfix.c_str());
+        }
+        filterString = filterString + L"|" + filterString + L"|";
+    }
+    wchar_t *filterChars = (wchar_t *)filterString.c_str();
+    for (wchar_t *p = filterChars; *p; ++p) {
+        if (L'|' == *p)
+            *p = L'\0';
+    }
+
+    memset(&ofn, 0, sizeof(ofn));
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hwndOwner = m_internal.handle;
+    ofn.lpstrFile = path;
+    ofn.nMaxFile = sizeof(path);
+    ofn.lpstrFilter = filterChars;
+    ofn.nFilterIndex = 1;
+    ofn.lpstrFileTitle = NULL;
+    ofn.nMaxFileTitle = 0;
+    ofn.lpstrInitialDir = NULL;
+    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+    
+    if (!GetOpenFileNameW(&ofn))
+        return "";
+    
+    std::u16string utf16Path(std::begin(path), std::begin(path) + wcslen(path));
+    return std::move(utf16conv.to_bytes(utf16Path));
 }
 
 void Window::mainLoop()

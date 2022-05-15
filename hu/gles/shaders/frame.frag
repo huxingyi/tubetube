@@ -8,14 +8,15 @@ in vec2 pointPosition;
 out vec4 fragColor;
 void main()
 {
-    float alpha = float(length(pointPosition - vec2(frameCoords[0] + frameCornerRadius, frameCoords[1] + frameCornerRadius)) <= frameCornerRadius ||
-        length(pointPosition - vec2(frameCoords[2] - frameCornerRadius, frameCoords[1] + frameCornerRadius)) <= frameCornerRadius ||
-        length(pointPosition - vec2(frameCoords[2] - frameCornerRadius, frameCoords[3] - frameCornerRadius)) <= frameCornerRadius ||
-        length(pointPosition - vec2(frameCoords[0] + frameCornerRadius, frameCoords[3] - frameCornerRadius)) <= frameCornerRadius ||
-        pointPosition[0] >= frameCoords[0] + frameCornerRadius && pointPosition[0] <= frameCoords[2] - frameCornerRadius ||
-        pointPosition[1] >= frameCoords[1] + frameCornerRadius && pointPosition[1] <= frameCoords[3] - frameCornerRadius);
-    fragColor = objectColor;
-    fragColor.a *= alpha;
+    if (length(pointPosition - vec2(frameCoords[0] + frameCornerRadius, frameCoords[1] + frameCornerRadius)) <= frameCornerRadius ||
+            length(pointPosition - vec2(frameCoords[2] - frameCornerRadius, frameCoords[1] + frameCornerRadius)) <= frameCornerRadius ||
+            length(pointPosition - vec2(frameCoords[2] - frameCornerRadius, frameCoords[3] - frameCornerRadius)) <= frameCornerRadius ||
+            length(pointPosition - vec2(frameCoords[0] + frameCornerRadius, frameCoords[3] - frameCornerRadius)) <= frameCornerRadius ||
+            pointPosition[0] >= frameCoords[0] + frameCornerRadius && pointPosition[0] <= frameCoords[2] - frameCornerRadius ||
+            pointPosition[1] >= frameCoords[1] + frameCornerRadius && pointPosition[1] <= frameCoords[3] - frameCornerRadius)
+        fragColor = objectColor;
+    else
+        discard;
 }
 
 )################"

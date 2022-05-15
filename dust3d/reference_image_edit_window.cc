@@ -40,6 +40,7 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     rightLayout->setLayoutDirection(Widget::LayoutDirection::TopToBottom);
     rightLayout->setWidth(250.0, Widget::SizePolicy::FixedSize);
     rightLayout->setHeight(1.0, Widget::SizePolicy::RelativeSize);
+    rightLayout->setBackgroundColor(Color("#333333"));
 
     auto loadImageButton = new Button;
     loadImageButton->setHeight(20.0 + loadImageButton->paddingHeight(), Widget::SizePolicy::FixedSize);

@@ -654,7 +654,7 @@ protected:
     bool m_mouseHovering = false;
     bool m_mousePressing = false;
     const Widget *m_parent = nullptr;
-    uint64_t m_renderHints = RenderHint::Container;
+    uint64_t m_renderHints = 0;
     Color m_backgroundColor;
     Color m_color;
     std::string m_name;

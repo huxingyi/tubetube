@@ -495,10 +495,14 @@ public:
         glBlendFunc(GL_ONE, GL_ZERO);
         m_frameShader.use();
         m_frameShader.setUniformColor("objectColor", widget->backgroundColor());
-        if (Widget::RenderHint::Container & widget->renderHints())
-            renderFrame(widget->layoutLeft(), widget->layoutTop(), widget->layoutWidth(), widget->layoutHeight(), 8.0);
-        else if (Widget::RenderHint::Element & widget->renderHints())
-            renderFrame(widget->layoutLeft(), widget->layoutTop(), widget->layoutWidth(), widget->layoutHeight(), 4.0);
+        if (widget->backgroundColor().alpha() > 0) {
+            double radius = 0.0;
+            if (Widget::RenderHint::Container & widget->renderHints())
+                radius = 8.0;
+            else if (Widget::RenderHint::Element & widget->renderHints())
+                radius = 4.0;
+            renderFrame(widget->layoutLeft(), widget->layoutTop(), widget->layoutWidth(), widget->layoutHeight(), radius);
+        }
         
         const auto &backgroundImageResourceName = widget->backgroundImageResourceName();
         if (!backgroundImageResourceName.empty()) {

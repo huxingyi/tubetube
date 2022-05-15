@@ -38,6 +38,7 @@ public:
         m_widthPolicy = SizePolicy::FixedSize;
         m_width = 420.0;
         m_renderHints = RenderHint::Element | RenderHint::Button;
+        setPadding(20.0, 5.0, 20.0, 5.0);
     }
     
     void setIcon(const std::string &icon)

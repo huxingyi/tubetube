@@ -25,7 +25,7 @@
 
 int main(int argc, char* argv[])
 {
-    new DocumentWindow();
+    new ReferenceImageEditWindow();
     
     Window::mainLoop();
     

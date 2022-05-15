@@ -115,6 +115,9 @@ public:
     
     double measureWidth(const std::string &string, double lineHeight)
     {
+        if (0 == m_fontSizeInPixel)
+            return 0.0;
+        
         std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> utf16conv;
         std::u16string utf16String = utf16conv.from_bytes(string);
         addCharsToImageClips(utf16String);
@@ -127,7 +130,10 @@ public:
         for (size_t i = 0; i < clips.size(); ++i) {
             maxFontHeight = std::max(maxFontHeight, (double)clips[i]->bitmapHeight);
             maxMove = std::max(maxMove, (double)clips[i]->bitmapBottomMove);
-            advanceX += clips[i]->advanceX;
+            double kerning = 0.0;
+            if (i + 1 < clips.size())
+                msdfgen::getKerning(kerning, m_fontHandle, clips[i]->utf16, clips[i + 1]->utf16);
+            advanceX += clips[i]->advanceX + kerning;
         }
         double scale = lineHeight / (maxFontHeight + maxMove);
         return advanceX * scale;
@@ -203,7 +209,13 @@ public:
             vertices[targetIndex++] = clip.leftBottomUv.first; // left bottom u
             vertices[targetIndex++] = clip.leftBottomUv.second; // left bottom v
             
-            left += clip.advanceX * scale;
+            double kerning = 0.0;
+            if (i + 1 < clips.size())
+                msdfgen::getKerning(kerning, m_fontHandle, clip.utf16, clips[i + 1]->utf16);
+            
+            std::cout << "[" << i << "] advanceX:" << clip.advanceX << " kerning:" << kerning << std::endl;
+            
+            left += (clip.advanceX + kerning) * scale;
         }
         
         if (0 == targetIndex)

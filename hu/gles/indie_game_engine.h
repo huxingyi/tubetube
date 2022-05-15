@@ -289,7 +289,7 @@ public:
         }
     }
     
-    void initializeScene()
+    void initialize()
     {
         if (m_initialized)
             return;
@@ -512,7 +512,7 @@ public:
             Button *button = dynamic_cast<Button *>(widget);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             double padding = widget->layoutHeight() * 0.3;
-            double leftOffset = padding;
+            double leftOffset = widget->paddingLeft();
             if (!button->icon().empty()) {
                 double iconSize = widget->layoutHeight();
                 m_iconMap.shader().use();
@@ -522,7 +522,7 @@ public:
             }
             m_fontMap.shader().use();
             m_fontMap.shader().setUniformColor("objectColor", widget->color());
-            renderString(button->text(), widget->layoutLeft() + leftOffset, widget->layoutTop(), widget->layoutWidth(), widget->layoutHeight());
+            renderString(button->text(), widget->layoutLeft() + leftOffset, widget->layoutTop() + widget->paddingTop(), widget->layoutWidth(), widget->layoutHeight() - widget->paddingHeight());
         }
         
         for (auto &child: widget->children())
@@ -532,7 +532,7 @@ public:
     void renderScene()
     {
         if (!m_initialized)
-            initializeScene();
+            initialize();
         
         bool particlesIsDirty = false;
         if (m_particles.aliveElementCount() > 0) {
@@ -957,6 +957,11 @@ public:
     void setImageResource(const std::string &resourceName, size_t width, size_t height, const unsigned char *data)
     {
         m_imageMap.setImage(resourceName, width, height, data);
+    }
+    
+    double measureFontWidth(const std::string &string, double lineHeight)
+    {
+        return m_fontMap.measureWidth(string, lineHeight);
     }
     
 private:

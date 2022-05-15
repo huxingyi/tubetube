@@ -144,10 +144,14 @@ void main()
     vec4 uiColor = texture(uiMap, pointTexCoords).rgba;
     //color = uiColor.rgb * uiColor.a + color.rgb * (1.0 - uiColor.a);
     //color = vec3(alpha);
-    color = color.rgb * alpha + uiColor.rgb * (1.0 - alpha) * uiColor.a;
+    //color = color.rgb * alpha + uiColor.rgb * (1.0 - alpha + uiColor.a) * 0.5;
     //fragColor = vec4(vec3(foam()), 1.0);
-    fragColor = vec4(color, 1.0);
+    //fragColor = vec4(color, 1.0);
     //fragColor = texture(idMap, pointTexCoords);
+    if (alpha > 0.0)
+        fragColor = vec4(color, alpha);
+    else
+        fragColor = uiColor;
 }
 
 )################"

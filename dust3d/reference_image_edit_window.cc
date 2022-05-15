@@ -40,13 +40,25 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     rightLayout->setLayoutDirection(Widget::LayoutDirection::TopToBottom);
     rightLayout->setWidth(250.0, Widget::SizePolicy::FixedSize);
     rightLayout->setHeight(1.0, Widget::SizePolicy::RelativeSize);
-    //rightLayout->setBackgroundColor(Color("#0000ff"));
-    
+
     auto loadImageButton = new Button;
+    loadImageButton->setHeight(20.0 + loadImageButton->paddingHeight(), Widget::SizePolicy::FixedSize);
     loadImageButton->setText("Select image");
     loadImageButton->setBackgroundColor(Color("#fc6621"));
     loadImageButton->setColor(Color("#ffffff"));
-    rightLayout->addWidget(loadImageButton);
+    engine()->windowSizeChanged.connect([=]() {
+        loadImageButton->setWidth(engine()->measureFontWidth(loadImageButton->text(), loadImageButton->layoutHeight() - loadImageButton->paddingHeight()) + loadImageButton->paddingWidth(), Widget::SizePolicy::FixedSize);
+    });
+    
+    auto loadImageButtonLayout = new Widget;
+    loadImageButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
+    loadImageButtonLayout->addExpanding();
+    loadImageButtonLayout->addWidget(loadImageButton);
+    loadImageButtonLayout->addExpanding();
+    
+    rightLayout->addSpacing(10.0);
+    rightLayout->addWidget(loadImageButtonLayout);
+    rightLayout->addExpanding();
     
     auto mainLayout = new Widget;
     mainLayout->setName("mainLayout");
@@ -54,7 +66,7 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     mainLayout->setWidth(1.0, Widget::SizePolicy::RelativeSize);
     mainLayout->addWidget(previewLayout);
     mainLayout->addWidget(rightLayout);
-    //mainLayout->setBackgroundColor(Color("#00ff00"));
+    mainLayout->setBackgroundColor(Color("#252525"));
     
     engine()->rootWidget()->setName("rootWidget");
     engine()->rootWidget()->addWidget(mainLayout);

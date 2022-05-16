@@ -31,16 +31,18 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     setTitle("Reference image edit");
     engine()->setBackgroundColor(Color("#00000000"));
     
-    auto previewLayout = new Widget;
+    auto previewLayout = new Widget("PreviewImage");
     previewLayout->setName("previewLayout");
     previewLayout->setWidth(1.0, Widget::SizePolicy::FlexibleSize);
+    previewLayout->setHeight(1.0, Widget::SizePolicy::RelativeSize);
+    previewLayout->setBackgroundColor(Color("#000000"));
     
     auto rightLayout = new Widget;
     rightLayout->setName("rightLayout");
     rightLayout->setLayoutDirection(Widget::LayoutDirection::TopToBottom);
     rightLayout->setWidth(250.0, Widget::SizePolicy::FixedSize);
     rightLayout->setHeight(1.0, Widget::SizePolicy::RelativeSize);
-    rightLayout->setBackgroundColor(Color("#333333"));
+    rightLayout->setBackgroundColor(Color("#252525"));
 
     auto loadImageButton = new Button;
     loadImageButton->setHeight(20.0 + loadImageButton->paddingHeight(), Widget::SizePolicy::FixedSize);
@@ -63,6 +65,9 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
         loadImageButton->setBackgroundColor(Color("#fc6621"));
         auto selectedFile = this->selectSingleFileByUser({"jpg", "jpeg", "png"});
         std::cout << "selectedFile:" << selectedFile << std::endl;
+        if (selectedFile.empty())
+            return;
+        setImage(selectedFile);
     });
     
     auto loadImageButtonLayout = new Widget;
@@ -82,10 +87,51 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     mainLayout->setWidth(1.0, Widget::SizePolicy::RelativeSize);
     mainLayout->addWidget(previewLayout);
     mainLayout->addWidget(rightLayout);
-    mainLayout->setBackgroundColor(Color("#252525"));
     
     engine()->rootWidget()->setName("rootWidget");
     engine()->rootWidget()->addWidget(mainLayout);
     
+    engine()->windowSizeChanged.connect(std::bind(&ReferenceImageEditWindow::updatePreviewImage, this));
+    
     setVisible(true);
+}
+
+void ReferenceImageEditWindow::updatePreviewImage()
+{
+    if (nullptr == m_image)
+        return;
+    
+    Widget *previewImageWidget = Widget::get("PreviewImage");
+    size_t targetWidth = previewImageWidget->layoutWidth();
+    size_t targetHeight = previewImageWidget->layoutHeight();
+    Image *image = new Image(*m_image);
+    engine()->run([=]() {
+            size_t toWidth = image->width();
+            size_t toHeight = toWidth * targetHeight / targetWidth;
+            if (toHeight < image->height()) {
+                toHeight = image->height();
+                toWidth = toHeight * targetWidth / targetHeight;
+            }
+            // FIXME: limit the image size to avoid texture error(OpenGL Error : 1281)
+            Image *resizedImage = new Image(toWidth, toHeight);
+            resizedImage->clear(0, 0, 0, 0);
+            resizedImage->copy(*image, 0, 0, (resizedImage->width() - image->width()) / 2, (resizedImage->height() - image->height()) / 2, image->width(), image->height());
+            delete image;
+            return (void *)resizedImage;
+        }, [=](void *result) {
+            Image *resizedImage = (Image *)result;
+            this->engine()->setImageResource("preview-image", resizedImage->width(), resizedImage->height(), resizedImage->data());
+            delete resizedImage;
+            Widget::get("PreviewImage")->setBackgroundImageResourceName("preview-image");
+        }
+    );
+}
+
+void ReferenceImageEditWindow::setImage(const std::string &path)
+{
+    m_image = std::make_unique<Image>();
+    m_image->load(path.c_str());
+    engine()->run([=](void *) {
+        this->updatePreviewImage();
+    });
 }

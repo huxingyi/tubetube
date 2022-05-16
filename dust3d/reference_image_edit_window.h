@@ -23,6 +23,7 @@
 #ifndef DUST3D_REFERENCE_IMAGE_EDIT_WINDOW_H_
 #define DUST3D_REFERENCE_IMAGE_EDIT_WINDOW_H_
 
+#include <hu/base/image.h>
 #include <hu/gles/window.h>
 
 using namespace Hu;
@@ -31,6 +32,11 @@ class ReferenceImageEditWindow: public Window
 {
 public:
     ReferenceImageEditWindow();
+    void setImage(const std::string &path);
+    void updatePreviewImage();
+    
+private:
+    std::unique_ptr<Image> m_image;
 };
 
 #endif

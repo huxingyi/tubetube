@@ -22,6 +22,7 @@
 
 #define NOMINMAX
 #include <hu/gles/indie_game_engine.h>
+#include <hu/widget/radio_button.h>
 #include <dust3d/reference_image_edit_window.h>
 #include <dust3d/document_window.h>
 
@@ -44,9 +45,9 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     rightLayout->setHeight(1.0, Widget::SizePolicy::RelativeSize);
     rightLayout->setBackgroundColor(Color("#252525"));
 
-    auto loadImageButton = new Button;
+    auto loadImageButton = new PushButton;
     loadImageButton->setHeight(20.0 + loadImageButton->paddingHeight(), Widget::SizePolicy::FixedSize);
-    loadImageButton->setText("Select image");
+    loadImageButton->setText("Load image");
     loadImageButton->setBackgroundColor(Color("#fc6621"));
     loadImageButton->setColor(Color("#ffffff"));
     engine()->windowSizeChanged.connect([=]() {
@@ -64,7 +65,6 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     loadImageButton->mouseReleased.connect([=]() {
         loadImageButton->setBackgroundColor(Color("#fc6621"));
         auto selectedFile = this->selectSingleFileByUser({"jpg", "jpeg", "png"});
-        std::cout << "selectedFile:" << selectedFile << std::endl;
         if (selectedFile.empty())
             return;
         setImage(selectedFile);
@@ -77,8 +77,56 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     loadImageButtonLayout->addWidget(loadImageButton);
     loadImageButtonLayout->addExpanding();
     
+    auto frontProfileRadioButton = new RadioButton;
+    frontProfileRadioButton->setText("Front rectangle");
+    frontProfileRadioButton->setHeight(20.0, Widget::SizePolicy::FixedSize);
+    frontProfileRadioButton->setBackgroundColor(Color("#fc6621"));
+    frontProfileRadioButton->setColor(Color("#ffffff"));
+    frontProfileRadioButton->setChecked(true);
+    engine()->windowSizeChanged.connect([=]() {
+        frontProfileRadioButton->setWidth(engine()->measureFontWidth(frontProfileRadioButton->text(), frontProfileRadioButton->layoutHeight() - frontProfileRadioButton->paddingHeight()) + frontProfileRadioButton->layoutHeight() * 1.5 + frontProfileRadioButton->paddingWidth(), Widget::SizePolicy::FixedSize);
+    });
+    frontProfileRadioButton->mouseEntered.connect([=]() {
+        frontProfileRadioButton->setBackgroundColor(Color("#fc6621").lighted());
+    });
+    frontProfileRadioButton->mouseLeaved.connect([=]() {
+        frontProfileRadioButton->setBackgroundColor(Color("#fc6621"));
+    });
+    frontProfileRadioButton->mousePressed.connect([=]() {
+        frontProfileRadioButton->setChecked(!frontProfileRadioButton->checked());
+    });
+    
+    auto sideProfileRadioButton = new RadioButton;
+    sideProfileRadioButton->setText("Side rectangle");
+    sideProfileRadioButton->setHeight(20.0, Widget::SizePolicy::FixedSize);
+    sideProfileRadioButton->setBackgroundColor(Color("#fc6621"));
+    sideProfileRadioButton->setColor(Color("#ffffff"));
+    engine()->windowSizeChanged.connect([=]() {
+        sideProfileRadioButton->setWidth(engine()->measureFontWidth(sideProfileRadioButton->text(), sideProfileRadioButton->layoutHeight() - sideProfileRadioButton->paddingHeight()) + sideProfileRadioButton->layoutHeight() * 1.5 + sideProfileRadioButton->paddingWidth(), Widget::SizePolicy::FixedSize);
+    });
+    sideProfileRadioButton->mouseEntered.connect([=]() {
+        sideProfileRadioButton->setBackgroundColor(Color("#fc6621").lighted());
+    });
+    sideProfileRadioButton->mouseLeaved.connect([=]() {
+        sideProfileRadioButton->setBackgroundColor(Color("#fc6621"));
+    });
+    sideProfileRadioButton->mousePressed.connect([=]() {
+        sideProfileRadioButton->setChecked(!sideProfileRadioButton->checked());
+    });
+    
+    auto profileRadiosLayout = new Widget;
+    profileRadiosLayout->setName("profileRadiosLayout");
+    profileRadiosLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
+    profileRadiosLayout->addSpacing(10.0);
+    profileRadiosLayout->addWidget(frontProfileRadioButton);
+    profileRadiosLayout->addExpanding();
+    profileRadiosLayout->addWidget(sideProfileRadioButton);
+    profileRadiosLayout->addSpacing(10.0);
+    
     rightLayout->addSpacing(30.0);
     rightLayout->addWidget(loadImageButtonLayout);
+    rightLayout->addSpacing(35.0);
+    rightLayout->addWidget(profileRadiosLayout);
     rightLayout->addExpanding();
     
     auto mainLayout = new Widget;

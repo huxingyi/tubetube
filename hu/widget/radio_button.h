@@ -20,32 +20,20 @@
  *  SOFTWARE.
  */
 
-#ifndef HU_WIDGET_BUTTON_H_
-#define HU_WIDGET_BUTTON_H_
+#ifndef HU_WIDGET_RADIO_BUTTON_H_
+#define HU_WIDGET_RADIO_BUTTON_H_
 
 #include <hu/widget/widget.h>
 
 namespace Hu
 {
     
-class Button: public Widget
+class RadioButton: public Widget
 {
 public:
-    Button()
+    RadioButton()
     {
-        m_heightPolicy = SizePolicy::FixedSize;
-        m_height = 16.0;
-        m_widthPolicy = SizePolicy::FixedSize;
-        m_width = 420.0;
-        m_renderHints = RenderHint::Element | RenderHint::Button;
-        setPadding(20.0, 5.0, 20.0, 5.0);
-    }
-    
-    void setIcon(const std::string &icon)
-    {
-        if (m_icon == icon)
-            return;
-        m_icon = icon;
+        m_renderHints = RenderHint::Element | RenderHint::RadioButton;
     }
     
     void setText(const std::string &text)
@@ -53,11 +41,7 @@ public:
         if (m_text == text)
             return;
         m_text = text;
-    }
-    
-    const std::string &icon()
-    {
-        return m_icon;
+        m_appearanceChanged = true;
     }
     
     const std::string &text()
@@ -65,12 +49,24 @@ public:
         return m_text;
     }
     
+    bool checked() const
+    {
+        return m_checked;
+    }
+    
+    void setChecked(bool checked)
+    {
+        if (m_checked == checked)
+            return;
+        m_checked = checked;
+        m_appearanceChanged = true;
+    }
+    
 private:
-    std::string m_icon;
     std::string m_text;
+    bool m_checked = false;
 };
 
 }
 
 #endif
-

@@ -24,7 +24,7 @@
 #include <hu/base/string.h>
 #include <hu/base/image.h>
 #include <hu/gles/indie_game_engine.h>
-#include <hu/widget/button.h>
+#include <hu/widget/push_button.h>
 #include <hu/widget/widget.h>
 #include <dust3d/document_window.h>
 #include <dust3d/reference_image_edit_window.h>
@@ -49,9 +49,9 @@ DocumentWindow::DocumentWindow():
     toolBoxWidget->addSpacing(5.0);
     toolBoxWidget->addExpanding(0.5);
     toolBoxWidget->addSpacing(5.0);
-    toolBoxWidget->addWidget(new Button);
+    toolBoxWidget->addWidget(new PushButton);
     toolBoxWidget->addSpacing(5.0);
-    toolBoxWidget->addWidget(new Button);
+    toolBoxWidget->addWidget(new PushButton);
     toolBoxWidget->addSpacing(5.0);
     toolBoxWidget->addExpanding(1.5);
     
@@ -64,7 +64,7 @@ DocumentWindow::DocumentWindow():
     backgroundImageWidget->setBackgroundImageOpacity(0.25);
     backgroundImageWidget->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
     
-    auto openReferenceImageButton = new Button;
+    auto openReferenceImageButton = new PushButton;
     openReferenceImageButton->setName("openReferenceImageButton");
     openReferenceImageButton->setBackgroundColor(Color("#fc6621"));
     openReferenceImageButton->setColor(Color("#000000")); //f7d9c8

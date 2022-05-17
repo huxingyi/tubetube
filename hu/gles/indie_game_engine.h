@@ -33,7 +33,8 @@
 #include <hu/base/task_list.h>
 #include <hu/base/signal.h>
 #include <hu/widget/widget.h>
-#include <hu/widget/button.h>
+#include <hu/widget/push_button.h>
+#include <hu/widget/radio_button.h>
 #include <hu/gles/color_map.h>
 #include <hu/gles/shader.h>
 #include <hu/gles/vertex_buffer.h>
@@ -379,7 +380,7 @@ public:
         m_shadowMap.setSize(1024, 1024);
         m_shadowMap.initialize();
         m_fontMap.initialize();
-        m_fontMap.setFont("OpenSans_Condensed-SemiBold.ttf");
+        m_fontMap.setFont("OpenSans_Condensed-Regular.ttf");
         m_iconMap.initialize();
         m_iconMap.setIconBitmapSize(16);
         m_imageMap.initialize();
@@ -437,7 +438,7 @@ public:
         glBindTexture(GL_TEXTURE_2D, 0);
     }
     
-    void renderFrame(double left, double top, double width, double height, double cornerRadius)
+    void renderFrame(double left, double top, double width, double height, double cornerRadius=0.0)
     {
         //std::cout << "    left:" << left << " top:" << top << " width:" << width << " height:" << height << std::endl;
         
@@ -496,12 +497,30 @@ public:
         m_frameShader.use();
         m_frameShader.setUniformColor("objectColor", widget->backgroundColor());
         if (widget->backgroundColor().alpha() > 0) {
-            double radius = 0.0;
-            if (Widget::RenderHint::Container & widget->renderHints())
-                radius = 8.0;
-            else if (Widget::RenderHint::Element & widget->renderHints())
-                radius = 4.0;
-            renderFrame(widget->layoutLeft(), widget->layoutTop(), widget->layoutWidth(), widget->layoutHeight(), radius);
+            if (Widget::RenderHint::RadioButton & widget->renderHints()) {
+                double radioLeft = widget->layoutLeft();
+                double radioSize = widget->layoutHeight() * 0.7;
+                double radioTop = widget->layoutTop() + (widget->layoutHeight() - radioSize) * 0.5;
+                double borderSize = 2.0;
+                renderFrame(radioLeft, radioTop, radioSize, radioSize);
+                
+                m_frameShader.setUniformColor("objectColor", widget->parentColor());
+                renderFrame(radioLeft + borderSize, radioTop + borderSize, radioSize - borderSize * 2.0, radioSize - borderSize * 2.0);
+                
+                m_frameShader.setUniformColor("objectColor", widget->backgroundColor());
+                RadioButton *button = dynamic_cast<RadioButton *>(widget);
+                if (button->checked()) {
+                    double marginSize = radioSize * 0.3;
+                    renderFrame(radioLeft + marginSize, radioTop + marginSize, radioSize - (marginSize * 2.0), radioSize - (marginSize * 2.0));
+                }
+            } else {
+                double radius = 0.0;
+                if (Widget::RenderHint::Container & widget->renderHints())
+                    radius = 8.0;
+                else if (Widget::RenderHint::Element & widget->renderHints())
+                    radius = 4.0;
+                renderFrame(widget->layoutLeft(), widget->layoutTop(), widget->layoutWidth(), widget->layoutHeight(), radius);
+            }
         }
         
         const auto &backgroundImageResourceName = widget->backgroundImageResourceName();
@@ -511,9 +530,9 @@ public:
             m_imageMap.renderImage(backgroundImageResourceName, widget->layoutLeft(), m_windowHeight - (widget->layoutTop() + widget->layoutHeight()), widget->layoutWidth(), widget->layoutHeight());
         }
         
-        // Render button
-        if (Widget::RenderHint::Button & widget->renderHints()) {
-            Button *button = dynamic_cast<Button *>(widget);
+        // Render push button
+        if (Widget::RenderHint::PushButton & widget->renderHints()) {
+            PushButton *button = dynamic_cast<PushButton *>(widget);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             double padding = widget->layoutHeight() * 0.3;
             double leftOffset = widget->paddingLeft();
@@ -527,6 +546,15 @@ public:
             m_fontMap.shader().use();
             m_fontMap.shader().setUniformColor("objectColor", widget->color());
             renderString(button->text(), widget->layoutLeft() + leftOffset, widget->layoutTop() + widget->paddingTop(), widget->layoutWidth(), widget->layoutHeight() - widget->paddingHeight());
+        }
+        
+        // Render radio button text
+        if (Widget::RenderHint::RadioButton & widget->renderHints()) {
+            RadioButton *button = dynamic_cast<RadioButton *>(widget);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            m_fontMap.shader().use();
+            m_fontMap.shader().setUniformColor("objectColor", widget->color());
+            renderString(button->text(), widget->layoutLeft() + widget->layoutHeight(), widget->layoutTop() + widget->paddingTop(), widget->layoutWidth() - widget->layoutHeight(), widget->layoutHeight() - widget->paddingHeight());
         }
         
         for (auto &child: widget->children())

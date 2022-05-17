@@ -88,7 +88,8 @@ public:
     {
         Container = 0x00000001,
         Element = 0x00000002,
-        Button = 0x00000004,
+        PushButton = 0x00000004,
+        RadioButton = 0x00000008,
     };
     
     std::string SizePolicyToString(SizePolicy sizePolicy)
@@ -509,12 +510,30 @@ public:
         return m_children;
     }
     
-    uint64_t renderHints()
+    const Widget *parent() const
+    {
+        return m_parent;
+    }
+    
+    const Color &parentColor() const
+    {
+        const Widget *parent = m_parent;
+        while (nullptr != parent && parent->parent()) {
+            if (parent->backgroundColor().alpha() > 0)
+                break;
+            parent = parent->parent();
+        }
+        if (nullptr == parent)
+            return m_backgroundColor;
+        return parent->backgroundColor();
+    }
+    
+    uint64_t renderHints() const
     {
         return m_renderHints;
     }
     
-    const Color &backgroundColor()
+    const Color &backgroundColor() const
     {
         return m_backgroundColor;
     }
@@ -527,7 +546,7 @@ public:
         m_appearanceChanged = true;
     }
     
-    const Color &color()
+    const Color &color() const
     {
         return m_color;
     }

@@ -90,6 +90,7 @@ public:
         Element = 0x00000002,
         PushButton = 0x00000004,
         RadioButton = 0x00000008,
+        Text = 0x00000010
     };
     
     std::string SizePolicyToString(SizePolicy sizePolicy)

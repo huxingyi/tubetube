@@ -23,11 +23,12 @@
 #define NOMINMAX
 #include <hu/gles/indie_game_engine.h>
 #include <hu/widget/radio_button.h>
+#include <hu/widget/text.h>
 #include <dust3d/reference_image_edit_window.h>
 #include <dust3d/document_window.h>
 
 ReferenceImageEditWindow::ReferenceImageEditWindow():
-    Window(String::toInt(DocumentWindow::settings()->value("referenceImageEditWindow.width", 640)), String::toInt(DocumentWindow::settings()->value("referenceImageEditWindow.height", 360)))
+    Window(String::toInt(DocumentWindow::settings()->value("referenceImageEditWindow.width", 800)), String::toInt(DocumentWindow::settings()->value("referenceImageEditWindow.height", 360)))
 {
     setTitle("Reference image edit");
     engine()->setBackgroundColor(Color("#00000000"));
@@ -77,6 +78,14 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     loadImageButtonLayout->addWidget(loadImageButton);
     loadImageButtonLayout->addExpanding();
     
+    auto profileText = new Text;
+    profileText->setText("Target area:");
+    profileText->setHeight(20.0, Widget::SizePolicy::FixedSize);
+    profileText->setColor(Color("#ffffff"));
+    engine()->windowSizeChanged.connect([=]() {
+        profileText->setWidth(engine()->measureFontWidth(profileText->text(), profileText->layoutHeight() - profileText->paddingHeight()), Widget::SizePolicy::FixedSize);
+    });
+    
     auto frontProfileRadioButton = new RadioButton;
     frontProfileRadioButton->setText("Front");
     frontProfileRadioButton->setHeight(20.0, Widget::SizePolicy::FixedSize);
@@ -118,11 +127,13 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     profileRadiosLayout->setName("profileRadiosLayout");
     profileRadiosLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
     profileRadiosLayout->addSpacing(10.0);
+    profileRadiosLayout->addWidget(profileText);
+    profileRadiosLayout->addExpanding();
+    profileRadiosLayout->addSpacing(10.0);
     profileRadiosLayout->addWidget(frontProfileRadioButton);
     profileRadiosLayout->addSpacing(10.0);
     profileRadiosLayout->addWidget(sideProfileRadioButton);
     profileRadiosLayout->addSpacing(10.0);
-    profileRadiosLayout->addExpanding();
     
     rightLayout->addSpacing(30.0);
     rightLayout->addWidget(loadImageButtonLayout);

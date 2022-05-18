@@ -35,6 +35,7 @@
 #include <hu/widget/widget.h>
 #include <hu/widget/push_button.h>
 #include <hu/widget/radio_button.h>
+#include <hu/widget/text.h>
 #include <hu/gles/color_map.h>
 #include <hu/gles/shader.h>
 #include <hu/gles/vertex_buffer.h>
@@ -554,7 +555,16 @@ public:
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             m_fontMap.shader().use();
             m_fontMap.shader().setUniformColor("objectColor", widget->color());
-            renderString(button->text(), widget->layoutLeft() + widget->layoutHeight(), widget->layoutTop() + widget->paddingTop(), widget->layoutWidth() - widget->layoutHeight(), widget->layoutHeight() - widget->paddingHeight());
+            renderString(button->text(), widget->layoutLeft() + widget->paddingLeft() + widget->layoutHeight(), widget->layoutTop() + widget->paddingTop(), widget->layoutWidth() - widget->layoutHeight(), widget->layoutHeight() - widget->paddingHeight());
+        }
+        
+        // Render text
+        if (Widget::RenderHint::Text & widget->renderHints()) {
+            Text *text = dynamic_cast<Text *>(widget);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            m_fontMap.shader().use();
+            m_fontMap.shader().setUniformColor("objectColor", widget->color());
+            renderString(text->text(), widget->layoutLeft() + widget->paddingLeft(), widget->layoutTop() + widget->paddingTop(), widget->layoutWidth(), widget->layoutHeight() - widget->paddingHeight());
         }
         
         for (auto &child: widget->children())

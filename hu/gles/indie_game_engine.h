@@ -381,7 +381,7 @@ public:
         m_shadowMap.setSize(1024, 1024);
         m_shadowMap.initialize();
         m_fontMap.initialize();
-        m_fontMap.setFont("OpenSans_Condensed-Regular.ttf");
+        m_fontMap.setFont("Heebo-Regular.ttf");
         m_iconMap.initialize();
         m_iconMap.setIconBitmapSize(16);
         m_imageMap.initialize();

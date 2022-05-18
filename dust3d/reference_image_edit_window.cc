@@ -26,6 +26,7 @@
 #include <hu/widget/text.h>
 #include <dust3d/reference_image_edit_window.h>
 #include <dust3d/document_window.h>
+#include <dust3d/style_constants.h>
 
 ReferenceImageEditWindow::ReferenceImageEditWindow():
     Window(String::toInt(DocumentWindow::settings()->value("referenceImageEditWindow.width", 800)), String::toInt(DocumentWindow::settings()->value("referenceImageEditWindow.height", 360)))
@@ -37,34 +38,34 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     previewLayout->setName("previewLayout");
     previewLayout->setWidth(1.0, Widget::SizePolicy::FlexibleSize);
     previewLayout->setHeight(1.0, Widget::SizePolicy::RelativeSize);
-    previewLayout->setBackgroundColor(Color("#000000"));
+    previewLayout->setBackgroundColor(Color(Style::BackgroundColor));
     
     auto rightLayout = new Widget;
     rightLayout->setName("rightLayout");
     rightLayout->setLayoutDirection(Widget::LayoutDirection::TopToBottom);
     rightLayout->setWidth(250.0, Widget::SizePolicy::FixedSize);
     rightLayout->setHeight(1.0, Widget::SizePolicy::RelativeSize);
-    rightLayout->setBackgroundColor(Color("#252525"));
+    rightLayout->setBackgroundColor(Color(Style::FrameBackgroundColor));
 
     auto loadImageButton = new PushButton;
-    loadImageButton->setHeight(20.0 + loadImageButton->paddingHeight(), Widget::SizePolicy::FixedSize);
+    loadImageButton->setHeight(Style::NormalFontLineHeight + loadImageButton->paddingHeight(), Widget::SizePolicy::FixedSize);
     loadImageButton->setText("Load image");
-    loadImageButton->setBackgroundColor(Color("#fc6621"));
-    loadImageButton->setColor(Color("#ffffff"));
+    loadImageButton->setBackgroundColor(Color(Style::MainColor));
+    loadImageButton->setColor(Color(Style::MainInversedFontColor));
     engine()->windowSizeChanged.connect([=]() {
         loadImageButton->setWidth(engine()->measureFontWidth(loadImageButton->text(), loadImageButton->layoutHeight() - loadImageButton->paddingHeight()) + loadImageButton->paddingWidth(), Widget::SizePolicy::FixedSize);
     });
     loadImageButton->mouseEntered.connect([=]() {
-        loadImageButton->setBackgroundColor(Color("#fc6621").lighted());
+        loadImageButton->setBackgroundColor(Color(Style::MainColor).lighted());
     });
     loadImageButton->mouseLeaved.connect([=]() {
-        loadImageButton->setBackgroundColor(Color("#fc6621"));
+        loadImageButton->setBackgroundColor(Color(Style::MainColor));
     });
     loadImageButton->mousePressed.connect([=]() {
-        loadImageButton->setBackgroundColor(Color("#fc6621").darked());
+        loadImageButton->setBackgroundColor(Color(Style::MainColor).darked());
     });
     loadImageButton->mouseReleased.connect([=]() {
-        loadImageButton->setBackgroundColor(Color("#fc6621"));
+        loadImageButton->setBackgroundColor(Color(Style::MainColor));
         auto selectedFile = this->selectSingleFileByUser({"jpg", "jpeg", "png"});
         if (selectedFile.empty())
             return;
@@ -80,26 +81,26 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     
     auto profileText = new Text;
     profileText->setText("Target area:");
-    profileText->setHeight(20.0, Widget::SizePolicy::FixedSize);
-    profileText->setColor(Color("#ffffff"));
+    profileText->setHeight(Style::NormalFontLineHeight, Widget::SizePolicy::FixedSize);
+    profileText->setColor(Color(Style::MainFontColor));
     engine()->windowSizeChanged.connect([=]() {
         profileText->setWidth(engine()->measureFontWidth(profileText->text(), profileText->layoutHeight() - profileText->paddingHeight()), Widget::SizePolicy::FixedSize);
     });
     
     auto frontProfileRadioButton = new RadioButton;
     frontProfileRadioButton->setText("Front");
-    frontProfileRadioButton->setHeight(20.0, Widget::SizePolicy::FixedSize);
-    frontProfileRadioButton->setBackgroundColor(Color("#fc6621"));
-    frontProfileRadioButton->setColor(Color("#ffffff"));
+    frontProfileRadioButton->setHeight(Style::NormalFontLineHeight, Widget::SizePolicy::FixedSize);
+    frontProfileRadioButton->setBackgroundColor(Color(Style::MainColor));
+    frontProfileRadioButton->setColor(Color(Style::MainFontColor));
     frontProfileRadioButton->setChecked(true);
     engine()->windowSizeChanged.connect([=]() {
         frontProfileRadioButton->setWidth(engine()->measureFontWidth(frontProfileRadioButton->text(), frontProfileRadioButton->layoutHeight() - frontProfileRadioButton->paddingHeight()) + frontProfileRadioButton->layoutHeight() * 1.5 + frontProfileRadioButton->paddingWidth(), Widget::SizePolicy::FixedSize);
     });
     frontProfileRadioButton->mouseEntered.connect([=]() {
-        frontProfileRadioButton->setBackgroundColor(Color("#fc6621").lighted());
+        frontProfileRadioButton->setBackgroundColor(Color(Style::MainColor).lighted());
     });
     frontProfileRadioButton->mouseLeaved.connect([=]() {
-        frontProfileRadioButton->setBackgroundColor(Color("#fc6621"));
+        frontProfileRadioButton->setBackgroundColor(Color(Style::MainColor));
     });
     frontProfileRadioButton->mousePressed.connect([=]() {
         frontProfileRadioButton->setChecked(!frontProfileRadioButton->checked());
@@ -107,17 +108,17 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     
     auto sideProfileRadioButton = new RadioButton;
     sideProfileRadioButton->setText("Side");
-    sideProfileRadioButton->setHeight(20.0, Widget::SizePolicy::FixedSize);
-    sideProfileRadioButton->setBackgroundColor(Color("#fc6621"));
-    sideProfileRadioButton->setColor(Color("#ffffff"));
+    sideProfileRadioButton->setHeight(Style::NormalFontLineHeight, Widget::SizePolicy::FixedSize);
+    sideProfileRadioButton->setBackgroundColor(Color(Style::MainColor));
+    sideProfileRadioButton->setColor(Color(Style::MainFontColor));
     engine()->windowSizeChanged.connect([=]() {
         sideProfileRadioButton->setWidth(engine()->measureFontWidth(sideProfileRadioButton->text(), sideProfileRadioButton->layoutHeight() - sideProfileRadioButton->paddingHeight()) + sideProfileRadioButton->layoutHeight() * 1.5 + sideProfileRadioButton->paddingWidth(), Widget::SizePolicy::FixedSize);
     });
     sideProfileRadioButton->mouseEntered.connect([=]() {
-        sideProfileRadioButton->setBackgroundColor(Color("#fc6621").lighted());
+        sideProfileRadioButton->setBackgroundColor(Color(Style::MainColor).lighted());
     });
     sideProfileRadioButton->mouseLeaved.connect([=]() {
-        sideProfileRadioButton->setBackgroundColor(Color("#fc6621"));
+        sideProfileRadioButton->setBackgroundColor(Color(Style::MainColor));
     });
     sideProfileRadioButton->mousePressed.connect([=]() {
         sideProfileRadioButton->setChecked(!sideProfileRadioButton->checked());
@@ -126,14 +127,14 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     auto profileRadiosLayout = new Widget;
     profileRadiosLayout->setName("profileRadiosLayout");
     profileRadiosLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
-    profileRadiosLayout->addSpacing(10.0);
+    profileRadiosLayout->addSpacing(15.0);
     profileRadiosLayout->addWidget(profileText);
     profileRadiosLayout->addExpanding();
     profileRadiosLayout->addSpacing(10.0);
     profileRadiosLayout->addWidget(frontProfileRadioButton);
     profileRadiosLayout->addSpacing(10.0);
     profileRadiosLayout->addWidget(sideProfileRadioButton);
-    profileRadiosLayout->addSpacing(10.0);
+    profileRadiosLayout->addSpacing(15.0);
     
     rightLayout->addSpacing(30.0);
     rightLayout->addWidget(loadImageButtonLayout);
@@ -173,8 +174,9 @@ void ReferenceImageEditWindow::updatePreviewImage()
                 toWidth = toHeight * targetWidth / targetHeight;
             }
             // FIXME: limit the image size to avoid texture error(OpenGL Error : 1281)
+            Color clearColor(Style::BackgroundColor);
             Image *resizedImage = new Image(toWidth, toHeight);
-            resizedImage->clear(0, 0, 0, 0);
+            resizedImage->clear(clearColor.red() * 255.0, clearColor.green() * 255.0, clearColor.blue() * 255.0, clearColor.alpha() * 255.0);
             resizedImage->copy(*image, 0, 0, (resizedImage->width() - image->width()) / 2, (resizedImage->height() - image->height()) / 2, image->width(), image->height());
             delete image;
             return (void *)resizedImage;

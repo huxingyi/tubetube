@@ -119,7 +119,8 @@ public:
             return 0.0;
         
         std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> utf16conv;
-        std::u16string utf16String = utf16conv.from_bytes(string);
+        // Add fake "fg" to make the full character coverage in max height calculation
+        std::u16string utf16String = utf16conv.from_bytes(string + "fg");
         addCharsToImageClips(utf16String);
         
         std::vector<const ImageClip *> clips = utf16StringToImageClips(utf16String);
@@ -130,6 +131,8 @@ public:
         for (size_t i = 0; i < clips.size(); ++i) {
             maxFontHeight = std::max(maxFontHeight, (double)clips[i]->bitmapHeight);
             maxMove = std::max(maxMove, (double)clips[i]->bitmapBottomMove);
+            if (i >= clips.size() - (sizeof("fg") - 1))
+                continue;
             double kerning = 0.0;
             if (i + 1 < clips.size())
                 msdfgen::getKerning(kerning, m_fontHandle, clips[i]->utf16, clips[i + 1]->utf16);
@@ -142,7 +145,7 @@ public:
     void renderString(const std::string &string, double left, double top, double lineHeight)
     {
         std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> utf16conv;
-        std::u16string utf16String = utf16conv.from_bytes(string);
+        std::u16string utf16String = utf16conv.from_bytes(string + "fg");
         addCharsToImageClips(utf16String);
         
         std::vector<const ImageClip *> clips = utf16StringToImageClips(utf16String);
@@ -160,6 +163,10 @@ public:
         std::vector<GLfloat> vertices(24 * clips.size());
         size_t targetIndex = 0;
         for (size_t i = 0; i < clips.size(); ++i) {
+            
+            if (i >= clips.size() - (sizeof("fg") - 1))
+                continue;
+            
             const auto &clip = *clips[i];
             
             std::pair<GLfloat, GLfloat> leftBottom = {

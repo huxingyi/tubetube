@@ -78,7 +78,7 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     loadImageButtonLayout->addExpanding();
     
     auto frontProfileRadioButton = new RadioButton;
-    frontProfileRadioButton->setText("Front rectangle");
+    frontProfileRadioButton->setText("Front");
     frontProfileRadioButton->setHeight(20.0, Widget::SizePolicy::FixedSize);
     frontProfileRadioButton->setBackgroundColor(Color("#fc6621"));
     frontProfileRadioButton->setColor(Color("#ffffff"));
@@ -97,7 +97,7 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     });
     
     auto sideProfileRadioButton = new RadioButton;
-    sideProfileRadioButton->setText("Side rectangle");
+    sideProfileRadioButton->setText("Side");
     sideProfileRadioButton->setHeight(20.0, Widget::SizePolicy::FixedSize);
     sideProfileRadioButton->setBackgroundColor(Color("#fc6621"));
     sideProfileRadioButton->setColor(Color("#ffffff"));
@@ -119,9 +119,10 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     profileRadiosLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
     profileRadiosLayout->addSpacing(10.0);
     profileRadiosLayout->addWidget(frontProfileRadioButton);
-    profileRadiosLayout->addExpanding();
+    profileRadiosLayout->addSpacing(10.0);
     profileRadiosLayout->addWidget(sideProfileRadioButton);
     profileRadiosLayout->addSpacing(10.0);
+    profileRadiosLayout->addExpanding();
     
     rightLayout->addSpacing(30.0);
     rightLayout->addWidget(loadImageButtonLayout);

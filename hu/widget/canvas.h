@@ -20,34 +20,68 @@
  *  SOFTWARE.
  */
 
-#ifndef DUST3D_REFERENCE_IMAGE_EDIT_WINDOW_H_
-#define DUST3D_REFERENCE_IMAGE_EDIT_WINDOW_H_
+#ifndef HU_WIDGET_CANVAS_H_
+#define HU_WIDGET_CANVAS_H_
 
-#include <hu/base/image.h>
-#include <hu/widget/radio_button.h>
-#include <hu/gles/window.h>
+#include <hu/base/color.h>
+#include <hu/widget/widget.h>
 
-using namespace Hu;
+namespace Hu
+{
 
-class ReferenceImageEditWindow: public Window
+class Canvas: public Widget
 {
 public:
-    enum TargetArea
+    struct Line
     {
-        Front,
-        Side
+        double fromX;
+        double fromY;
+        double toX;
+        double toY;
+        Color color;
     };
-
-    ReferenceImageEditWindow();
-    void setImage(const std::string &path);
-    void updatePreviewImage();
-    void setTargetArea(TargetArea targetArea, bool forceUpdate=false);
+    
+    struct Rectangle
+    {
+        double left;
+        double top;
+        double right;
+        double bottom;
+        Color color;
+    };
+    
+    Canvas()
+    {
+        m_renderHints = RenderHint::Canvas;
+    }
+    
+    void addLine(double fromX, double fromY, double toX, double toY, const Color &color)
+    {
+        m_lines.push_back({fromX, fromY, toX, toY, color});
+        m_appearanceChanged = true;
+    }
+    
+    void addRectangle(double left, double top, double right, double bottom, const Color &color)
+    {
+        m_rectangles.push_back({left, top, right, bottom, color});
+        m_appearanceChanged = true;
+    }
+    
+    const std::vector<Line> &lines() const
+    {
+        return m_lines;
+    }
+    
+    const std::vector<Rectangle> &rectangles() const
+    {
+        return m_rectangles;
+    }
     
 private:
-    std::unique_ptr<Image> m_image;
-    RadioButton *m_frontProfileRadioButton = nullptr;
-    RadioButton *m_sideProfileRadioButton = nullptr;
-    TargetArea m_targetArea = TargetArea::Front;
+    std::vector<Line> m_lines;
+    std::vector<Rectangle> m_rectangles;
 };
+
+}
 
 #endif

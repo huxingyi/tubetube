@@ -165,14 +165,14 @@ public:
         return to_string(*this);
     }
     
-    Color lighted(double weight=0.1) const
+    inline Color lighted(double weight=0.1) const
     {
         auto hsl = rgbToHsl({red(), green(), blue()});
         auto rgb = hslToRgb({hsl[0], hsl[1], std::min(hsl[2] + weight, 1.0)});
         return Color(rgb[0], rgb[1], rgb[2]);
     }
     
-    Color darked(double weight=0.1) const
+    inline Color darked(double weight=0.1) const
     {
         return lighted(-weight);
     }

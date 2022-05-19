@@ -36,6 +36,7 @@
 #include <hu/widget/push_button.h>
 #include <hu/widget/radio_button.h>
 #include <hu/widget/text.h>
+#include <hu/widget/canvas.h>
 #include <hu/gles/color_map.h>
 #include <hu/gles/shader.h>
 #include <hu/gles/vertex_buffer.h>
@@ -368,6 +369,15 @@ public:
                 ;
             m_frameShader = Shader(vertexShaderSource, fragmentShaderSource);
         }
+        {
+            const GLchar *vertexShaderSource =
+                #include <hu/gles/shaders/canvas.vert>
+                ;
+            const GLchar *fragmentShaderSource = 
+                #include <hu/gles/shaders/canvas.frag>
+                ;
+            m_canvasShader = Shader(vertexShaderSource, fragmentShaderSource);
+        }
         
         std::unique_ptr<std::vector<GLfloat>> quadVertices = std::unique_ptr<std::vector<GLfloat>>(new std::vector<GLfloat> {
             -1.0f, -1.0f,  0.0f,  0.0f,  0.0f,
@@ -439,6 +449,98 @@ public:
         glBindTexture(GL_TEXTURE_2D, 0);
     }
     
+    void renderCanvasLines(Canvas *canvas, const std::vector<Canvas::Line> &lines)
+    {
+        if (lines.empty())
+            return;
+        
+        std::vector<GLfloat> vertices(12 * lines.size());
+        size_t targetIndex = 0;
+        
+        for (const auto &line: lines) {
+            vertices[targetIndex++] = canvas->layoutLeft() + line.fromX * canvas->layoutWidth();
+            vertices[targetIndex++] = m_windowHeight - (canvas->layoutTop() + line.fromY * canvas->layoutHeight());
+            vertices[targetIndex++] = line.color.red();
+            vertices[targetIndex++] = line.color.green();
+            vertices[targetIndex++] = line.color.blue();
+            vertices[targetIndex++] = line.color.alpha();
+            vertices[targetIndex++] = canvas->layoutLeft() + line.toX * canvas->layoutWidth();
+            vertices[targetIndex++] = m_windowHeight - (canvas->layoutTop() + line.toY * canvas->layoutHeight());
+            vertices[targetIndex++] = line.color.red();
+            vertices[targetIndex++] = line.color.green();
+            vertices[targetIndex++] = line.color.blue();
+            vertices[targetIndex++] = line.color.alpha();
+        }
+        
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 6, &vertices[0]);
+        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 6, &vertices[2]);
+        glEnableVertexAttribArray(0);
+        glEnableVertexAttribArray(1);
+        glDrawArrays(GL_LINES, 0, targetIndex / 6);
+        glDisableVertexAttribArray(0);
+        glDisableVertexAttribArray(1);
+    }
+    
+    void renderCanvasRectangles(Canvas *canvas, const std::vector<Canvas::Rectangle> &rectangles)
+    {
+        if (rectangles.empty())
+            return;
+        
+        std::vector<GLfloat> vertices(36 * rectangles.size());
+        size_t targetIndex = 0;
+        
+        for (const auto &rectangle: rectangles) {
+            double left = canvas->layoutLeft() + rectangle.left * canvas->layoutWidth();
+            double right = canvas->layoutLeft() + rectangle.right * canvas->layoutWidth();
+            double top = m_windowHeight - (canvas->layoutTop() + rectangle.bottom * canvas->layoutHeight());
+            double bottom = m_windowHeight - (canvas->layoutTop() + rectangle.top * canvas->layoutHeight());
+            vertices[targetIndex++] = left;
+            vertices[targetIndex++] = top;
+            vertices[targetIndex++] = rectangle.color.red();
+            vertices[targetIndex++] = rectangle.color.green();
+            vertices[targetIndex++] = rectangle.color.blue();
+            vertices[targetIndex++] = rectangle.color.alpha();
+            vertices[targetIndex++] = right;
+            vertices[targetIndex++] = top;
+            vertices[targetIndex++] = rectangle.color.red();
+            vertices[targetIndex++] = rectangle.color.green();
+            vertices[targetIndex++] = rectangle.color.blue();
+            vertices[targetIndex++] = rectangle.color.alpha();
+            vertices[targetIndex++] = right;
+            vertices[targetIndex++] = bottom;
+            vertices[targetIndex++] = rectangle.color.red();
+            vertices[targetIndex++] = rectangle.color.green();
+            vertices[targetIndex++] = rectangle.color.blue();
+            vertices[targetIndex++] = rectangle.color.alpha();
+            vertices[targetIndex++] = right;
+            vertices[targetIndex++] = bottom;
+            vertices[targetIndex++] = rectangle.color.red();
+            vertices[targetIndex++] = rectangle.color.green();
+            vertices[targetIndex++] = rectangle.color.blue();
+            vertices[targetIndex++] = rectangle.color.alpha();
+            vertices[targetIndex++] = left;
+            vertices[targetIndex++] = bottom;
+            vertices[targetIndex++] = rectangle.color.red();
+            vertices[targetIndex++] = rectangle.color.green();
+            vertices[targetIndex++] = rectangle.color.blue();
+            vertices[targetIndex++] = rectangle.color.alpha();
+            vertices[targetIndex++] = left;
+            vertices[targetIndex++] = top;
+            vertices[targetIndex++] = rectangle.color.red();
+            vertices[targetIndex++] = rectangle.color.green();
+            vertices[targetIndex++] = rectangle.color.blue();
+            vertices[targetIndex++] = rectangle.color.alpha();
+        }
+        
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 6, &vertices[0]);
+        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 6, &vertices[2]);
+        glEnableVertexAttribArray(0);
+        glEnableVertexAttribArray(1);
+        glDrawArrays(GL_TRIANGLES, 0, targetIndex / 6);
+        glDisableVertexAttribArray(0);
+        glDisableVertexAttribArray(1);
+    }
+    
     void renderFrame(double left, double top, double width, double height, double cornerRadius=0.0)
     {
         //std::cout << "    left:" << left << " top:" << top << " width:" << width << " height:" << height << std::endl;
@@ -494,7 +596,7 @@ public:
         //std::cout << "renderWidget name:" << widget->name() << " color:" << widget->backgroundColor().toString() << std::endl;
         
         // Render background
-        glBlendFunc(GL_ONE, GL_ZERO);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         m_frameShader.use();
         m_frameShader.setUniformColor("objectColor", widget->backgroundColor());
         if (widget->backgroundColor().alpha() > 0) {
@@ -565,6 +667,15 @@ public:
             m_fontMap.shader().use();
             m_fontMap.shader().setUniformColor("objectColor", widget->color());
             renderString(text->text(), widget->layoutLeft() + widget->paddingLeft(), widget->layoutTop() + widget->paddingTop(), widget->layoutWidth(), widget->layoutHeight() - widget->paddingHeight());
+        }
+        
+        // Render canvas
+        if (Widget::RenderHint::Canvas & widget->renderHints()) {
+            Canvas *canvas = dynamic_cast<Canvas *>(widget);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            m_canvasShader.use();
+            renderCanvasLines(canvas, canvas->lines());
+            renderCanvasRectangles(canvas, canvas->rectangles());
         }
         
         for (auto &child: widget->children())
@@ -796,6 +907,8 @@ public:
                     m_frameShader.setUniformMatrix("projectionMatrix", m_screenProjectionMatrix);
                     m_imageMap.shader().use();
                     m_imageMap.shader().setUniformMatrix("projectionMatrix", m_screenProjectionMatrix);
+                    m_canvasShader.use();
+                    m_canvasShader.setUniformMatrix("projectionMatrix", m_screenProjectionMatrix);
                     if (Widget::layoutChanged()) {
                         m_rootWidget->layout();
                         windowSizeChanged.emit();
@@ -1047,6 +1160,7 @@ private:
     Shader m_positionShader;
     Shader m_idShader;
     Shader m_frameShader;
+    Shader m_canvasShader;
     Particles m_particles;
     VertexBuffer m_quadBuffer;
     DepthMap m_shadowMap;

@@ -24,6 +24,7 @@
 #include <hu/gles/indie_game_engine.h>
 #include <hu/widget/radio_button.h>
 #include <hu/widget/text.h>
+#include <hu/widget/canvas.h>
 #include <dust3d/reference_image_edit_window.h>
 #include <dust3d/document_window.h>
 #include <dust3d/style_constants.h>
@@ -39,6 +40,13 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     previewLayout->setWidth(1.0, Widget::SizePolicy::FlexibleSize);
     previewLayout->setHeight(1.0, Widget::SizePolicy::RelativeSize);
     previewLayout->setBackgroundColor(Color(Style::BackgroundColor));
+    
+    auto canvas = new Canvas;
+    canvas->setWidth(1.0, Widget::SizePolicy::RelativeSize);
+    canvas->setHeight(1.0, Widget::SizePolicy::RelativeSize);
+    canvas->addLine(0.1, 0.5, 0.9, 0.5, Color("#00ff00"));
+    canvas->addRectangle(0.05, 0.45, 0.15, 0.55, Color("#00ff00"));
+    previewLayout->addWidget(canvas);
     
     auto rightLayout = new Widget;
     rightLayout->setName("rightLayout");
@@ -88,6 +96,7 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     });
     
     auto frontProfileRadioButton = new RadioButton;
+    m_frontProfileRadioButton = frontProfileRadioButton;
     frontProfileRadioButton->setText("Front");
     frontProfileRadioButton->setHeight(Style::NormalFontLineHeight, Widget::SizePolicy::FixedSize);
     frontProfileRadioButton->setBackgroundColor(Color(Style::MainColor));
@@ -103,10 +112,11 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
         frontProfileRadioButton->setBackgroundColor(Color(Style::MainColor));
     });
     frontProfileRadioButton->mousePressed.connect([=]() {
-        frontProfileRadioButton->setChecked(!frontProfileRadioButton->checked());
+        setTargetArea(TargetArea::Front);
     });
     
     auto sideProfileRadioButton = new RadioButton;
+    m_sideProfileRadioButton = sideProfileRadioButton;
     sideProfileRadioButton->setText("Side");
     sideProfileRadioButton->setHeight(Style::NormalFontLineHeight, Widget::SizePolicy::FixedSize);
     sideProfileRadioButton->setBackgroundColor(Color(Style::MainColor));
@@ -121,8 +131,10 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
         sideProfileRadioButton->setBackgroundColor(Color(Style::MainColor));
     });
     sideProfileRadioButton->mousePressed.connect([=]() {
-        sideProfileRadioButton->setChecked(!sideProfileRadioButton->checked());
+        setTargetArea(TargetArea::Side);
     });
+    
+    setTargetArea(m_targetArea, true);
     
     auto profileRadiosLayout = new Widget;
     profileRadiosLayout->setName("profileRadiosLayout");
@@ -155,6 +167,17 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     engine()->windowSizeChanged.connect(std::bind(&ReferenceImageEditWindow::updatePreviewImage, this));
     
     setVisible(true);
+}
+
+void ReferenceImageEditWindow::setTargetArea(TargetArea targetArea, bool forceUpdate)
+{
+    if (!forceUpdate && m_targetArea == targetArea)
+        return;
+    m_targetArea = targetArea;
+    if (nullptr != m_frontProfileRadioButton)
+        m_frontProfileRadioButton->setChecked(TargetArea::Front == m_targetArea);
+    if (nullptr != m_sideProfileRadioButton)
+        m_sideProfileRadioButton->setChecked(TargetArea::Side == m_targetArea);
 }
 
 void ReferenceImageEditWindow::updatePreviewImage()

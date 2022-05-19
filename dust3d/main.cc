@@ -20,6 +20,7 @@
  *  SOFTWARE.
  */
 
+#define NOMINMAX
 #include <dust3d/document_window.h>
 #include <dust3d/reference_image_edit_window.h>
 

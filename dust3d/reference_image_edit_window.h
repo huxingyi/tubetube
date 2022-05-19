@@ -25,6 +25,7 @@
 
 #include <hu/base/image.h>
 #include <hu/widget/radio_button.h>
+#include <hu/widget/canvas.h>
 #include <hu/gles/window.h>
 
 using namespace Hu;
@@ -42,11 +43,17 @@ public:
     void setImage(const std::string &path);
     void updatePreviewImage();
     void setTargetArea(TargetArea targetArea, bool forceUpdate=false);
+    void updateClip();
     
 private:
     std::unique_ptr<Image> m_image;
     RadioButton *m_frontProfileRadioButton = nullptr;
     RadioButton *m_sideProfileRadioButton = nullptr;
+    Canvas *m_canvas = nullptr;
+    double m_clipLeft = 0.25;
+    double m_clipRight = 0.75;
+    double m_clipTop = 0.05;
+    double m_clipBottom = 0.95;
     TargetArea m_targetArea = TargetArea::Front;
 };
 

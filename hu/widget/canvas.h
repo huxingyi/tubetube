@@ -55,6 +55,13 @@ public:
         m_renderHints = RenderHint::Canvas;
     }
     
+    void clear()
+    {
+        m_lines.clear();
+        m_rectangles.clear();
+        m_appearanceChanged = true;
+    }
+    
     void addLine(double fromX, double fromY, double toX, double toY, const Color &color)
     {
         m_lines.push_back({fromX, fromY, toX, toY, color});

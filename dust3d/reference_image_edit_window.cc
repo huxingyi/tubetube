@@ -42,10 +42,9 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     previewLayout->setBackgroundColor(Color(Style::BackgroundColor));
     
     auto canvas = new Canvas;
+    m_canvas = canvas;
     canvas->setWidth(1.0, Widget::SizePolicy::RelativeSize);
     canvas->setHeight(1.0, Widget::SizePolicy::RelativeSize);
-    canvas->addLine(0.1, 0.5, 0.9, 0.5, Color("#00ff00"));
-    canvas->addRectangle(0.05, 0.45, 0.15, 0.55, Color("#00ff00"));
     previewLayout->addWidget(canvas);
     
     auto rightLayout = new Widget;
@@ -134,8 +133,6 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
         setTargetArea(TargetArea::Side);
     });
     
-    setTargetArea(m_targetArea, true);
-    
     auto profileRadiosLayout = new Widget;
     profileRadiosLayout->setName("profileRadiosLayout");
     profileRadiosLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
@@ -165,6 +162,9 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     engine()->rootWidget()->addWidget(mainLayout);
     
     engine()->windowSizeChanged.connect(std::bind(&ReferenceImageEditWindow::updatePreviewImage, this));
+    engine()->windowSizeChanged.connect(std::bind(&ReferenceImageEditWindow::updateClip, this));
+
+    setTargetArea(m_targetArea, true);
     
     setVisible(true);
 }
@@ -178,6 +178,33 @@ void ReferenceImageEditWindow::setTargetArea(TargetArea targetArea, bool forceUp
         m_frontProfileRadioButton->setChecked(TargetArea::Front == m_targetArea);
     if (nullptr != m_sideProfileRadioButton)
         m_sideProfileRadioButton->setChecked(TargetArea::Side == m_targetArea);
+}
+
+void ReferenceImageEditWindow::updateClip()
+{
+    m_canvas->clear();
+    
+    m_canvas->addLine(m_clipLeft, m_clipTop, m_clipRight, m_clipTop, Color(Style::HighlightColor));
+    m_canvas->addLine(m_clipRight, m_clipTop, m_clipRight, m_clipBottom, Color(Style::HighlightColor));
+    m_canvas->addLine(m_clipRight, m_clipBottom, m_clipLeft, m_clipBottom, Color(Style::HighlightColor));
+    m_canvas->addLine(m_clipLeft, m_clipBottom, m_clipLeft, m_clipTop, Color(Style::HighlightColor));
+    
+    Color maskColor = Color(Style::HighlightColor);
+    maskColor.alpha() = 0.2;
+    m_canvas->addRectangle(0.0, 0.0, m_clipLeft, 1.0, maskColor);
+    m_canvas->addRectangle(m_clipRight, 0.0, 1.0, 1.0, maskColor);
+    m_canvas->addRectangle(m_clipLeft, 0.0, m_clipRight, m_clipTop, maskColor);
+    m_canvas->addRectangle(m_clipLeft, m_clipBottom, m_clipRight, 1.0, maskColor);
+    
+    Widget *previewImageWidget = Widget::get("PreviewImage");
+    
+    const double handleSize = Style::NormalFontLineHeight;
+    double handleHalfWidth = 0.5 * handleSize / previewImageWidget->layoutWidth();
+    double handleHalfHeight = 0.5 * handleSize / previewImageWidget->layoutHeight();
+    m_canvas->addRectangle(m_clipLeft - handleHalfWidth, m_clipTop - handleHalfHeight, m_clipLeft + handleHalfWidth, m_clipTop + handleHalfHeight, Color(Style::HighlightColor));
+    m_canvas->addRectangle(m_clipRight - handleHalfWidth, m_clipTop - handleHalfHeight, m_clipRight + handleHalfWidth, m_clipTop + handleHalfHeight, Color(Style::HighlightColor));
+    m_canvas->addRectangle(m_clipRight - handleHalfWidth, m_clipBottom - handleHalfHeight, m_clipRight + handleHalfWidth, m_clipBottom + handleHalfHeight, Color(Style::HighlightColor));
+    m_canvas->addRectangle(m_clipLeft - handleHalfWidth, m_clipBottom - handleHalfHeight, m_clipLeft + handleHalfWidth, m_clipBottom + handleHalfHeight, Color(Style::HighlightColor));
 }
 
 void ReferenceImageEditWindow::updatePreviewImage()

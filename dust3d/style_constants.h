@@ -31,6 +31,7 @@ public:
     static inline const char *MainInversedFontColor = "#ffffff";
     static inline const char *BackgroundColor = "#ffffff";
     static inline const char *FrameBackgroundColor = "#f3f3f3";
+    static inline const char *HighlightColor = "#0078d4";
     static inline double NormalFontLineHeight = 16.0;
 };
 

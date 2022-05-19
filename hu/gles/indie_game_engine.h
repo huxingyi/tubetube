@@ -880,23 +880,17 @@ public:
                 
                 glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-                // Render text
-                
-                m_fontMap.shader().use();
-
                 glClear(GL_COLOR_BUFFER_BIT);
                 glDisable(GL_DEPTH_TEST);
                 glEnable(GL_BLEND);
                 glBlendFunc(GL_ONE, GL_ZERO);
                 
+                m_fontMap.shader().use();
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, m_fontMap.textureId());
                 m_fontMap.shader().setUniformMatrix("projectionMatrix", m_screenProjectionMatrix);
-                //glUniform4f(m_fontMap.shader().getUniformLocation("objectColor"), 1.0, 0.0, 0.0, 1.0);
                 
                 m_uiTaskList.update();
-
-                //m_fontMap.renderString(particlesIsDirty ? "Partices rendered:[" + std::to_string(m_particles.aliveElementCount()) + "]" : "Partices NOT rendered", m_windowWidth / 2.0, m_windowHeight / 2.0);
                 
                 glBindTexture(GL_TEXTURE_2D, 0);
                 

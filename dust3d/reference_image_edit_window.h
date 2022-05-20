@@ -27,6 +27,7 @@
 #include <hu/widget/radio_button.h>
 #include <hu/widget/canvas.h>
 #include <hu/gles/window.h>
+#include <dust3d/style_constants.h>
 
 using namespace Hu;
 
@@ -44,6 +45,9 @@ public:
     void updatePreviewImage();
     void setTargetArea(TargetArea targetArea, bool forceUpdate=false);
     void updateClip();
+    void handleCanvasMouseMove(double x, double y);
+    void handleCanvasMousePressed();
+    void handleCanvasMouseReleased();
     
 private:
     std::unique_ptr<Image> m_image;
@@ -54,7 +58,25 @@ private:
     double m_clipRight = 0.75;
     double m_clipTop = 0.05;
     double m_clipBottom = 0.95;
+    bool m_leftTopHandleMouseHovering = false;
+    bool m_leftTopHandleMouseMoving = false;
+    bool m_rightTopHandleMouseHovering = false;
+    bool m_rightTopHandleMouseMoving = false;
+    bool m_rightBottomHandleMouseHovering = false;
+    bool m_rightBottomHandleMouseMoving = false;
+    bool m_leftBottomHandleMouseHovering = false;
+    bool m_leftBottomHandleMouseMoving = false;
+    bool m_mousePressing = false;
+    bool m_mouseMoveStarted = false;
+    double m_mouseMoveFromX = 0.0;
+    double m_mouseMoveFromY = 0.0;
     TargetArea m_targetArea = TargetArea::Front;
+    const double m_handleSize = Style::NormalFontLineHeight;
+    
+    void setLeftTopHandleMouseHovering(bool hovering);
+    void setRightTopHandleMouseHovering(bool hovering);
+    void setRightBottomHandleMouseHovering(bool hovering);
+    void setLeftBottomHandleMouseHovering(bool hovering);
 };
 
 #endif

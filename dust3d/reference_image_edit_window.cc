@@ -21,6 +21,7 @@
  */
 
 #define NOMINMAX
+#include <functional>
 #include <hu/gles/indie_game_engine.h>
 #include <hu/widget/radio_button.h>
 #include <hu/widget/text.h>
@@ -163,6 +164,10 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     
     engine()->windowSizeChanged.connect(std::bind(&ReferenceImageEditWindow::updatePreviewImage, this));
     engine()->windowSizeChanged.connect(std::bind(&ReferenceImageEditWindow::updateClip, this));
+    
+    m_canvas->mouseMoved.connect(std::bind(&ReferenceImageEditWindow::handleCanvasMouseMove, this, std::placeholders::_1, std::placeholders::_2));
+    m_canvas->mousePressed.connect(std::bind(&ReferenceImageEditWindow::handleCanvasMousePressed, this));
+    m_canvas->mouseReleased.connect(std::bind(&ReferenceImageEditWindow::handleCanvasMouseReleased, this));
 
     setTargetArea(m_targetArea, true);
     
@@ -178,6 +183,114 @@ void ReferenceImageEditWindow::setTargetArea(TargetArea targetArea, bool forceUp
         m_frontProfileRadioButton->setChecked(TargetArea::Front == m_targetArea);
     if (nullptr != m_sideProfileRadioButton)
         m_sideProfileRadioButton->setChecked(TargetArea::Side == m_targetArea);
+}
+
+void ReferenceImageEditWindow::setLeftTopHandleMouseHovering(bool hovering)
+{
+    if (m_leftTopHandleMouseHovering == hovering)
+        return;
+    m_leftTopHandleMouseHovering = hovering;
+    updateClip();
+}
+
+void ReferenceImageEditWindow::setRightTopHandleMouseHovering(bool hovering)
+{
+    if (m_rightTopHandleMouseHovering == hovering)
+        return;
+    m_rightTopHandleMouseHovering = hovering;
+    updateClip();
+}
+
+void ReferenceImageEditWindow::setRightBottomHandleMouseHovering(bool hovering)
+{
+    if (m_rightBottomHandleMouseHovering == hovering)
+        return;
+    m_rightBottomHandleMouseHovering = hovering;
+    updateClip();
+}
+
+void ReferenceImageEditWindow::setLeftBottomHandleMouseHovering(bool hovering)
+{
+    if (m_leftBottomHandleMouseHovering == hovering)
+        return;
+    m_leftBottomHandleMouseHovering = hovering;
+    updateClip();
+}
+
+void ReferenceImageEditWindow::handleCanvasMousePressed()
+{
+    m_mousePressing = true;
+}
+
+void ReferenceImageEditWindow::handleCanvasMouseReleased()
+{
+    m_mousePressing = false;
+    if (m_mouseMoveStarted) {
+        m_mouseMoveStarted = false;
+        m_leftTopHandleMouseMoving = false;
+        m_rightTopHandleMouseMoving = false;
+        m_rightBottomHandleMouseMoving = false;
+        m_leftBottomHandleMouseMoving = false;
+    }
+}
+
+void ReferenceImageEditWindow::handleCanvasMouseMove(double x, double y)
+{
+    Widget *previewImageWidget = Widget::get("PreviewImage");
+    double realX = (x - previewImageWidget->layoutLeft()) / previewImageWidget->layoutWidth();
+    double realY = (y - previewImageWidget->layoutTop()) / previewImageWidget->layoutHeight();
+    double handleHalfWidth = 0.75 * m_handleSize / previewImageWidget->layoutWidth();
+    double handleHalfHeight = 0.75 * m_handleSize / previewImageWidget->layoutHeight();
+    setLeftTopHandleMouseHovering(realX >= m_clipLeft - handleHalfWidth && realX <= m_clipLeft + handleHalfWidth && 
+        realY >= m_clipTop - handleHalfHeight && realY <= m_clipTop + handleHalfHeight);
+    setRightTopHandleMouseHovering(realX >= m_clipRight - handleHalfWidth && realX <= m_clipRight + handleHalfWidth && 
+        realY >= m_clipTop - handleHalfHeight && realY <= m_clipTop + handleHalfHeight);
+    setRightBottomHandleMouseHovering(realX >= m_clipRight - handleHalfWidth && realX <= m_clipRight + handleHalfWidth && 
+        realY >= m_clipBottom - handleHalfHeight && realY <= m_clipBottom + handleHalfHeight);
+    setLeftBottomHandleMouseHovering(realX >= m_clipLeft - handleHalfWidth && realX <= m_clipLeft + handleHalfWidth && 
+        realY >= m_clipBottom - handleHalfHeight && realY <= m_clipBottom + handleHalfHeight);
+    if (m_mousePressing && !m_mouseMoveStarted) {
+        if (m_leftTopHandleMouseHovering) {
+            m_leftTopHandleMouseMoving = true;
+            m_mouseMoveStarted = true;
+        } else if (m_rightTopHandleMouseHovering) {
+            m_rightTopHandleMouseMoving = true;
+            m_mouseMoveStarted = true;
+        } else if (m_rightBottomHandleMouseHovering) {
+            m_rightBottomHandleMouseMoving = true;
+            m_mouseMoveStarted = true;
+        } else if (m_leftBottomHandleMouseHovering) {
+            m_leftBottomHandleMouseMoving = true;
+            m_mouseMoveStarted = true;
+        }
+        if (m_mouseMoveStarted) {
+            m_mouseMoveFromX = realX;
+            m_mouseMoveFromY = realY;
+        }
+    }
+    if (m_mouseMoveStarted) {
+        double moveX = realX - m_mouseMoveFromX;
+        double moveY = realY - m_mouseMoveFromY;
+        if (m_leftTopHandleMouseMoving) {
+            m_clipLeft += moveX;
+            m_clipTop += moveY;
+            updateClip();
+        } else if (m_rightTopHandleMouseMoving) {
+            m_clipRight += moveX;
+            m_clipTop += moveY;
+            updateClip();
+        } else if (m_rightBottomHandleMouseMoving) {
+            m_clipRight += moveX;
+            m_clipBottom += moveY;
+            updateClip();
+        } else if (m_leftBottomHandleMouseMoving) {
+            m_clipLeft += moveX;
+            m_clipBottom += moveY;
+            updateClip();
+        }
+        m_mouseMoveFromX = realX;
+        m_mouseMoveFromY = realY;
+    }
 }
 
 void ReferenceImageEditWindow::updateClip()
@@ -198,13 +311,12 @@ void ReferenceImageEditWindow::updateClip()
     
     Widget *previewImageWidget = Widget::get("PreviewImage");
     
-    const double handleSize = Style::NormalFontLineHeight;
-    double handleHalfWidth = 0.5 * handleSize / previewImageWidget->layoutWidth();
-    double handleHalfHeight = 0.5 * handleSize / previewImageWidget->layoutHeight();
-    m_canvas->addRectangle(m_clipLeft - handleHalfWidth, m_clipTop - handleHalfHeight, m_clipLeft + handleHalfWidth, m_clipTop + handleHalfHeight, Color(Style::HighlightColor));
-    m_canvas->addRectangle(m_clipRight - handleHalfWidth, m_clipTop - handleHalfHeight, m_clipRight + handleHalfWidth, m_clipTop + handleHalfHeight, Color(Style::HighlightColor));
-    m_canvas->addRectangle(m_clipRight - handleHalfWidth, m_clipBottom - handleHalfHeight, m_clipRight + handleHalfWidth, m_clipBottom + handleHalfHeight, Color(Style::HighlightColor));
-    m_canvas->addRectangle(m_clipLeft - handleHalfWidth, m_clipBottom - handleHalfHeight, m_clipLeft + handleHalfWidth, m_clipBottom + handleHalfHeight, Color(Style::HighlightColor));
+    double handleHalfWidth = 0.5 * m_handleSize / previewImageWidget->layoutWidth();
+    double handleHalfHeight = 0.5 * m_handleSize / previewImageWidget->layoutHeight();
+    m_canvas->addRectangle(m_clipLeft - handleHalfWidth, m_clipTop - handleHalfHeight, m_clipLeft + handleHalfWidth, m_clipTop + handleHalfHeight, m_leftTopHandleMouseHovering ? Color(Style::HighlightColor).lighted() : Color(Style::HighlightColor));
+    m_canvas->addRectangle(m_clipRight - handleHalfWidth, m_clipTop - handleHalfHeight, m_clipRight + handleHalfWidth, m_clipTop + handleHalfHeight, m_rightTopHandleMouseHovering ? Color(Style::HighlightColor).lighted() : Color(Style::HighlightColor));
+    m_canvas->addRectangle(m_clipRight - handleHalfWidth, m_clipBottom - handleHalfHeight, m_clipRight + handleHalfWidth, m_clipBottom + handleHalfHeight, m_rightBottomHandleMouseHovering ? Color(Style::HighlightColor).lighted() : Color(Style::HighlightColor));
+    m_canvas->addRectangle(m_clipLeft - handleHalfWidth, m_clipBottom - handleHalfHeight, m_clipLeft + handleHalfWidth, m_clipBottom + handleHalfHeight, m_leftBottomHandleMouseHovering ? Color(Style::HighlightColor).lighted() : Color(Style::HighlightColor));
 }
 
 void ReferenceImageEditWindow::updatePreviewImage()

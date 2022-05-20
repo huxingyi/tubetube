@@ -36,7 +36,7 @@ namespace Hu
 class Widget
 {
 public:
-    Signal<> mouseMoved;
+    Signal<double, double> mouseMoved;
     Signal<> mouseEntered;
     Signal<> mouseLeaved;
     Signal<> mousePressed;
@@ -483,7 +483,7 @@ public:
             setMouseHovering(true);
             for (auto &widget: m_children)
                 widget->handleMouseMove(x, y);
-            mouseMoved.emit();
+            mouseMoved.emit(x, y);
             return true;
         }
         for (auto &widget: m_children)

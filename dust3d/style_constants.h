@@ -26,13 +26,21 @@
 class Style
 {
 public:
-    static inline const char *MainColor = "#1a1a1a";
-    static inline const char *MainFontColor = "#000000";
-    static inline const char *MainInversedFontColor = "#ffffff";
-    static inline const char *BackgroundColor = "#ffffff";
-    static inline const char *FrameBackgroundColor = "#f3f3f3";
-    static inline const char *HighlightColor = "#0078d4";
-    static inline double NormalFontLineHeight = 16.0;
+    static inline const char *MainColor = "#f7d9c8";
+    static inline const char *MainFontColor = "#f7d9c8";
+    static inline const char *HighlightButtonColor = "#fc6621";
+    static inline const char *HighlightButtonFontColor = "#353535";
+    static inline const char *ButtonColor = "#353535";
+    static inline const char *ButtonFontColor = "#f7d9c8";
+    static inline const char *BackgroundColor = "#000000";
+    static inline const char *FrameBackgroundColor = "#252525";
+    static inline const char *HighlightColor = "#fc6621";
+    static inline double NormalFontLineHeight = 17.0;
+    static inline double SidebarWidth = 270.0;
+    static inline double SidebarHorizontalSpacing = 10.0;
+    static inline double SidebarVerticalSpacing = 15.0;
+    static inline double SidebarVerticalInternalSpacing = 7.5;
+    static inline double BorderSize = 1.0;
 };
 
 #endif

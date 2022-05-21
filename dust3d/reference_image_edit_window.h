@@ -28,31 +28,36 @@
 #include <hu/widget/canvas.h>
 #include <hu/gles/window.h>
 #include <dust3d/style_constants.h>
+#include <dust3d/dirty_flags.h>
 
 using namespace Hu;
 
 class ReferenceImageEditWindow: public Window
 {
 public:
-    enum TargetArea
-    {
-        Front,
-        Side
-    };
-
     ReferenceImageEditWindow();
     void setImage(const std::string &path);
     void updatePreviewImage();
-    void setTargetArea(TargetArea targetArea, bool forceUpdate=false);
     void updateClip();
     void handleCanvasMouseMove(double x, double y);
     void handleCanvasMousePressed();
     void handleCanvasMouseReleased();
+    void copyClipToFront();
+    void copyClipToSide();
+    void updateReferenceImage();
+    std::unique_ptr<Image> &resizedImage();
+    std::unique_ptr<Image> &frontImage();
+    std::unique_ptr<Image> &sideImage();
+    std::unique_ptr<Image> &referenceImage();
     
+    static inline const size_t m_targetReferenceWidth = 1024;
+    static inline const size_t m_targetReferenceHeight = 512;
 private:
     std::unique_ptr<Image> m_image;
-    RadioButton *m_frontProfileRadioButton = nullptr;
-    RadioButton *m_sideProfileRadioButton = nullptr;
+    std::unique_ptr<Image> m_resizedImage;
+    std::unique_ptr<Image> m_frontImage;
+    std::unique_ptr<Image> m_sideImage;
+    std::unique_ptr<Image> m_referenceImage;
     Canvas *m_canvas = nullptr;
     double m_clipLeft = 0.25;
     double m_clipRight = 0.75;
@@ -70,8 +75,8 @@ private:
     bool m_mouseMoveStarted = false;
     double m_mouseMoveFromX = 0.0;
     double m_mouseMoveFromY = 0.0;
-    TargetArea m_targetArea = TargetArea::Front;
     const double m_handleSize = Style::NormalFontLineHeight;
+    DirtyFlags m_referenceImageFlags;
     
     void setLeftTopHandleMouseHovering(bool hovering);
     void setRightTopHandleMouseHovering(bool hovering);

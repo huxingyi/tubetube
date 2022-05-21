@@ -63,6 +63,25 @@ public:
         }
     }
     
+    Image *scaledToHeight(size_t toHeight)
+    {
+        size_t toWidth = m_width * (double)toHeight / m_height;
+        Image *toImage = new Image(toWidth, toHeight);
+        unsigned char *toData = toImage->data();
+        double scaleX = (double)m_width / toWidth;
+        double scaleY = (double)m_height / toHeight;
+        for (double y = 0; y < toHeight; y += 1.0) {
+            size_t srcY = std::min((size_t)(scaleY * y), m_height - 1);
+            for (double x = 0; x < toWidth; x += 1.0) {
+                size_t srcX = std::min((size_t)(scaleX * x), m_width - 1);
+                size_t srcOffset = (size_t)(srcY * m_width + srcX) * 4;
+                size_t targetOffset = (size_t)(y * toWidth + x) * 4;
+                memcpy(toData + targetOffset, m_data + srcOffset, 4);
+            }
+        }
+        return toImage;
+    }
+    
     void copy(const Image &source, size_t sourceLeft, size_t sourceTop, size_t targetLeft, size_t targetTop, size_t width, size_t height)
     {
         const unsigned char *sourceData = source.data();

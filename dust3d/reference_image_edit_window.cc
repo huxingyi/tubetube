@@ -36,44 +36,55 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     setTitle("Reference image edit");
     engine()->setBackgroundColor(Color("#00000000"));
     
-    auto previewLayout = new Widget("PreviewImage");
-    previewLayout->setName("previewLayout");
-    previewLayout->setWidth(1.0, Widget::SizePolicy::FlexibleSize);
-    previewLayout->setHeight(1.0, Widget::SizePolicy::RelativeSize);
-    previewLayout->setBackgroundColor(Color(Style::BackgroundColor));
+    auto sourceImageWidget = new Widget("referenceImageEditWindow.sourceImage");
+    sourceImageWidget->setName("sourceImageWidget");
+    sourceImageWidget->setWidth(1.0, Widget::SizePolicy::FlexibleSize);
+    sourceImageWidget->setHeight(1.0, Widget::SizePolicy::RelativeSize);
+    sourceImageWidget->setBackgroundColor(Color(Style::BackgroundColor));
     
     auto canvas = new Canvas;
     m_canvas = canvas;
     canvas->setWidth(1.0, Widget::SizePolicy::RelativeSize);
     canvas->setHeight(1.0, Widget::SizePolicy::RelativeSize);
-    previewLayout->addWidget(canvas);
+    sourceImageWidget->addWidget(canvas);
     
     auto rightLayout = new Widget;
     rightLayout->setName("rightLayout");
     rightLayout->setLayoutDirection(Widget::LayoutDirection::TopToBottom);
-    rightLayout->setWidth(250.0, Widget::SizePolicy::FixedSize);
+    rightLayout->setWidth(Style::SidebarWidth, Widget::SizePolicy::FixedSize);
     rightLayout->setHeight(1.0, Widget::SizePolicy::RelativeSize);
     rightLayout->setBackgroundColor(Color(Style::FrameBackgroundColor));
+    
+    auto referenceImagePreviewWidget = new Widget("referenceImageEditWindow.referenceImagePreview");
+    referenceImagePreviewWidget->setName("referenceImagePreviewWidget");
+    double referenceImageWidth = Style::SidebarWidth - Style::BorderSize * 2.0;
+    referenceImagePreviewWidget->setWidth(referenceImageWidth, Widget::SizePolicy::FixedSize);
+    referenceImagePreviewWidget->setHeight(referenceImageWidth * 0.5, Widget::SizePolicy::FixedSize);
+    referenceImagePreviewWidget->setBackgroundColor(Color(Style::BackgroundColor));
+    
+    auto referenceImagePreviewLayout = new Widget;
+    referenceImagePreviewLayout->addSpacing(Style::BorderSize);
+    referenceImagePreviewLayout->addWidget(referenceImagePreviewWidget);
 
     auto loadImageButton = new PushButton;
     loadImageButton->setHeight(Style::NormalFontLineHeight + loadImageButton->paddingHeight(), Widget::SizePolicy::FixedSize);
-    loadImageButton->setText("Load image");
-    loadImageButton->setBackgroundColor(Color(Style::MainColor));
-    loadImageButton->setColor(Color(Style::MainInversedFontColor));
+    loadImageButton->setText("Load source image");
+    loadImageButton->setBackgroundColor(Color(Style::ButtonColor));
+    loadImageButton->setColor(Color(Style::ButtonFontColor));
     engine()->windowSizeChanged.connect([=]() {
         loadImageButton->setWidth(engine()->measureFontWidth(loadImageButton->text(), loadImageButton->layoutHeight() - loadImageButton->paddingHeight()) + loadImageButton->paddingWidth(), Widget::SizePolicy::FixedSize);
     });
     loadImageButton->mouseEntered.connect([=]() {
-        loadImageButton->setBackgroundColor(Color(Style::MainColor).lighted());
+        loadImageButton->setBackgroundColor(Color(Style::ButtonColor).lighted());
     });
     loadImageButton->mouseLeaved.connect([=]() {
-        loadImageButton->setBackgroundColor(Color(Style::MainColor));
+        loadImageButton->setBackgroundColor(Color(Style::ButtonColor));
     });
     loadImageButton->mousePressed.connect([=]() {
-        loadImageButton->setBackgroundColor(Color(Style::MainColor).darked());
+        loadImageButton->setBackgroundColor(Color(Style::ButtonColor).darked());
     });
     loadImageButton->mouseReleased.connect([=]() {
-        loadImageButton->setBackgroundColor(Color(Style::MainColor));
+        loadImageButton->setBackgroundColor(Color(Style::ButtonColor));
         auto selectedFile = this->selectSingleFileByUser({"jpg", "jpeg", "png"});
         if (selectedFile.empty())
             return;
@@ -87,76 +98,103 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     loadImageButtonLayout->addWidget(loadImageButton);
     loadImageButtonLayout->addExpanding();
     
-    auto profileText = new Text;
-    profileText->setText("Target area:");
-    profileText->setHeight(Style::NormalFontLineHeight, Widget::SizePolicy::FixedSize);
-    profileText->setColor(Color(Style::MainFontColor));
+    auto copyToFrontButton = new PushButton;
+    copyToFrontButton->setHeight(Style::NormalFontLineHeight + copyToFrontButton->paddingHeight(), Widget::SizePolicy::FixedSize);
+    copyToFrontButton->setText("Copy to front");
+    copyToFrontButton->setBackgroundColor(Color(Style::ButtonColor));
+    copyToFrontButton->setColor(Color(Style::ButtonFontColor));
     engine()->windowSizeChanged.connect([=]() {
-        profileText->setWidth(engine()->measureFontWidth(profileText->text(), profileText->layoutHeight() - profileText->paddingHeight()), Widget::SizePolicy::FixedSize);
+        copyToFrontButton->setWidth(engine()->measureFontWidth(copyToFrontButton->text(), copyToFrontButton->layoutHeight() - copyToFrontButton->paddingHeight()) + copyToFrontButton->paddingWidth(), Widget::SizePolicy::FixedSize);
+    });
+    copyToFrontButton->mouseEntered.connect([=]() {
+        copyToFrontButton->setBackgroundColor(Color(Style::ButtonColor).lighted());
+    });
+    copyToFrontButton->mouseLeaved.connect([=]() {
+        copyToFrontButton->setBackgroundColor(Color(Style::ButtonColor));
+    });
+    copyToFrontButton->mousePressed.connect([=]() {
+        copyToFrontButton->setBackgroundColor(Color(Style::ButtonColor).darked());
+    });
+    copyToFrontButton->mouseReleased.connect([=]() {
+        copyToFrontButton->setBackgroundColor(Color(Style::ButtonColor));
+        this->copyClipToFront();
     });
     
-    auto frontProfileRadioButton = new RadioButton;
-    m_frontProfileRadioButton = frontProfileRadioButton;
-    frontProfileRadioButton->setText("Front");
-    frontProfileRadioButton->setHeight(Style::NormalFontLineHeight, Widget::SizePolicy::FixedSize);
-    frontProfileRadioButton->setBackgroundColor(Color(Style::MainColor));
-    frontProfileRadioButton->setColor(Color(Style::MainFontColor));
-    frontProfileRadioButton->setChecked(true);
+    auto copyToSideButton = new PushButton;
+    copyToSideButton->setHeight(Style::NormalFontLineHeight + copyToSideButton->paddingHeight(), Widget::SizePolicy::FixedSize);
+    copyToSideButton->setText("Copy to side");
+    copyToSideButton->setBackgroundColor(Color(Style::ButtonColor));
+    copyToSideButton->setColor(Color(Style::ButtonFontColor));
     engine()->windowSizeChanged.connect([=]() {
-        frontProfileRadioButton->setWidth(engine()->measureFontWidth(frontProfileRadioButton->text(), frontProfileRadioButton->layoutHeight() - frontProfileRadioButton->paddingHeight()) + frontProfileRadioButton->layoutHeight() * 1.5 + frontProfileRadioButton->paddingWidth(), Widget::SizePolicy::FixedSize);
+        copyToSideButton->setWidth(engine()->measureFontWidth(copyToSideButton->text(), copyToSideButton->layoutHeight() - copyToSideButton->paddingHeight()) + copyToSideButton->paddingWidth(), Widget::SizePolicy::FixedSize);
     });
-    frontProfileRadioButton->mouseEntered.connect([=]() {
-        frontProfileRadioButton->setBackgroundColor(Color(Style::MainColor).lighted());
+    copyToSideButton->mouseEntered.connect([=]() {
+        copyToSideButton->setBackgroundColor(Color(Style::ButtonColor).lighted());
     });
-    frontProfileRadioButton->mouseLeaved.connect([=]() {
-        frontProfileRadioButton->setBackgroundColor(Color(Style::MainColor));
+    copyToSideButton->mouseLeaved.connect([=]() {
+        copyToSideButton->setBackgroundColor(Color(Style::ButtonColor));
     });
-    frontProfileRadioButton->mousePressed.connect([=]() {
-        setTargetArea(TargetArea::Front);
+    copyToSideButton->mousePressed.connect([=]() {
+        copyToSideButton->setBackgroundColor(Color(Style::ButtonColor).darked());
+    });
+    copyToSideButton->mouseReleased.connect([=]() {
+        copyToSideButton->setBackgroundColor(Color(Style::ButtonColor));
+        this->copyClipToSide();
     });
     
-    auto sideProfileRadioButton = new RadioButton;
-    m_sideProfileRadioButton = sideProfileRadioButton;
-    sideProfileRadioButton->setText("Side");
-    sideProfileRadioButton->setHeight(Style::NormalFontLineHeight, Widget::SizePolicy::FixedSize);
-    sideProfileRadioButton->setBackgroundColor(Color(Style::MainColor));
-    sideProfileRadioButton->setColor(Color(Style::MainFontColor));
+    auto copyButtonsLayout = new Widget;
+    copyButtonsLayout->setName("copyButtonsLayout");
+    copyButtonsLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
+    copyButtonsLayout->addSpacing(Style::SidebarHorizontalSpacing);
+    copyButtonsLayout->addWidget(copyToFrontButton);
+    copyButtonsLayout->addExpanding();
+    copyButtonsLayout->addWidget(copyToSideButton);
+    copyButtonsLayout->addSpacing(Style::SidebarHorizontalSpacing);
+    
+    auto saveButton = new PushButton;
+    saveButton->setHeight(Style::NormalFontLineHeight + saveButton->paddingHeight(), Widget::SizePolicy::FixedSize);
+    saveButton->setText("Save");
+    saveButton->setBackgroundColor(Color(Style::HighlightButtonColor));
+    saveButton->setColor(Color(Style::HighlightButtonFontColor));
     engine()->windowSizeChanged.connect([=]() {
-        sideProfileRadioButton->setWidth(engine()->measureFontWidth(sideProfileRadioButton->text(), sideProfileRadioButton->layoutHeight() - sideProfileRadioButton->paddingHeight()) + sideProfileRadioButton->layoutHeight() * 1.5 + sideProfileRadioButton->paddingWidth(), Widget::SizePolicy::FixedSize);
+        saveButton->setWidth(engine()->measureFontWidth(saveButton->text(), saveButton->layoutHeight() - saveButton->paddingHeight()) + saveButton->paddingWidth(), Widget::SizePolicy::FixedSize);
     });
-    sideProfileRadioButton->mouseEntered.connect([=]() {
-        sideProfileRadioButton->setBackgroundColor(Color(Style::MainColor).lighted());
+    saveButton->mouseEntered.connect([=]() {
+        saveButton->setBackgroundColor(Color(Style::HighlightButtonColor).lighted());
     });
-    sideProfileRadioButton->mouseLeaved.connect([=]() {
-        sideProfileRadioButton->setBackgroundColor(Color(Style::MainColor));
+    saveButton->mouseLeaved.connect([=]() {
+        saveButton->setBackgroundColor(Color(Style::HighlightButtonColor));
     });
-    sideProfileRadioButton->mousePressed.connect([=]() {
-        setTargetArea(TargetArea::Side);
+    saveButton->mousePressed.connect([=]() {
+        saveButton->setBackgroundColor(Color(Style::HighlightButtonColor).darked());
+    });
+    saveButton->mouseReleased.connect([=]() {
+        saveButton->setBackgroundColor(Color(Style::HighlightButtonColor));
     });
     
-    auto profileRadiosLayout = new Widget;
-    profileRadiosLayout->setName("profileRadiosLayout");
-    profileRadiosLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
-    profileRadiosLayout->addSpacing(15.0);
-    profileRadiosLayout->addWidget(profileText);
-    profileRadiosLayout->addExpanding();
-    profileRadiosLayout->addSpacing(10.0);
-    profileRadiosLayout->addWidget(frontProfileRadioButton);
-    profileRadiosLayout->addSpacing(10.0);
-    profileRadiosLayout->addWidget(sideProfileRadioButton);
-    profileRadiosLayout->addSpacing(15.0);
-    
-    rightLayout->addSpacing(30.0);
+    auto saveButtonLayout = new Widget;
+    saveButtonLayout->setName("saveButtonLayout");
+    saveButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
+    saveButtonLayout->addExpanding();
+    saveButtonLayout->addWidget(saveButton);
+    saveButtonLayout->addSpacing(Style::SidebarHorizontalSpacing);
+
+    rightLayout->addSpacing(Style::BorderSize);
+    rightLayout->addWidget(referenceImagePreviewLayout);
+    rightLayout->addSpacing(Style::SidebarVerticalInternalSpacing);
+    rightLayout->addWidget(copyButtonsLayout);
+    rightLayout->addSpacing(Style::SidebarVerticalSpacing * 2.0);
     rightLayout->addWidget(loadImageButtonLayout);
-    rightLayout->addSpacing(35.0);
-    rightLayout->addWidget(profileRadiosLayout);
+    rightLayout->addSpacing(Style::SidebarVerticalSpacing);
     rightLayout->addExpanding();
+    rightLayout->addWidget(saveButtonLayout);
+    rightLayout->addSpacing(Style::SidebarVerticalSpacing);
     
     auto mainLayout = new Widget;
     mainLayout->setName("mainLayout");
     mainLayout->setHeight(1.0, Widget::SizePolicy::RelativeSize);
     mainLayout->setWidth(1.0, Widget::SizePolicy::RelativeSize);
-    mainLayout->addWidget(previewLayout);
+    mainLayout->addWidget(sourceImageWidget);
     mainLayout->addWidget(rightLayout);
     
     engine()->rootWidget()->setName("rootWidget");
@@ -169,20 +207,7 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     m_canvas->mousePressed.connect(std::bind(&ReferenceImageEditWindow::handleCanvasMousePressed, this));
     m_canvas->mouseReleased.connect(std::bind(&ReferenceImageEditWindow::handleCanvasMouseReleased, this));
 
-    setTargetArea(m_targetArea, true);
-    
     setVisible(true);
-}
-
-void ReferenceImageEditWindow::setTargetArea(TargetArea targetArea, bool forceUpdate)
-{
-    if (!forceUpdate && m_targetArea == targetArea)
-        return;
-    m_targetArea = targetArea;
-    if (nullptr != m_frontProfileRadioButton)
-        m_frontProfileRadioButton->setChecked(TargetArea::Front == m_targetArea);
-    if (nullptr != m_sideProfileRadioButton)
-        m_sideProfileRadioButton->setChecked(TargetArea::Side == m_targetArea);
 }
 
 void ReferenceImageEditWindow::setLeftTopHandleMouseHovering(bool hovering)
@@ -236,11 +261,11 @@ void ReferenceImageEditWindow::handleCanvasMouseReleased()
 
 void ReferenceImageEditWindow::handleCanvasMouseMove(double x, double y)
 {
-    Widget *previewImageWidget = Widget::get("PreviewImage");
-    double realX = (x - previewImageWidget->layoutLeft()) / previewImageWidget->layoutWidth();
-    double realY = (y - previewImageWidget->layoutTop()) / previewImageWidget->layoutHeight();
-    double handleHalfWidth = 0.75 * m_handleSize / previewImageWidget->layoutWidth();
-    double handleHalfHeight = 0.75 * m_handleSize / previewImageWidget->layoutHeight();
+    Widget *sourceImageWidget = Widget::get("referenceImageEditWindow.sourceImage");
+    double realX = (x - sourceImageWidget->layoutLeft()) / sourceImageWidget->layoutWidth();
+    double realY = (y - sourceImageWidget->layoutTop()) / sourceImageWidget->layoutHeight();
+    double handleHalfWidth = 0.75 * m_handleSize / sourceImageWidget->layoutWidth();
+    double handleHalfHeight = 0.75 * m_handleSize / sourceImageWidget->layoutHeight();
     setLeftTopHandleMouseHovering(realX >= m_clipLeft - handleHalfWidth && realX <= m_clipLeft + handleHalfWidth && 
         realY >= m_clipTop - handleHalfHeight && realY <= m_clipTop + handleHalfHeight);
     setRightTopHandleMouseHovering(realX >= m_clipRight - handleHalfWidth && realX <= m_clipRight + handleHalfWidth && 
@@ -309,14 +334,124 @@ void ReferenceImageEditWindow::updateClip()
     m_canvas->addRectangle(m_clipLeft, 0.0, m_clipRight, m_clipTop, maskColor);
     m_canvas->addRectangle(m_clipLeft, m_clipBottom, m_clipRight, 1.0, maskColor);
     
-    Widget *previewImageWidget = Widget::get("PreviewImage");
+    Widget *sourceImageWidget = Widget::get("referenceImageEditWindow.sourceImage");
     
-    double handleHalfWidth = 0.5 * m_handleSize / previewImageWidget->layoutWidth();
-    double handleHalfHeight = 0.5 * m_handleSize / previewImageWidget->layoutHeight();
+    double handleHalfWidth = 0.5 * m_handleSize / sourceImageWidget->layoutWidth();
+    double handleHalfHeight = 0.5 * m_handleSize / sourceImageWidget->layoutHeight();
     m_canvas->addRectangle(m_clipLeft - handleHalfWidth, m_clipTop - handleHalfHeight, m_clipLeft + handleHalfWidth, m_clipTop + handleHalfHeight, m_leftTopHandleMouseHovering ? Color(Style::HighlightColor).lighted() : Color(Style::HighlightColor));
     m_canvas->addRectangle(m_clipRight - handleHalfWidth, m_clipTop - handleHalfHeight, m_clipRight + handleHalfWidth, m_clipTop + handleHalfHeight, m_rightTopHandleMouseHovering ? Color(Style::HighlightColor).lighted() : Color(Style::HighlightColor));
     m_canvas->addRectangle(m_clipRight - handleHalfWidth, m_clipBottom - handleHalfHeight, m_clipRight + handleHalfWidth, m_clipBottom + handleHalfHeight, m_rightBottomHandleMouseHovering ? Color(Style::HighlightColor).lighted() : Color(Style::HighlightColor));
     m_canvas->addRectangle(m_clipLeft - handleHalfWidth, m_clipBottom - handleHalfHeight, m_clipLeft + handleHalfWidth, m_clipBottom + handleHalfHeight, m_leftBottomHandleMouseHovering ? Color(Style::HighlightColor).lighted() : Color(Style::HighlightColor));
+}
+
+std::unique_ptr<Image> &ReferenceImageEditWindow::resizedImage()
+{
+    return m_resizedImage;
+}
+
+std::unique_ptr<Image> &ReferenceImageEditWindow::frontImage()
+{
+    return m_frontImage;
+}
+
+std::unique_ptr<Image> &ReferenceImageEditWindow::sideImage()
+{
+    return m_sideImage;
+}
+
+std::unique_ptr<Image> &ReferenceImageEditWindow::referenceImage()
+{
+    return m_referenceImage;
+}
+
+void ReferenceImageEditWindow::updateReferenceImage()
+{
+    if (m_referenceImageFlags.processing) {
+        m_referenceImageFlags.dirty = true;
+        return;
+    }
+    
+    m_referenceImageFlags.dirty = false;
+    
+    Image *frontImage = nullptr != m_frontImage ? new Image(*m_frontImage) : nullptr;
+    Image *sideImage = nullptr != m_sideImage ? new Image(*m_sideImage) : nullptr;
+    engine()->run([=]() {
+            Image *frontScaledImage = nullptr != frontImage ? frontImage->scaledToHeight(ReferenceImageEditWindow::m_targetReferenceHeight) : nullptr;
+            Image *sideScaledImage = nullptr != sideImage ? sideImage->scaledToHeight(ReferenceImageEditWindow::m_targetReferenceHeight) : nullptr;
+            size_t frontScaledImageWidth = nullptr != frontScaledImage ? frontScaledImage->width() : 0;
+            size_t sideScaledImageWidth = nullptr != sideScaledImage ? sideScaledImage->width() : 0;
+            size_t targetWidth = std::max(frontScaledImageWidth + sideScaledImageWidth, ReferenceImageEditWindow::m_targetReferenceWidth);
+            Image *referenceImage = new Image(targetWidth, ReferenceImageEditWindow::m_targetReferenceHeight);
+            referenceImage->clear(255, 255, 255, 255);
+            size_t left = (targetWidth - (frontScaledImageWidth + sideScaledImageWidth)) / 2;
+            if (nullptr != frontScaledImage)
+                referenceImage->copy(*frontScaledImage, 0, 0, left, 0, frontScaledImage->width(), frontScaledImage->height());
+            if (nullptr != sideScaledImage)
+                referenceImage->copy(*sideScaledImage, 0, 0, left + frontScaledImageWidth, 0, sideScaledImage->width(), sideScaledImage->height());
+            delete frontImage;
+            delete sideImage;
+            delete frontScaledImage;
+            delete sideScaledImage;
+            return (void *)referenceImage;
+        }, [=](void *result) {
+            Image *referenceImage = (Image *)result;
+            this->engine()->setImageResource("referenceImageEditWindow.referenceImagePreview", referenceImage->width(), referenceImage->height(), referenceImage->data());
+            this->referenceImage().reset(referenceImage);
+            Widget::get("referenceImageEditWindow.referenceImagePreview")->setBackgroundImageResourceName("referenceImageEditWindow.referenceImagePreview");
+            if (m_referenceImageFlags.dirty)
+                updateReferenceImage();
+        }
+    );
+}
+
+void ReferenceImageEditWindow::copyClipToFront()
+{
+    if (nullptr == m_resizedImage)
+        return;
+    
+    double clipLeft = m_clipLeft * m_resizedImage->width();
+    double clipRight = m_clipRight * m_resizedImage->width();
+    double clipTop = m_clipTop * m_resizedImage->height();
+    double clipBottom = m_clipBottom * m_resizedImage->height();
+    Image *image = new Image(*m_resizedImage);
+    engine()->run([=]() {
+            Color clearColor(Style::BackgroundColor);
+            Image *clipImage = new Image(clipRight - clipLeft, clipBottom - clipTop);
+            clipImage->clear(clearColor.red() * 255.0, clearColor.green() * 255.0, clearColor.blue() * 255.0, clearColor.alpha() * 255.0);
+            clipImage->copy(*image, clipLeft, clipTop, 0, 0, clipImage->width(), clipImage->height());
+            delete image;
+            return (void *)clipImage;
+        }, [=](void *result) {
+            Image *clipImage = (Image *)result;
+            this->frontImage().reset(clipImage);
+            this->updateReferenceImage();
+        }
+    );
+}
+
+void ReferenceImageEditWindow::copyClipToSide()
+{
+    if (nullptr == m_resizedImage)
+        return;
+    
+    double clipLeft = m_clipLeft * m_resizedImage->width();
+    double clipRight = m_clipRight * m_resizedImage->width();
+    double clipTop = m_clipTop * m_resizedImage->height();
+    double clipBottom = m_clipBottom * m_resizedImage->height();
+    Image *image = new Image(*m_resizedImage);
+    engine()->run([=]() {
+            Color clearColor(Style::BackgroundColor);
+            Image *clipImage = new Image(clipRight - clipLeft, clipBottom - clipTop);
+            clipImage->clear(clearColor.red() * 255.0, clearColor.green() * 255.0, clearColor.blue() * 255.0, clearColor.alpha() * 255.0);
+            clipImage->copy(*image, clipLeft, clipTop, 0, 0, clipImage->width(), clipImage->height());
+            delete image;
+            return (void *)clipImage;
+        }, [=](void *result) {
+            Image *clipImage = (Image *)result;
+            this->sideImage().reset(clipImage);
+            this->updateReferenceImage();
+        }
+    );
 }
 
 void ReferenceImageEditWindow::updatePreviewImage()
@@ -324,9 +459,9 @@ void ReferenceImageEditWindow::updatePreviewImage()
     if (nullptr == m_image)
         return;
     
-    Widget *previewImageWidget = Widget::get("PreviewImage");
-    size_t targetWidth = previewImageWidget->layoutWidth();
-    size_t targetHeight = previewImageWidget->layoutHeight();
+    Widget *sourceImageWidget = Widget::get("referenceImageEditWindow.sourceImage");
+    size_t targetWidth = sourceImageWidget->layoutWidth();
+    size_t targetHeight = sourceImageWidget->layoutHeight();
     Image *image = new Image(*m_image);
     engine()->run([=]() {
             size_t toWidth = image->width();
@@ -344,9 +479,9 @@ void ReferenceImageEditWindow::updatePreviewImage()
             return (void *)resizedImage;
         }, [=](void *result) {
             Image *resizedImage = (Image *)result;
-            this->engine()->setImageResource("preview-image", resizedImage->width(), resizedImage->height(), resizedImage->data());
-            delete resizedImage;
-            Widget::get("PreviewImage")->setBackgroundImageResourceName("preview-image");
+            this->engine()->setImageResource("referenceImageEditWindow.sourceImage", resizedImage->width(), resizedImage->height(), resizedImage->data());
+            this->resizedImage().reset(resizedImage);
+            Widget::get("referenceImageEditWindow.sourceImage")->setBackgroundImageResourceName("referenceImageEditWindow.sourceImage");
         }
     );
 }

@@ -287,6 +287,8 @@ void ReferenceImageEditWindow::handleCanvasMouseMove(double x, double y)
         } else if (m_leftBottomHandleMouseHovering) {
             m_leftBottomHandleMouseMoving = true;
             m_mouseMoveStarted = true;
+        } else {
+            m_mouseMoveStarted = true;
         }
         if (m_mouseMoveStarted) {
             m_mouseMoveFromX = realX;
@@ -310,6 +312,12 @@ void ReferenceImageEditWindow::handleCanvasMouseMove(double x, double y)
             updateClip();
         } else if (m_leftBottomHandleMouseMoving) {
             m_clipLeft += moveX;
+            m_clipBottom += moveY;
+            updateClip();
+        } else {
+            m_clipLeft += moveX;
+            m_clipTop += moveY;
+            m_clipRight += moveX;
             m_clipBottom += moveY;
             updateClip();
         }

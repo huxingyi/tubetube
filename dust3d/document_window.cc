@@ -98,6 +98,28 @@ DocumentWindow::DocumentWindow():
     radiusButton->setColor(Color(Style::WhiteColor));
     radiusButton->setIcon("toolbar_radius.svg");
     
+    auto imageButton = new PushButton;
+    imageButton->setName("imageButton");
+    imageButton->setPadding(Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding);
+    imageButton->setWidth(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
+    imageButton->setHeight(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
+    //imageButton->setBackgroundColor(Color(Style::ButtonColor));
+    imageButton->setColor(Color(Style::WhiteColor));
+    imageButton->setIcon("toolbar_image.svg");
+    imageButton->mouseEntered.connect([=]() {
+        imageButton->setBackgroundColor(Color(Style::ButtonColor).lighted());
+    });
+    imageButton->mouseLeaved.connect([=]() {
+        imageButton->setBackgroundColor(Color(0.0, 0.0, 0.0, 0.0));
+    });
+    imageButton->mousePressed.connect([=]() {
+        imageButton->setBackgroundColor(Color(Style::ButtonColor).darked());
+    });
+    imageButton->mouseReleased.connect([=]() {
+        imageButton->setBackgroundColor(Color(Style::ButtonColor));
+        // TODO:
+    });
+    
     auto selectButtonLayout = new Widget;
     selectButtonLayout->setName("selectButtonLayout");
     selectButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
@@ -146,6 +168,14 @@ DocumentWindow::DocumentWindow():
     radiusButtonLayout->addWidget(radiusButton);
     radiusButtonLayout->addSpacing(Style::ToolbarSpacing);
     
+    auto imageButtonLayout = new Widget;
+    imageButtonLayout->setName("imageButtonLayout");
+    imageButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
+    imageButtonLayout->setWidth(Style::ToolbarIconSize + Style::ToolbarSpacing * 2, Widget::SizePolicy::FixedSize);
+    imageButtonLayout->addSpacing(Style::ToolbarSpacing);
+    imageButtonLayout->addWidget(imageButton);
+    imageButtonLayout->addSpacing(Style::ToolbarSpacing);
+    
     auto backgroundImageWidget = new Widget("documentWindow.turnaround");
     backgroundImageWidget->setName("backgroundImageWidget");
     backgroundImageWidget->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
@@ -174,6 +204,8 @@ DocumentWindow::DocumentWindow():
     leftBarLayout->addWidget(yButtonLayout);
     leftBarLayout->addWidget(zButtonLayout);
     leftBarLayout->addWidget(radiusButtonLayout);
+    leftBarLayout->addSpacing(Style::ToolbarSpacing * 3.0);
+    leftBarLayout->addWidget(imageButtonLayout);
     leftBarLayout->addExpanding();
     leftBarLayout->addWidget(logoWidget);
     leftBarLayout->addSpacing(Style::ToolbarSpacing);
@@ -205,7 +237,7 @@ DocumentWindow::DocumentWindow():
     
     setVisible(true);
     
-    setReferenceImage("reference-image.jpg");
+    //setReferenceImage("reference-image.jpg");
 }
 
 void DocumentWindow::popupMenu()

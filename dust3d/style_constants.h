@@ -26,15 +26,19 @@
 class Style
 {
 public:
-    static inline const char *MainColor = "#f7d9c8";
-    static inline const char *MainFontColor = "#f7d9c8";
-    static inline const char *HighlightButtonColor = "#fc6621";
+    static inline const char *RedColor = "#fc6621";
+    static inline const char *GreenColor = "#0da9f1";
+    static inline const char *BlueColor = "#aaebc4";
+    static inline const char *WhiteColor = "#ffffff"; //"#f7d9c8";
+    static inline const char *MainColor = WhiteColor;
+    static inline const char *MainFontColor = WhiteColor;
+    static inline const char *HighlightButtonColor = RedColor;
     static inline const char *HighlightButtonFontColor = "#353535";
     static inline const char *ButtonColor = "#353535";
-    static inline const char *ButtonFontColor = "#f7d9c8";
+    static inline const char *ButtonFontColor = WhiteColor;
     static inline const char *BackgroundColor = "#000000";
     static inline const char *FrameBackgroundColor = "#252525";
-    static inline const char *HighlightColor = "#fc6621";
+    static inline const char *HighlightColor = RedColor;
     static inline const double NormalFontLineHeight = 17.0;
     static inline const double SidebarWidth = 270.0;
     static inline const double SidebarHorizontalSpacing = 10.0;
@@ -44,10 +48,6 @@ public:
     static inline const double ToolbarIconPadding = 3.0;
     static inline const double ToolbarIconSize = 17.0 + ToolbarIconPadding * 2.0;
     static inline const double ToolbarSpacing = 5.0;
-    static inline const char *RedColor = "#fc6621";
-    static inline const char *GreenColor = "#0da9f1";
-    static inline const char *BlueColor = "#aaebc4";
-    static inline const char *WhiteColor = "#f7d9c8";
 };
 
 #endif

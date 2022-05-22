@@ -497,7 +497,7 @@ public:
         layoutSizeTopDown();
         layoutLocation();
         
-        m_window->setLayoutChanged(true);
+        m_window->setLayoutChanged(false);
     }
     
     void setMouseHovering(bool hovering)

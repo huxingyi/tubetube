@@ -273,8 +273,8 @@ Window::Window(int width, int height, Type type, Window *parent):
         eglMakeCurrent(this->eglDisplay(), this->eglSurface(), this->eglSurface(), this->eglContext());
         while (!this->internal().pendingMessages.empty()) {
             auto pending = this->internal().pendingMessages.front();
-            handlePendingMessage(this, pending.msg, pending.wparam, pending.lparam);
             this->internal().pendingMessages.pop();
+            handlePendingMessage(this, pending.msg, pending.wparam, pending.lparam);
         }
         this->engine()->renderScene();
         eglSwapBuffers(this->eglDisplay(), this->eglSurface());

@@ -29,6 +29,7 @@
 #include <dust3d/document_window.h>
 #include <dust3d/reference_image_edit_window.h>
 #include <dust3d/data/dust3d_vertical_png.h>
+#include <dust3d/style_constants.h>
 
 Settings *DocumentWindow::settings()
 {
@@ -41,64 +42,150 @@ DocumentWindow::DocumentWindow():
 {
     setTitle("Tubetube");
 
-    engine()->setBackgroundColor(Color("#00252525"));
+    engine()->setBackgroundColor(Color("#00000000"));
     
-    auto toolBoxWidget = new Widget;
-    toolBoxWidget->setName("toolBoxWidget");
-    toolBoxWidget->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
-    toolBoxWidget->addSpacing(5.0);
-    toolBoxWidget->addExpanding(0.5);
-    toolBoxWidget->addSpacing(5.0);
-    toolBoxWidget->addWidget(new PushButton);
-    toolBoxWidget->addSpacing(5.0);
-    toolBoxWidget->addWidget(new PushButton);
-    toolBoxWidget->addSpacing(5.0);
-    toolBoxWidget->addExpanding(1.5);
+    auto selectButton = new PushButton;
+    selectButton->setName("selectButton");
+    selectButton->setPadding(Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding);
+    selectButton->setWidth(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
+    selectButton->setHeight(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
+    selectButton->setBackgroundColor(Color(Style::ButtonColor));
+    selectButton->setColor(Color(Style::WhiteColor));
+    selectButton->setIcon("toolbar_pointer.svg");
     
-    auto backgroundImageWidget = new Widget("Turnaround");
+    auto addButton = new PushButton;
+    addButton->setName("addButton");
+    addButton->setPadding(Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding);
+    addButton->setWidth(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
+    addButton->setHeight(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
+    //addButton->setBackgroundColor(Color(Style::ButtonColor));
+    addButton->setColor(Color(Style::WhiteColor));
+    addButton->setIcon("toolbar_add.svg");
+    
+    auto xButton = new PushButton;
+    xButton->setName("xButton");
+    xButton->setPadding(Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding);
+    xButton->setWidth(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
+    xButton->setHeight(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
+    xButton->setBackgroundColor(Color(Style::ButtonColor));
+    xButton->setColor(Color(Style::RedColor));
+    xButton->setIcon("toolbar_x.svg");
+    
+    auto yButton = new PushButton;
+    yButton->setName("yButton");
+    yButton->setPadding(Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding);
+    yButton->setWidth(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
+    yButton->setHeight(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
+    yButton->setBackgroundColor(Color(Style::ButtonColor));
+    yButton->setColor(Color(Style::GreenColor));
+    yButton->setIcon("toolbar_y.svg");
+    
+    auto zButton = new PushButton;
+    zButton->setName("zButton");
+    zButton->setPadding(Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding);
+    zButton->setWidth(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
+    zButton->setHeight(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
+    zButton->setBackgroundColor(Color(Style::ButtonColor));
+    zButton->setColor(Color(Style::BlueColor));
+    zButton->setIcon("toolbar_z.svg");
+    
+    auto radiusButton = new PushButton;
+    radiusButton->setName("radiusButton");
+    radiusButton->setPadding(Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding);
+    radiusButton->setWidth(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
+    radiusButton->setHeight(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
+    radiusButton->setBackgroundColor(Color(Style::ButtonColor));
+    radiusButton->setColor(Color(Style::WhiteColor));
+    radiusButton->setIcon("toolbar_radius.svg");
+    
+    auto selectButtonLayout = new Widget;
+    selectButtonLayout->setName("selectButtonLayout");
+    selectButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
+    selectButtonLayout->setWidth(Style::ToolbarIconSize + Style::ToolbarSpacing * 2, Widget::SizePolicy::FixedSize);
+    selectButtonLayout->addSpacing(Style::ToolbarSpacing);
+    selectButtonLayout->addWidget(selectButton);
+    selectButtonLayout->addSpacing(Style::ToolbarSpacing);
+    
+    auto addButtonLayout = new Widget;
+    addButtonLayout->setName("addButtonLayout");
+    addButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
+    addButtonLayout->setWidth(Style::ToolbarIconSize + Style::ToolbarSpacing * 2, Widget::SizePolicy::FixedSize);
+    addButtonLayout->addSpacing(Style::ToolbarSpacing);
+    addButtonLayout->addWidget(addButton);
+    addButtonLayout->addSpacing(Style::ToolbarSpacing);
+    
+    auto xButtonLayout = new Widget;
+    xButtonLayout->setName("xButtonLayout");
+    xButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
+    xButtonLayout->setWidth(Style::ToolbarIconSize + Style::ToolbarSpacing * 2, Widget::SizePolicy::FixedSize);
+    xButtonLayout->addSpacing(Style::ToolbarSpacing);
+    xButtonLayout->addWidget(xButton);
+    xButtonLayout->addSpacing(Style::ToolbarSpacing);
+    
+    auto yButtonLayout = new Widget;
+    yButtonLayout->setName("yButtonLayout");
+    yButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
+    yButtonLayout->setWidth(Style::ToolbarIconSize + Style::ToolbarSpacing * 2, Widget::SizePolicy::FixedSize);
+    yButtonLayout->addSpacing(Style::ToolbarSpacing);
+    yButtonLayout->addWidget(yButton);
+    yButtonLayout->addSpacing(Style::ToolbarSpacing);
+    
+    auto zButtonLayout = new Widget;
+    zButtonLayout->setName("zButtonLayout");
+    zButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
+    zButtonLayout->setWidth(Style::ToolbarIconSize + Style::ToolbarSpacing * 2, Widget::SizePolicy::FixedSize);
+    zButtonLayout->addSpacing(Style::ToolbarSpacing);
+    zButtonLayout->addWidget(zButton);
+    zButtonLayout->addSpacing(Style::ToolbarSpacing);
+    
+    auto radiusButtonLayout = new Widget;
+    radiusButtonLayout->setName("radiusButtonLayout");
+    radiusButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
+    radiusButtonLayout->setWidth(Style::ToolbarIconSize + Style::ToolbarSpacing * 2, Widget::SizePolicy::FixedSize);
+    radiusButtonLayout->addSpacing(Style::ToolbarSpacing);
+    radiusButtonLayout->addWidget(radiusButton);
+    radiusButtonLayout->addSpacing(Style::ToolbarSpacing);
+    
+    auto backgroundImageWidget = new Widget("documentWindow.turnaround");
     backgroundImageWidget->setName("backgroundImageWidget");
-    backgroundImageWidget->setHeightPolicy(Widget::SizePolicy::RelativeSize);
-    backgroundImageWidget->setHeight(1.0);
-    backgroundImageWidget->setWidthPolicy(Widget::SizePolicy::FlexibleSize);
-    backgroundImageWidget->setWidth(1.0);
-    backgroundImageWidget->setBackgroundImageOpacity(0.25);
     backgroundImageWidget->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
-    
-    auto openReferenceImageButton = new PushButton;
-    openReferenceImageButton->setName("openReferenceImageButton");
-    openReferenceImageButton->setBackgroundColor(Color("#fc6621"));
-    openReferenceImageButton->setColor(Color("#000000")); //f7d9c8
-    openReferenceImageButton->setText("Open reference image");
-    backgroundImageWidget->addExpanding();
-    //backgroundImageWidget->addWidget(openReferenceImageButton);
-    backgroundImageWidget->addExpanding();
+    backgroundImageWidget->setHeight(1.0, Widget::SizePolicy::RelativeSize);
+    backgroundImageWidget->setWidth(1.0, Widget::SizePolicy::FlexibleSize);
+    backgroundImageWidget->setBackgroundColor(Color(Style::BackgroundColor));
+    backgroundImageWidget->setBackgroundImageOpacity(0.25);
     
     auto logoWidget = new Widget;
     logoWidget->setName("logoWidget");
-    logoWidget->setSizePolicy(Widget::SizePolicy::FixedSize);
-    logoWidget->setWidth(25.0);
-    logoWidget->setHeight(71.0);
+    logoWidget->setWidth(25.0, Widget::SizePolicy::FixedSize);
+    logoWidget->setHeight(71.0, Widget::SizePolicy::FixedSize);
     logoWidget->setBackgroundImageResourceName("dust3d/data/dust3d_vertical.png");
     
     auto leftBarLayout = new Widget;
     leftBarLayout->setName("leftBarLayout");
     leftBarLayout->setLayoutDirection(Widget::LayoutDirection::TopToBottom);
-    leftBarLayout->setHeightPolicy(Widget::SizePolicy::RelativeSize);
-    leftBarLayout->setHeight(1.0);
+    leftBarLayout->setWidth(1.0, Widget::SizePolicy::MinimalSize);
+    leftBarLayout->setHeight(1.0, Widget::SizePolicy::RelativeSize);
+    leftBarLayout->addSpacing(Style::ToolbarSpacing * 2.0);
+    leftBarLayout->addWidget(selectButtonLayout);
+    leftBarLayout->addSpacing(Style::ToolbarSpacing * 0.5);
+    leftBarLayout->addWidget(addButtonLayout);
+    leftBarLayout->addSpacing(Style::ToolbarSpacing * 3.0);
+    leftBarLayout->addWidget(xButtonLayout);
+    leftBarLayout->addWidget(yButtonLayout);
+    leftBarLayout->addWidget(zButtonLayout);
+    leftBarLayout->addWidget(radiusButtonLayout);
     leftBarLayout->addExpanding();
-    leftBarLayout->addSpacing(5.0);
-    //leftBarLayout->addWidget(toolBoxWidget);
     leftBarLayout->addWidget(logoWidget);
-    leftBarLayout->addSpacing(5.0);
+    leftBarLayout->addSpacing(Style::ToolbarSpacing);
     
     auto mainLayout = new Widget;
     mainLayout->setName("mainLayout");
     mainLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
-    mainLayout->setHeightPolicy(Widget::SizePolicy::RelativeSize);
-    mainLayout->setHeight(1.0);
+    mainLayout->setHeight(1.0, Widget::SizePolicy::RelativeSize);
     mainLayout->addWidget(leftBarLayout);
     mainLayout->addWidget(backgroundImageWidget);
     
+    engine()->rootWidget()->setBackgroundColor(Color(Style::FrameBackgroundColor));
     engine()->rootWidget()->setName("rootWidget");
     engine()->rootWidget()->addWidget(mainLayout);
     
@@ -126,8 +213,8 @@ void DocumentWindow::popupMenu()
     //Window *menu = openPopupWindow();
     //menu->engine()->setBackgroundColor(Color("#efefef"));
     //menu->setVisible(true);
-    ReferenceImageEditWindow *editWindow = new ReferenceImageEditWindow();
-    editWindow->setVisible(true);
+    //ReferenceImageEditWindow *editWindow = new ReferenceImageEditWindow();
+    //editWindow->setVisible(true);
 }
 
 DirtyFlags &DocumentWindow::referenceImageFlags()
@@ -149,7 +236,7 @@ void DocumentWindow::updateReferenceImage()
     
     m_referenceImageFlags.processing = true;
     
-    Widget *turnaroundWidget = Widget::get("Turnaround");
+    Widget *turnaroundWidget = Widget::get("documentWindow.turnaround");
     size_t targetWidth = turnaroundWidget->layoutWidth();
     size_t targetHeight = turnaroundWidget->layoutHeight();
     Image *image = new Image(*m_referenceImage);
@@ -167,9 +254,9 @@ void DocumentWindow::updateReferenceImage()
             return (void *)resizedImage;
         }, [=](void *result) {
             Image *resizedImage = (Image *)result;
-            this->engine()->setImageResource("reference-image", resizedImage->width(), resizedImage->height(), resizedImage->data());
+            this->engine()->setImageResource("documentWindow.turnaround", resizedImage->width(), resizedImage->height(), resizedImage->data());
             delete resizedImage;
-            Widget::get("Turnaround")->setBackgroundImageResourceName("reference-image");
+            Widget::get("documentWindow.turnaround")->setBackgroundImageResourceName("documentWindow.turnaround");
             this->referenceImageFlags().processing = false;
             if (this->referenceImageFlags().dirty)
                 this->updateReferenceImage();

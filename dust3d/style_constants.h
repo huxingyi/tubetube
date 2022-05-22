@@ -35,12 +35,19 @@ public:
     static inline const char *BackgroundColor = "#000000";
     static inline const char *FrameBackgroundColor = "#252525";
     static inline const char *HighlightColor = "#fc6621";
-    static inline double NormalFontLineHeight = 17.0;
-    static inline double SidebarWidth = 270.0;
-    static inline double SidebarHorizontalSpacing = 10.0;
-    static inline double SidebarVerticalSpacing = 15.0;
-    static inline double SidebarVerticalInternalSpacing = 7.5;
-    static inline double BorderSize = 1.0;
+    static inline const double NormalFontLineHeight = 17.0;
+    static inline const double SidebarWidth = 270.0;
+    static inline const double SidebarHorizontalSpacing = 10.0;
+    static inline const double SidebarVerticalSpacing = 15.0;
+    static inline const double SidebarVerticalInternalSpacing = 7.5;
+    static inline const double BorderSize = 1.0;
+    static inline const double ToolbarIconPadding = 3.0;
+    static inline const double ToolbarIconSize = 17.0 + ToolbarIconPadding * 2.0;
+    static inline const double ToolbarSpacing = 5.0;
+    static inline const char *RedColor = "#fc6621";
+    static inline const char *GreenColor = "#0da9f1";
+    static inline const char *BlueColor = "#aaebc4";
+    static inline const char *WhiteColor = "#f7d9c8";
 };
 
 #endif

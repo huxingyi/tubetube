@@ -77,6 +77,7 @@ LINK_OPTIONS = \
 
 $(EXECUTABLE_NAME): $(OBJ_FILES)
 	@if not exist $(BIN_DIRECTORY) mkdir $(BIN_DIRECTORY)
-	@link /out:$(BIN_DIRECTORY)\$(EXECUTABLE_NAME) $(OBJ_FILES) $(LINK_OPTIONS)
+    rc /fo"$(OBJ_DIRECTORY)\dust3d.res" dust3d.rc
+	@link /out:$(BIN_DIRECTORY)\$(EXECUTABLE_NAME) $(OBJ_FILES) $(OBJ_DIRECTORY)\dust3d.res $(LINK_OPTIONS)
 
 all: $(EXECUTABLE_NAME)

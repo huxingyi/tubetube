@@ -393,7 +393,7 @@ public:
         m_fontMap.initialize();
         m_fontMap.setFont("Heebo-SemiBold.ttf");
         m_iconMap.initialize();
-        m_iconMap.setIconBitmapSize(16);
+        m_iconMap.setIconBitmapSize(64);
         m_imageMap.initialize();
         m_particles.initialize();
         m_cameraSpaceColorMap.initialize();
@@ -640,7 +640,7 @@ public:
             double padding = widget->layoutHeight() * 0.3;
             double leftOffset = widget->paddingLeft();
             if (!button->icon().empty()) {
-                double iconSize = widget->layoutHeight();
+                double iconSize = widget->layoutHeight() - widget->paddingHeight();
                 m_iconMap.shader().use();
                 m_iconMap.shader().setUniformColor("objectColor", widget->color());
                 renderIcon(button->icon(), widget->layoutLeft() + leftOffset, widget->layoutTop() + (widget->layoutHeight() - iconSize) * 0.5, iconSize);

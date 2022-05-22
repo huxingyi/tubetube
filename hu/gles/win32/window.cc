@@ -142,7 +142,7 @@ Window::Window(int width, int height, Type type, Window *parent):
         windowClass.cbClsExtra = 0;
         windowClass.cbWndExtra = 0;
         windowClass.hInstance = GetModuleHandle(NULL);
-        windowClass.hIcon = NULL;
+        windowClass.hIcon = LoadIcon(GetModuleHandle(NULL), L"IDI_ICON1");
         windowClass.hCursor = LoadCursor(NULL, IDC_ARROW);
         windowClass.hbrBackground = 0;
         windowClass.lpszMenuName = NULL;

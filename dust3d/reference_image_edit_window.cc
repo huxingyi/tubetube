@@ -380,6 +380,7 @@ void ReferenceImageEditWindow::updateReferenceImage()
     }
     
     m_referenceImageFlags.dirty = false;
+    m_referenceImageFlags.processing = true;
     
     Image *frontImage = nullptr != m_frontImage ? new Image(*m_frontImage) : nullptr;
     Image *sideImage = nullptr != m_sideImage ? new Image(*m_sideImage) : nullptr;
@@ -406,6 +407,7 @@ void ReferenceImageEditWindow::updateReferenceImage()
             this->engine()->setImageResource("referenceImageEditWindow.referenceImagePreview", referenceImage->width(), referenceImage->height(), referenceImage->data());
             this->referenceImage().reset(referenceImage);
             Widget::get("referenceImageEditWindow.referenceImagePreview")->setBackgroundImageResourceName("referenceImageEditWindow.referenceImagePreview");
+            m_referenceImageFlags.processing = false;
             if (m_referenceImageFlags.dirty)
                 updateReferenceImage();
         }

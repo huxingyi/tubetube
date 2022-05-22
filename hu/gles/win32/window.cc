@@ -32,11 +32,46 @@ namespace Hu
 
 static int g_windowCount = 0;
 
-static LRESULT CALLBACK windowMessageHandler(HWND hwnd, unsigned int msg, WPARAM wParam, LPARAM lParam) {
+static void handlePendingMessage(Window *window, unsigned int msg, WPARAM wparam, LPARAM lparam)
+{
+    switch (msg) {
+    case WM_SIZE: {
+            auto windowWidth = LOWORD(lparam);
+            auto windowHeight = HIWORD(lparam);
+            if (nullptr != window && nullptr != window->engine())
+                window->engine()->setWindowSize(windowWidth, windowHeight);
+        }
+        break;
+    case WM_MOUSEMOVE: {
+            auto x = GET_X_LPARAM(lparam);
+            auto y = GET_Y_LPARAM(lparam);
+            if (nullptr != window && nullptr != window->engine())
+                window->engine()->handleMouseMove(x, y);
+        }
+        break;
+    case WM_CONTEXTMENU: {
+            if (nullptr != window && nullptr != window->engine())
+                window->engine()->shouldPopupMenu.emit();
+        }
+        break;
+    case WM_LBUTTONDOWN: {
+            if (nullptr != window && nullptr != window->engine())
+                window->engine()->handleMouseLeftButtonDown();
+        }
+        break;
+    case WM_LBUTTONUP: {
+            if (nullptr != window && nullptr != window->engine())
+                window->engine()->handleMouseLeftButtonUp();
+        }
+        break;
+    }
+}
+
+static LRESULT CALLBACK windowMessageHandler(HWND hwnd, unsigned int msg, WPARAM wparam, LPARAM lparam) {
     Window *window = (Window *)GetWindowLongPtr(hwnd, GWLP_USERDATA);
     switch (msg) {
     case WM_CREATE: {
-            SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)((LPCREATESTRUCT)lParam)->lpCreateParams); 
+            SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)((LPCREATESTRUCT)lparam)->lpCreateParams); 
             ++g_windowCount;
         }
         break;
@@ -52,15 +87,16 @@ static LRESULT CALLBACK windowMessageHandler(HWND hwnd, unsigned int msg, WPARAM
         } 
         break;
     case WM_SIZE: {
-            auto windowWidth = LOWORD(lParam);
-            auto windowHeight = HIWORD(lParam);
-            if (nullptr != window && nullptr != window->engine())
-                window->engine()->setWindowSize(windowWidth, windowHeight);
+            window->internal().pendingMessages.push({msg, wparam, lparam});
+            //auto windowWidth = LOWORD(lparam);
+            //auto windowHeight = HIWORD(lparam);
+            //if (nullptr != window && nullptr != window->engine())
+            //    window->engine()->setWindowSize(windowWidth, windowHeight);
             return 0;
         } 
         break;
     case WM_MOUSEWHEEL: {
-            //auto zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+            //auto zDelta = GET_WHEEL_DELTA_WPARAM(wparam);
             //fov += zDelta > 0.0 ? -5.0 : 5.0;
             //if (fov < 1.0f)
             //    fov = 1.0f;
@@ -69,32 +105,37 @@ static LRESULT CALLBACK windowMessageHandler(HWND hwnd, unsigned int msg, WPARAM
         } 
         break;
     case WM_MOUSEMOVE: {
-            auto x = GET_X_LPARAM(lParam);
-            auto y = GET_Y_LPARAM(lParam);
-            if (nullptr != window && nullptr != window->engine())
-                window->engine()->handleMouseMove(x, y);
+            window->internal().pendingMessages.push({msg, wparam, lparam});
+            //auto x = GET_X_LPARAM(lparam);
+            //auto y = GET_Y_LPARAM(lparam);
+            //if (nullptr != window && nullptr != window->engine())
+            //    window->engine()->handleMouseMove(x, y);
         }
         break;
     case WM_CONTEXTMENU: {
-            if (nullptr != window && nullptr != window->engine())
-                window->engine()->shouldPopupMenu.emit();
+            window->internal().pendingMessages.push({msg, wparam, lparam});
+            //if (nullptr != window && nullptr != window->engine())
+            //    window->engine()->shouldPopupMenu.emit();
         }
         break;
     case WM_LBUTTONDOWN: {
-            Window *popup = window->popupWindow();
-            if (nullptr != popup)
-                popup->setVisible(false);
-            if (nullptr != window && nullptr != window->engine())
-                window->engine()->handleMouseLeftButtonDown();
+            window->internal().pendingMessages.push({msg, wparam, lparam});
+            //Window *popup = window->popupWindow();
+            //if (nullptr != popup)
+            //    popup->setVisible(false);
+            //if (nullptr != window && nullptr != window->engine())
+            //    window->engine()->handleMouseLeftButtonDown();
         }
         break;
     case WM_LBUTTONUP: {
-            if (nullptr != window && nullptr != window->engine())
-                window->engine()->handleMouseLeftButtonUp();
+            window->internal().pendingMessages.push({msg, wparam, lparam});
+            //if (nullptr != window && nullptr != window->engine())
+            //    window->engine()->handleMouseLeftButtonUp();
         }
         break;
+        /*
     case WM_ACTIVATE: {
-            if (WA_INACTIVE == LOWORD(wParam)) {
+            if (WA_INACTIVE == LOWORD(wparam)) {
                 if (Window::Type::Popup == window->type()) {
                     window->setVisible(true);
                 } else {
@@ -113,9 +154,10 @@ static LRESULT CALLBACK windowMessageHandler(HWND hwnd, unsigned int msg, WPARAM
             }
         }
         break;
+        */
     }
 
-    return (DefWindowProc(hwnd, msg, wParam, lParam));
+    return (DefWindowProc(hwnd, msg, wparam, lparam));
 }
 
 static EGLint getContextRenderableType(EGLDisplay eglDisplay)
@@ -217,9 +259,8 @@ Window::Window(int width, int height, Type type, Window *parent):
     if (EGL_NO_CONTEXT == m_eglContext)
         huDebug << "eglCreateContext returns EGL_NO_SURFACE:" << eglGetError();
     
-    eglMakeCurrent(m_eglDisplay, m_eglSurface, m_eglSurface, m_eglContext);
-    
     setEngine(new IndieGameEngine);
+    m_engine->setWindow(this);
     m_engine->setMillisecondsQueryHandler([]() {
         return Window::getMilliseconds();
     });
@@ -230,6 +271,11 @@ Window::Window(int width, int height, Type type, Window *parent):
     });
     addTimer(1000 / 60, [=]() {
         eglMakeCurrent(this->eglDisplay(), this->eglSurface(), this->eglSurface(), this->eglContext());
+        while (!this->internal().pendingMessages.empty()) {
+            auto pending = this->internal().pendingMessages.front();
+            handlePendingMessage(this, pending.msg, pending.wparam, pending.lparam);
+            this->internal().pendingMessages.pop();
+        }
         this->engine()->renderScene();
         eglSwapBuffers(this->eglDisplay(), this->eglSurface());
     });

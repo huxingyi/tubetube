@@ -25,10 +25,7 @@
 namespace Hu
 {
 
-std::map<std::string, Widget *> Widget::m_widgets;
 uint64_t Widget::m_nextWidgetId = 1;
-bool Widget::m_layoutChanged = false;
-bool Widget::m_appearanceChanged = false;
 
 }
 

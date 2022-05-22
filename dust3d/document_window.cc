@@ -44,7 +44,7 @@ DocumentWindow::DocumentWindow():
 
     engine()->setBackgroundColor(Color("#00000000"));
     
-    auto selectButton = new PushButton;
+    auto selectButton = new PushButton(this);
     selectButton->setName("selectButton");
     selectButton->setPadding(Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding);
     selectButton->setWidth(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
@@ -53,7 +53,7 @@ DocumentWindow::DocumentWindow():
     selectButton->setColor(Color(Style::WhiteColor));
     selectButton->setIcon("toolbar_pointer.svg");
     
-    auto addButton = new PushButton;
+    auto addButton = new PushButton(this);
     addButton->setName("addButton");
     addButton->setPadding(Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding);
     addButton->setWidth(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
@@ -62,7 +62,7 @@ DocumentWindow::DocumentWindow():
     addButton->setColor(Color(Style::WhiteColor));
     addButton->setIcon("toolbar_add.svg");
     
-    auto xButton = new PushButton;
+    auto xButton = new PushButton(this);
     xButton->setName("xButton");
     xButton->setPadding(Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding);
     xButton->setWidth(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
@@ -71,7 +71,7 @@ DocumentWindow::DocumentWindow():
     xButton->setColor(Color(Style::RedColor));
     xButton->setIcon("toolbar_x.svg");
     
-    auto yButton = new PushButton;
+    auto yButton = new PushButton(this);
     yButton->setName("yButton");
     yButton->setPadding(Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding);
     yButton->setWidth(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
@@ -80,7 +80,7 @@ DocumentWindow::DocumentWindow():
     yButton->setColor(Color(Style::GreenColor));
     yButton->setIcon("toolbar_y.svg");
     
-    auto zButton = new PushButton;
+    auto zButton = new PushButton(this);
     zButton->setName("zButton");
     zButton->setPadding(Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding);
     zButton->setWidth(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
@@ -89,7 +89,7 @@ DocumentWindow::DocumentWindow():
     zButton->setColor(Color(Style::BlueColor));
     zButton->setIcon("toolbar_z.svg");
     
-    auto radiusButton = new PushButton;
+    auto radiusButton = new PushButton(this);
     radiusButton->setName("radiusButton");
     radiusButton->setPadding(Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding);
     radiusButton->setWidth(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
@@ -98,7 +98,7 @@ DocumentWindow::DocumentWindow():
     radiusButton->setColor(Color(Style::WhiteColor));
     radiusButton->setIcon("toolbar_radius.svg");
     
-    auto imageButton = new PushButton;
+    auto imageButton = new PushButton(this);
     imageButton->setName("imageButton");
     imageButton->setPadding(Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding);
     imageButton->setWidth(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
@@ -117,10 +117,10 @@ DocumentWindow::DocumentWindow():
     });
     imageButton->mouseReleased.connect([=]() {
         imageButton->setBackgroundColor(Color(Style::ButtonColor));
-        // TODO:
+        openReferenceImageEditWindow();
     });
     
-    auto selectButtonLayout = new Widget;
+    auto selectButtonLayout = new Widget(this);
     selectButtonLayout->setName("selectButtonLayout");
     selectButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
     selectButtonLayout->setWidth(Style::ToolbarIconSize + Style::ToolbarSpacing * 2, Widget::SizePolicy::FixedSize);
@@ -128,7 +128,7 @@ DocumentWindow::DocumentWindow():
     selectButtonLayout->addWidget(selectButton);
     selectButtonLayout->addSpacing(Style::ToolbarSpacing);
     
-    auto addButtonLayout = new Widget;
+    auto addButtonLayout = new Widget(this);
     addButtonLayout->setName("addButtonLayout");
     addButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
     addButtonLayout->setWidth(Style::ToolbarIconSize + Style::ToolbarSpacing * 2, Widget::SizePolicy::FixedSize);
@@ -136,7 +136,7 @@ DocumentWindow::DocumentWindow():
     addButtonLayout->addWidget(addButton);
     addButtonLayout->addSpacing(Style::ToolbarSpacing);
     
-    auto xButtonLayout = new Widget;
+    auto xButtonLayout = new Widget(this);
     xButtonLayout->setName("xButtonLayout");
     xButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
     xButtonLayout->setWidth(Style::ToolbarIconSize + Style::ToolbarSpacing * 2, Widget::SizePolicy::FixedSize);
@@ -144,7 +144,7 @@ DocumentWindow::DocumentWindow():
     xButtonLayout->addWidget(xButton);
     xButtonLayout->addSpacing(Style::ToolbarSpacing);
     
-    auto yButtonLayout = new Widget;
+    auto yButtonLayout = new Widget(this);
     yButtonLayout->setName("yButtonLayout");
     yButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
     yButtonLayout->setWidth(Style::ToolbarIconSize + Style::ToolbarSpacing * 2, Widget::SizePolicy::FixedSize);
@@ -152,7 +152,7 @@ DocumentWindow::DocumentWindow():
     yButtonLayout->addWidget(yButton);
     yButtonLayout->addSpacing(Style::ToolbarSpacing);
     
-    auto zButtonLayout = new Widget;
+    auto zButtonLayout = new Widget(this);
     zButtonLayout->setName("zButtonLayout");
     zButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
     zButtonLayout->setWidth(Style::ToolbarIconSize + Style::ToolbarSpacing * 2, Widget::SizePolicy::FixedSize);
@@ -160,7 +160,7 @@ DocumentWindow::DocumentWindow():
     zButtonLayout->addWidget(zButton);
     zButtonLayout->addSpacing(Style::ToolbarSpacing);
     
-    auto radiusButtonLayout = new Widget;
+    auto radiusButtonLayout = new Widget(this);
     radiusButtonLayout->setName("radiusButtonLayout");
     radiusButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
     radiusButtonLayout->setWidth(Style::ToolbarIconSize + Style::ToolbarSpacing * 2, Widget::SizePolicy::FixedSize);
@@ -168,7 +168,7 @@ DocumentWindow::DocumentWindow():
     radiusButtonLayout->addWidget(radiusButton);
     radiusButtonLayout->addSpacing(Style::ToolbarSpacing);
     
-    auto imageButtonLayout = new Widget;
+    auto imageButtonLayout = new Widget(this);
     imageButtonLayout->setName("imageButtonLayout");
     imageButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
     imageButtonLayout->setWidth(Style::ToolbarIconSize + Style::ToolbarSpacing * 2, Widget::SizePolicy::FixedSize);
@@ -176,7 +176,7 @@ DocumentWindow::DocumentWindow():
     imageButtonLayout->addWidget(imageButton);
     imageButtonLayout->addSpacing(Style::ToolbarSpacing);
     
-    auto backgroundImageWidget = new Widget("documentWindow.turnaround");
+    auto backgroundImageWidget = new Widget(this, "documentWindow.turnaround");
     backgroundImageWidget->setName("backgroundImageWidget");
     backgroundImageWidget->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
     backgroundImageWidget->setHeight(1.0, Widget::SizePolicy::RelativeSize);
@@ -184,13 +184,13 @@ DocumentWindow::DocumentWindow():
     backgroundImageWidget->setBackgroundColor(Color(Style::BackgroundColor));
     backgroundImageWidget->setBackgroundImageOpacity(0.25);
     
-    auto logoWidget = new Widget;
+    auto logoWidget = new Widget(this);
     logoWidget->setName("logoWidget");
     logoWidget->setWidth(25.0, Widget::SizePolicy::FixedSize);
     logoWidget->setHeight(71.0, Widget::SizePolicy::FixedSize);
     logoWidget->setBackgroundImageResourceName("dust3d/data/dust3d_vertical.png");
     
-    auto leftBarLayout = new Widget;
+    auto leftBarLayout = new Widget(this);
     leftBarLayout->setName("leftBarLayout");
     leftBarLayout->setLayoutDirection(Widget::LayoutDirection::TopToBottom);
     leftBarLayout->setWidth(1.0, Widget::SizePolicy::MinimalSize);
@@ -210,7 +210,7 @@ DocumentWindow::DocumentWindow():
     leftBarLayout->addWidget(logoWidget);
     leftBarLayout->addSpacing(Style::ToolbarSpacing);
     
-    auto mainLayout = new Widget;
+    auto mainLayout = new Widget(this);
     mainLayout->setName("mainLayout");
     mainLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
     mainLayout->setHeight(1.0, Widget::SizePolicy::RelativeSize);
@@ -249,6 +249,11 @@ void DocumentWindow::popupMenu()
     //editWindow->setVisible(true);
 }
 
+void DocumentWindow::openReferenceImageEditWindow()
+{
+    ReferenceImageEditWindow *editWindow = new ReferenceImageEditWindow();
+}
+
 DirtyFlags &DocumentWindow::referenceImageFlags()
 {
     return m_referenceImageFlags;
@@ -268,7 +273,7 @@ void DocumentWindow::updateReferenceImage()
     
     m_referenceImageFlags.processing = true;
     
-    Widget *turnaroundWidget = Widget::get("documentWindow.turnaround");
+    Widget *turnaroundWidget = getWidget("documentWindow.turnaround");
     size_t targetWidth = turnaroundWidget->layoutWidth();
     size_t targetHeight = turnaroundWidget->layoutHeight();
     Image *image = new Image(*m_referenceImage);
@@ -288,7 +293,7 @@ void DocumentWindow::updateReferenceImage()
             Image *resizedImage = (Image *)result;
             this->engine()->setImageResource("documentWindow.turnaround", resizedImage->width(), resizedImage->height(), resizedImage->data());
             delete resizedImage;
-            Widget::get("documentWindow.turnaround")->setBackgroundImageResourceName("documentWindow.turnaround");
+            this->getWidget("documentWindow.turnaround")->setBackgroundImageResourceName("documentWindow.turnaround");
             this->referenceImageFlags().processing = false;
             if (this->referenceImageFlags().dirty)
                 this->updateReferenceImage();

@@ -50,7 +50,8 @@ public:
         Color color;
     };
     
-    Canvas()
+    Canvas(Widget::Window *window):
+        Widget(window)
     {
         m_renderHints = RenderHint::Canvas;
     }
@@ -59,19 +60,19 @@ public:
     {
         m_lines.clear();
         m_rectangles.clear();
-        m_appearanceChanged = true;
+        m_window->setAppearanceChanged(true);
     }
     
     void addLine(double fromX, double fromY, double toX, double toY, const Color &color)
     {
         m_lines.push_back({fromX, fromY, toX, toY, color});
-        m_appearanceChanged = true;
+        m_window->setAppearanceChanged(true);
     }
     
     void addRectangle(double left, double top, double right, double bottom, const Color &color)
     {
         m_rectangles.push_back({left, top, right, bottom, color});
-        m_appearanceChanged = true;
+        m_window->setAppearanceChanged(true);
     }
     
     const std::vector<Line> &lines() const

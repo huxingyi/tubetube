@@ -31,7 +31,8 @@ namespace Hu
 class Text: public Widget
 {
 public:
-    Text()
+    Text(Widget::Window *window):
+        Widget(window)
     {
         m_renderHints = RenderHint::Element | RenderHint::Text;
     }
@@ -41,7 +42,7 @@ public:
         if (m_text == text)
             return;
         m_text = text;
-        m_appearanceChanged = true;
+        m_window->setAppearanceChanged(true);
     }
     
     const std::string &text()

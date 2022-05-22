@@ -31,7 +31,8 @@ namespace Hu
 class PushButton: public Widget
 {
 public:
-    PushButton()
+    PushButton(Widget::Window *window):
+        Widget(window)
     {
         m_heightPolicy = SizePolicy::FixedSize;
         m_height = 16.0;
@@ -46,7 +47,7 @@ public:
         if (m_icon == icon)
             return;
         m_icon = icon;
-        m_appearanceChanged = true;
+        m_window->setAppearanceChanged(true);
     }
     
     void setText(const std::string &text)
@@ -54,7 +55,7 @@ public:
         if (m_text == text)
             return;
         m_text = text;
-        m_appearanceChanged = true;
+        m_window->setAppearanceChanged(true);
     }
     
     const std::string &icon()

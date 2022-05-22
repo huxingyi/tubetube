@@ -37,6 +37,7 @@ public:
     void setReferenceImage(const std::string &path);
     static Settings *settings();
     void updateReferenceImage();
+    void openReferenceImageEditWindow();
     void popupMenu();
     DirtyFlags &referenceImageFlags();
 private:

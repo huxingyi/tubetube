@@ -684,6 +684,20 @@ public:
     
     void renderScene()
     {
+        if (m_windowSizeChanged) {
+            m_windowSizeChanged = false;
+            m_cameraSpaceColorMap.setSize(m_windowWidth, m_windowHeight);
+            m_uiMap.setSize(m_windowWidth, m_windowHeight);
+            m_cameraSpaceDepthMap.setSize(m_windowWidth, m_windowHeight);
+            m_positionMap.setSize(m_windowWidth, m_windowHeight);
+            m_idMap.setSize(m_windowWidth, m_windowHeight);
+            m_rootWidget->setSizePolicy(Widget::FixedSize);
+            m_rootWidget->setSize(m_windowWidth, m_windowHeight);
+            m_screenProjectionMatrix = Matrix4x4();
+            m_screenProjectionMatrix.orthographicProject(0.0, m_windowWidth, 0.0, m_windowHeight);
+            dirty();
+        }
+        
         if (!m_initialized)
             initialize();
         
@@ -696,9 +710,9 @@ public:
         if (m_uiTaskList.anyWorkDone())
             m_screenIsDirty = true;
         
-        if (Widget::layoutChanged() || Widget::m_appearanceChanged) {
+        if (m_window->layoutChanged() || m_window->appearanceChanged()) {
             m_screenIsDirty = true;
-            Widget::m_appearanceChanged = false;
+            m_window->setAppearanceChanged(false);
         }
         
         if (m_screenIsDirty) {
@@ -903,7 +917,7 @@ public:
                     m_imageMap.shader().setUniformMatrix("projectionMatrix", m_screenProjectionMatrix);
                     m_canvasShader.use();
                     m_canvasShader.setUniformMatrix("projectionMatrix", m_screenProjectionMatrix);
-                    if (Widget::layoutChanged()) {
+                    if (m_window->layoutChanged()) {
                         m_rootWidget->layout();
                         windowSizeChanged.emit();
                     }
@@ -933,18 +947,11 @@ public:
     
     void setWindowSize(double width, double height)
     {
+        if (Math::isEqual(width, m_windowWidth) && Math::isEqual(height, m_windowHeight))
+            return;
         m_windowWidth = width;
         m_windowHeight = height;
-        m_cameraSpaceColorMap.setSize(m_windowWidth, m_windowHeight);
-        m_uiMap.setSize(m_windowWidth, m_windowHeight);
-        m_cameraSpaceDepthMap.setSize(m_windowWidth, m_windowHeight);
-        m_positionMap.setSize(m_windowWidth, m_windowHeight);
-        m_idMap.setSize(m_windowWidth, m_windowHeight);
-        m_rootWidget->setSizePolicy(Widget::FixedSize);
-        m_rootWidget->setSize(m_windowWidth, m_windowHeight);
-        m_screenProjectionMatrix = Matrix4x4();
-        m_screenProjectionMatrix.orthographicProject(0.0, m_windowWidth, 0.0, m_windowHeight);
-        dirty();
+        m_windowSizeChanged = true;
     }
     
     void handleMouseMove(double x, double y)
@@ -1102,7 +1109,7 @@ public:
         if (m_backgroundColor == color)
             return;
         m_backgroundColor = color;
-        Widget::m_appearanceChanged = true;
+        m_window->setAppearanceChanged(true);
     }
     
     void run(std::unique_ptr<Task> task)
@@ -1128,6 +1135,15 @@ public:
     double measureFontWidth(const std::string &string, double lineHeight)
     {
         return m_fontMap.measureWidth(string, lineHeight);
+    }
+    
+    void setWindow(Widget::Window *window)
+    {
+        if (m_window == window)
+            return;
+        m_window = window;
+        if (nullptr == m_rootWidget)
+            m_rootWidget = std::make_unique<Widget>(m_window);
     }
     
 private:
@@ -1173,11 +1189,13 @@ private:
     double m_elapsedSeconds = 0.0;
     bool m_screenIsDirty = true;
     bool m_showWireframes = false;
+    bool m_windowSizeChanged = false;
     Color m_backgroundColor;
     Matrix4x4 m_screenProjectionMatrix;
+    Widget::Window *m_window = nullptr;
     
     TaskList m_uiTaskList;
-    std::unique_ptr<Widget> m_rootWidget = std::make_unique<Widget>();
+    std::unique_ptr<Widget> m_rootWidget;
     std::map<std::string, std::pair<std::unique_ptr<std::vector<VertexBuffer>>, int64_t/*referencingCount*/>> m_vertexBufferListMap;
     std::map<std::string, std::unique_ptr<Object>> m_objects;
     std::map<std::string, std::unique_ptr<LocationState>> m_locationStates;

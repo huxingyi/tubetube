@@ -36,19 +36,67 @@ namespace Hu
 class Widget
 {
 public:
+
+    class Window
+    {
+    public:
+        bool layoutChanged() const
+        {
+            return m_layoutChanged;
+        }
+        
+        bool appearanceChanged() const
+        {
+            return m_appearanceChanged;
+        }
+        
+        void setLayoutChanged(bool changed)
+        {
+            if (m_layoutChanged == changed)
+                return;
+            m_layoutChanged = changed;
+        }
+        
+        void setAppearanceChanged(bool changed)
+        {
+            if (m_appearanceChanged == changed)
+                return;
+            m_appearanceChanged = changed;
+        }
+        
+        std::map<std::string, Widget *> &widgets()
+        {
+            return m_widgets;
+        }
+        
+        Widget *getWidget(const std::string &id) const
+        {
+            auto findWidget = m_widgets.find(id);
+            if (findWidget == m_widgets.end())
+                return nullptr;
+            return findWidget->second;
+        }
+        
+    private:
+        bool m_layoutChanged = false;
+        bool m_appearanceChanged = false;
+        std::map<std::string, Widget *> m_widgets;
+    };
+
     Signal<double, double> mouseMoved;
     Signal<> mouseEntered;
     Signal<> mouseLeaved;
     Signal<> mousePressed;
     Signal<> mouseReleased;
 
-    Widget(const std::string &id=std::string()):
+    Widget(Window *window, const std::string &id=std::string()):
+        m_window(window),
         m_id(id)
     {
         if (m_id.empty())
             m_id = std::format("{}_unamed", m_nextWidgetId++);
         
-        m_widgets.insert({m_id, this});
+        m_window->widgets().insert({m_id, this});
     }
     
     const std::string &id() const
@@ -123,7 +171,7 @@ public:
         if (m_widthPolicy == widthPolicy)
             return;
         m_widthPolicy = widthPolicy;
-        m_layoutChanged = true;
+        m_window->setLayoutChanged(true);
     }
     
     SizePolicy widthPolicy() const
@@ -136,7 +184,7 @@ public:
         if (m_heightPolicy == heightPolicy)
             return;
         m_heightPolicy = heightPolicy;
-        m_layoutChanged = true;
+        m_window->setLayoutChanged(true);
     }
     
     SizePolicy heightPolicy() const
@@ -167,7 +215,7 @@ public:
         if (Math::isEqual(width, m_width))
             return;
         m_width = width;
-        m_layoutChanged = true;
+        m_window->setLayoutChanged(true);
     }
     
     void setHeight(double height)
@@ -175,7 +223,7 @@ public:
         if (Math::isEqual(height, m_height))
             return;
         m_height = height;
-        m_layoutChanged = true;
+        m_window->setLayoutChanged(true);
     }
     
     void setSize(double width, double height)
@@ -202,7 +250,7 @@ public:
             setWidthPolicy(SizePolicy::MinimalSize);
             break;
         }
-        m_layoutChanged = true;
+        m_window->setLayoutChanged(true);
     }
     
     void setParent(const Widget *parent)
@@ -210,19 +258,19 @@ public:
         if (m_parent == parent)
             return;
         m_parent = parent;
-        m_layoutChanged = true;
+        m_window->setLayoutChanged(true);
     }
     
     void addWidget(Widget *widget)
     {
         widget->setParent(this);
         m_children.push_back(widget);
-        m_layoutChanged = true;
+        m_window->setLayoutChanged(true);
     }
     
     void addSpacing(double fixedSize)
     {
-        auto widget = new Widget;
+        auto widget = new Widget(m_window);
         widget->setName(std::format("Spacing {}", fixedSize));
         widget->setSizePolicy(SizePolicy::FixedSize);
         widget->setSize(fixedSize, fixedSize);
@@ -231,7 +279,7 @@ public:
     
     void addExpanding(double weight=1.0)
     {
-        auto widget = new Widget;
+        auto widget = new Widget(m_window);
         widget->setName(std::format("Expanding {}", weight));
         widget->setSizePolicy(SizePolicy::FlexibleSize);
         widget->setSize(weight);
@@ -441,7 +489,7 @@ public:
 
     void layout()
     {
-        if (!m_layoutChanged)
+        if (!m_window->layoutChanged())
             return;
         
         layoutSizeFixed();
@@ -449,7 +497,7 @@ public:
         layoutSizeTopDown();
         layoutLocation();
         
-        m_layoutChanged = false;
+        m_window->setLayoutChanged(true);
     }
     
     void setMouseHovering(bool hovering)
@@ -545,7 +593,7 @@ public:
         if (m_backgroundColor == color)
             return;
         m_backgroundColor = color;
-        m_appearanceChanged = true;
+        m_window->setAppearanceChanged(true);
     }
     
     const Color &color() const
@@ -558,7 +606,7 @@ public:
         if (m_color == color)
             return;
         m_color = color;
-        m_appearanceChanged = true;
+        m_window->setAppearanceChanged(true);
     }
     
     const std::string &backgroundImageResourceName() const
@@ -571,7 +619,7 @@ public:
         if (m_backgroundImageResourceName == name)
             return;
         m_backgroundImageResourceName = name;
-        m_appearanceChanged = true;
+        m_window->setAppearanceChanged(true);
     }
     
     const double &backgroundImageOpacity() const
@@ -584,7 +632,7 @@ public:
         if (Math::isEqual(m_backgroundImageOpacity, opacity))
             return;
         m_backgroundImageOpacity = opacity;
-        m_appearanceChanged = true;
+        m_window->setAppearanceChanged(true);
     }
     
     const std::string &name() const
@@ -597,7 +645,7 @@ public:
         if (m_name == name)
             return;
         m_name = name;
-        m_appearanceChanged = true;
+        m_window->setAppearanceChanged(true);
     }
     
     void setPadding(double left, double top, double right, double bottom)
@@ -611,7 +659,7 @@ public:
         m_paddingTop = top;
         m_paddingRight = right;
         m_paddingBottom = bottom;
-        m_appearanceChanged = true;
+        m_window->setAppearanceChanged(true);
     }
     
     double paddingLeft() const
@@ -643,25 +691,10 @@ public:
     {
         return m_paddingTop + m_paddingBottom;
     }
-    
-    static Widget *get(const std::string &id)
-    {
-        auto findWidget = m_widgets.find(id);
-        if (findWidget == m_widgets.end())
-            return nullptr;
-        return findWidget->second;
-    }
-    
-    static bool layoutChanged()
-    {
-        return m_layoutChanged;
-    }
-    
-    static std::map<std::string, Widget *> m_widgets;
+
     static uint64_t m_nextWidgetId;
-    static bool m_layoutChanged;
-    static bool m_appearanceChanged;
 protected:
+    Window *m_window = nullptr;
     double m_width = 1.0;
     double m_height = 0.0;
     double m_layoutLeft = 0.0;

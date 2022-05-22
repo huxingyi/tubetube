@@ -24,6 +24,7 @@
 #define HU_GLES_WINDOW_H_
 
 #include <hu/gles/win32/window_internal.h>
+#include <hu/widget/widget.h>
 #include <EGL/egl.h>
 #include <EGL/eglplatform.h>
 
@@ -32,7 +33,7 @@ namespace Hu
     
 class IndieGameEngine;
     
-class Window
+class Window: public Widget::Window
 {
 public:
     enum Type

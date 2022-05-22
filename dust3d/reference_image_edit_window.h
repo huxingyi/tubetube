@@ -49,6 +49,8 @@ public:
     std::unique_ptr<Image> &frontImage();
     std::unique_ptr<Image> &sideImage();
     std::unique_ptr<Image> &referenceImage();
+    const std::string &sourceImageWidgetId() const;
+    const std::string &referenceImagePreviewWidgetId() const;
     
     static inline const size_t m_targetReferenceWidth = 1024;
     static inline const size_t m_targetReferenceHeight = 512;
@@ -58,6 +60,8 @@ private:
     std::unique_ptr<Image> m_frontImage;
     std::unique_ptr<Image> m_sideImage;
     std::unique_ptr<Image> m_referenceImage;
+    std::string m_sourceImageWidgetId;
+    std::string m_referenceImagePreviewWidgetId;
     Canvas *m_canvas = nullptr;
     double m_clipLeft = 0.25;
     double m_clipRight = 0.75;

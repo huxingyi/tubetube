@@ -36,37 +36,39 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     setTitle("Reference image edit");
     engine()->setBackgroundColor(Color("#00000000"));
     
-    auto sourceImageWidget = new Widget("referenceImageEditWindow.sourceImage");
+    auto sourceImageWidget = new Widget(this);
+    m_sourceImageWidgetId = sourceImageWidget->id();
     sourceImageWidget->setName("sourceImageWidget");
     sourceImageWidget->setWidth(1.0, Widget::SizePolicy::FlexibleSize);
     sourceImageWidget->setHeight(1.0, Widget::SizePolicy::RelativeSize);
     sourceImageWidget->setBackgroundColor(Color(Style::BackgroundColor));
     
-    auto canvas = new Canvas;
+    auto canvas = new Canvas(this);
     m_canvas = canvas;
     canvas->setWidth(1.0, Widget::SizePolicy::RelativeSize);
     canvas->setHeight(1.0, Widget::SizePolicy::RelativeSize);
     sourceImageWidget->addWidget(canvas);
     
-    auto rightLayout = new Widget;
+    auto rightLayout = new Widget(this);
     rightLayout->setName("rightLayout");
     rightLayout->setLayoutDirection(Widget::LayoutDirection::TopToBottom);
     rightLayout->setWidth(Style::SidebarWidth, Widget::SizePolicy::FixedSize);
     rightLayout->setHeight(1.0, Widget::SizePolicy::RelativeSize);
     rightLayout->setBackgroundColor(Color(Style::FrameBackgroundColor));
     
-    auto referenceImagePreviewWidget = new Widget("referenceImageEditWindow.referenceImagePreview");
+    auto referenceImagePreviewWidget = new Widget(this);
+    m_referenceImagePreviewWidgetId = referenceImagePreviewWidget->id();
     referenceImagePreviewWidget->setName("referenceImagePreviewWidget");
     double referenceImageWidth = Style::SidebarWidth - Style::BorderSize * 2.0;
     referenceImagePreviewWidget->setWidth(referenceImageWidth, Widget::SizePolicy::FixedSize);
     referenceImagePreviewWidget->setHeight(referenceImageWidth * 0.5, Widget::SizePolicy::FixedSize);
     referenceImagePreviewWidget->setBackgroundColor(Color(Style::BackgroundColor));
     
-    auto referenceImagePreviewLayout = new Widget;
+    auto referenceImagePreviewLayout = new Widget(this);
     referenceImagePreviewLayout->addSpacing(Style::BorderSize);
     referenceImagePreviewLayout->addWidget(referenceImagePreviewWidget);
 
-    auto loadImageButton = new PushButton;
+    auto loadImageButton = new PushButton(this);
     loadImageButton->setHeight(Style::NormalFontLineHeight + loadImageButton->paddingHeight(), Widget::SizePolicy::FixedSize);
     loadImageButton->setText("Load source image");
     loadImageButton->setBackgroundColor(Color(Style::ButtonColor));
@@ -91,14 +93,14 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
         setImage(selectedFile);
     });
     
-    auto loadImageButtonLayout = new Widget;
+    auto loadImageButtonLayout = new Widget(this);
     loadImageButtonLayout->setName("loadImageButtonLayout");
     loadImageButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
     loadImageButtonLayout->addExpanding();
     loadImageButtonLayout->addWidget(loadImageButton);
     loadImageButtonLayout->addExpanding();
     
-    auto copyToFrontButton = new PushButton;
+    auto copyToFrontButton = new PushButton(this);
     copyToFrontButton->setHeight(Style::NormalFontLineHeight + copyToFrontButton->paddingHeight(), Widget::SizePolicy::FixedSize);
     copyToFrontButton->setText("Copy to front");
     copyToFrontButton->setBackgroundColor(Color(Style::ButtonColor));
@@ -120,7 +122,7 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
         this->copyClipToFront();
     });
     
-    auto copyToSideButton = new PushButton;
+    auto copyToSideButton = new PushButton(this);
     copyToSideButton->setHeight(Style::NormalFontLineHeight + copyToSideButton->paddingHeight(), Widget::SizePolicy::FixedSize);
     copyToSideButton->setText("Copy to side");
     copyToSideButton->setBackgroundColor(Color(Style::ButtonColor));
@@ -142,7 +144,7 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
         this->copyClipToSide();
     });
     
-    auto copyButtonsLayout = new Widget;
+    auto copyButtonsLayout = new Widget(this);
     copyButtonsLayout->setName("copyButtonsLayout");
     copyButtonsLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
     copyButtonsLayout->addSpacing(Style::SidebarHorizontalSpacing);
@@ -151,7 +153,7 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     copyButtonsLayout->addWidget(copyToSideButton);
     copyButtonsLayout->addSpacing(Style::SidebarHorizontalSpacing);
     
-    auto saveButton = new PushButton;
+    auto saveButton = new PushButton(this);
     saveButton->setHeight(Style::NormalFontLineHeight + saveButton->paddingHeight(), Widget::SizePolicy::FixedSize);
     saveButton->setText("Save");
     saveButton->setBackgroundColor(Color(Style::HighlightButtonColor));
@@ -172,7 +174,7 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
         saveButton->setBackgroundColor(Color(Style::HighlightButtonColor));
     });
     
-    auto saveButtonLayout = new Widget;
+    auto saveButtonLayout = new Widget(this);
     saveButtonLayout->setName("saveButtonLayout");
     saveButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
     saveButtonLayout->addExpanding();
@@ -190,7 +192,7 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     rightLayout->addWidget(saveButtonLayout);
     rightLayout->addSpacing(Style::SidebarVerticalSpacing);
     
-    auto mainLayout = new Widget;
+    auto mainLayout = new Widget(this);
     mainLayout->setName("mainLayout");
     mainLayout->setHeight(1.0, Widget::SizePolicy::RelativeSize);
     mainLayout->setWidth(1.0, Widget::SizePolicy::RelativeSize);
@@ -261,7 +263,7 @@ void ReferenceImageEditWindow::handleCanvasMouseReleased()
 
 void ReferenceImageEditWindow::handleCanvasMouseMove(double x, double y)
 {
-    Widget *sourceImageWidget = Widget::get("referenceImageEditWindow.sourceImage");
+    Widget *sourceImageWidget = getWidget(m_sourceImageWidgetId);
     double realX = (x - sourceImageWidget->layoutLeft()) / sourceImageWidget->layoutWidth();
     double realY = (y - sourceImageWidget->layoutTop()) / sourceImageWidget->layoutHeight();
     double handleHalfWidth = 0.75 * m_handleSize / sourceImageWidget->layoutWidth();
@@ -342,7 +344,7 @@ void ReferenceImageEditWindow::updateClip()
     m_canvas->addRectangle(m_clipLeft, 0.0, m_clipRight, m_clipTop, maskColor);
     m_canvas->addRectangle(m_clipLeft, m_clipBottom, m_clipRight, 1.0, maskColor);
     
-    Widget *sourceImageWidget = Widget::get("referenceImageEditWindow.sourceImage");
+    Widget *sourceImageWidget = getWidget(m_sourceImageWidgetId);
     
     double handleHalfWidth = 0.5 * m_handleSize / sourceImageWidget->layoutWidth();
     double handleHalfHeight = 0.5 * m_handleSize / sourceImageWidget->layoutHeight();
@@ -406,7 +408,7 @@ void ReferenceImageEditWindow::updateReferenceImage()
             Image *referenceImage = (Image *)result;
             this->engine()->setImageResource("referenceImageEditWindow.referenceImagePreview", referenceImage->width(), referenceImage->height(), referenceImage->data());
             this->referenceImage().reset(referenceImage);
-            Widget::get("referenceImageEditWindow.referenceImagePreview")->setBackgroundImageResourceName("referenceImageEditWindow.referenceImagePreview");
+            this->getWidget(this->referenceImagePreviewWidgetId())->setBackgroundImageResourceName("referenceImageEditWindow.referenceImagePreview");
             m_referenceImageFlags.processing = false;
             if (m_referenceImageFlags.dirty)
                 updateReferenceImage();
@@ -469,7 +471,7 @@ void ReferenceImageEditWindow::updatePreviewImage()
     if (nullptr == m_image)
         return;
     
-    Widget *sourceImageWidget = Widget::get("referenceImageEditWindow.sourceImage");
+    Widget *sourceImageWidget = getWidget(m_sourceImageWidgetId);
     size_t targetWidth = sourceImageWidget->layoutWidth();
     size_t targetHeight = sourceImageWidget->layoutHeight();
     Image *image = new Image(*m_image);
@@ -491,9 +493,19 @@ void ReferenceImageEditWindow::updatePreviewImage()
             Image *resizedImage = (Image *)result;
             this->engine()->setImageResource("referenceImageEditWindow.sourceImage", resizedImage->width(), resizedImage->height(), resizedImage->data());
             this->resizedImage().reset(resizedImage);
-            Widget::get("referenceImageEditWindow.sourceImage")->setBackgroundImageResourceName("referenceImageEditWindow.sourceImage");
+            this->getWidget(this->sourceImageWidgetId())->setBackgroundImageResourceName("referenceImageEditWindow.sourceImage");
         }
     );
+}
+
+const std::string &ReferenceImageEditWindow::sourceImageWidgetId() const
+{
+    return m_sourceImageWidgetId;
+}
+
+const std::string &ReferenceImageEditWindow::referenceImagePreviewWidgetId() const
+{
+    return m_referenceImagePreviewWidgetId;
 }
 
 void ReferenceImageEditWindow::setImage(const std::string &path)

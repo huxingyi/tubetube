@@ -31,7 +31,8 @@ namespace Hu
 class RadioButton: public Widget
 {
 public:
-    RadioButton()
+    RadioButton(Widget::Window *window):
+        Widget(window)
     {
         m_renderHints = RenderHint::Element | RenderHint::RadioButton;
     }
@@ -41,7 +42,7 @@ public:
         if (m_text == text)
             return;
         m_text = text;
-        m_appearanceChanged = true;
+        m_window->setAppearanceChanged(true);
     }
     
     const std::string &text()
@@ -59,7 +60,7 @@ public:
         if (m_checked == checked)
             return;
         m_checked = checked;
-        m_appearanceChanged = true;
+        m_window->setAppearanceChanged(true);
     }
     
 private:

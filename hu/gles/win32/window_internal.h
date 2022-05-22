@@ -24,6 +24,7 @@
 #define HU_GLES_WINDOW_INTERNAL_H_
 
 #include <vector>
+#include <queue>
 #include <functional>
 #include <Windows.h>
 #include <Windowsx.h>
@@ -33,8 +34,16 @@ namespace Hu
 
 struct WindowInternal
 {
+    struct Message
+    {
+        unsigned int msg;
+        WPARAM wparam;
+        LPARAM lparam;
+    };
+    
     HWND handle = nullptr;
     HDC display = nullptr;
+    std::queue<Message> pendingMessages;
     std::vector<std::function<void (void)>> timers;
 };
 

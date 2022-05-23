@@ -27,6 +27,7 @@
 #include <hu/base/settings.h>
 #include <hu/gles/window.h>
 #include <dust3d/dirty_flags.h>
+#include <dust3d/reference_image_edit_window.h>
 
 using namespace Hu;
 
@@ -42,6 +43,7 @@ public:
     DirtyFlags &referenceImageFlags();
 private:
     std::unique_ptr<Image> m_referenceImage;
+    std::unique_ptr<ReferenceImageEditWindow> m_referenceImageEditWindow;
     DirtyFlags m_referenceImageFlags;
 };
 

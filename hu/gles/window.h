@@ -56,6 +56,7 @@ public:
     WindowInternal &internal();
     void setTitle(const std::string &string);
     void setPosition(int x, int y);
+    void bringToForeground();
     Type type() const;
     Window *openPopupWindow();
     Window *popupWindow() const;

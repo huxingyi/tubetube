@@ -949,6 +949,8 @@ public:
     
     void setWindowSize(double width, double height)
     {
+        if (width <= 0.0 || height <= 0.0)
+            return;
         if (Math::isEqual(width, m_windowWidth) && Math::isEqual(height, m_windowHeight))
             return;
         m_windowWidth = width;

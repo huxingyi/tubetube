@@ -307,7 +307,26 @@ void Window::setTitle(const std::string &string)
 
 void Window::setVisible(bool visible)
 {
-    ShowWindow(m_internal.handle, visible ? SW_SHOW : SW_HIDE);
+    if (visible) {
+        WINDOWPLACEMENT place;
+        memset(&place, 0, sizeof(WINDOWPLACEMENT));
+        place.length = sizeof(WINDOWPLACEMENT);
+        GetWindowPlacement(m_internal.handle, &place);
+
+        switch (place.showCmd) {
+        case SW_SHOWMAXIMIZED:
+            ShowWindow(m_internal.handle, SW_SHOWMAXIMIZED);
+            break;
+        case SW_SHOWMINIMIZED:
+            ShowWindow(m_internal.handle, SW_RESTORE);
+            break;
+        default:
+            ShowWindow(m_internal.handle, SW_NORMAL);
+            break;
+        }
+        return;
+    }
+    ShowWindow(m_internal.handle, SW_HIDE);
 }
 
 void Window::setEngine(IndieGameEngine *engine)
@@ -455,6 +474,11 @@ std::string Window::selectSingleFileByUser(const std::vector<std::string> &filte
     
     std::u16string utf16Path(std::begin(path), std::begin(path) + wcslen(path));
     return std::move(utf16conv.to_bytes(utf16Path));
+}
+
+void Window::bringToForeground()
+{
+    SetActiveWindow(m_internal.handle);
 }
 
 void Window::mainLoop()

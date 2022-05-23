@@ -41,8 +41,6 @@ DocumentWindow::DocumentWindow():
     Window(String::toInt(settings()->value("mainWindow.width", 640)), String::toInt(settings()->value("mainWindow.height", 360)))
 {
     setTitle("Tubetube");
-
-    engine()->setBackgroundColor(Color("#00000000"));
     
     auto selectButton = new PushButton(this);
     selectButton->setName("selectButton");
@@ -251,7 +249,11 @@ void DocumentWindow::popupMenu()
 
 void DocumentWindow::openReferenceImageEditWindow()
 {
-    ReferenceImageEditWindow *editWindow = new ReferenceImageEditWindow();
+    if (nullptr == m_referenceImageEditWindow) {
+        m_referenceImageEditWindow = std::make_unique<ReferenceImageEditWindow>();
+    }
+    m_referenceImageEditWindow->setVisible(true);
+    m_referenceImageEditWindow->bringToForeground();
 }
 
 DirtyFlags &DocumentWindow::referenceImageFlags()

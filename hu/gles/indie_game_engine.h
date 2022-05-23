@@ -906,6 +906,8 @@ public:
                 
                 m_uiTaskList.update();
                 
+                m_window->update();
+                
                 glBindTexture(GL_TEXTURE_2D, 0);
                 
                 if (nullptr != m_rootWidget) {

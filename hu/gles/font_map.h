@@ -92,22 +92,18 @@ public:
         std::string newFontFilePath = filePath;
         if (m_fontFilePath == newFontFilePath)
             return;
-        
-        if (nullptr != m_fontHandle) {
-            msdfgen::destroyFont(m_fontHandle);
-            m_fontHandle = nullptr;
-        }
         m_fontFilePath = newFontFilePath;
         
-        if (nullptr == m_freeTypeHandle)
-            m_freeTypeHandle = msdfgen::initializeFreetype();
         if (nullptr == m_fontHandle) {
+            if (nullptr == m_freeTypeHandle)
+                m_freeTypeHandle = msdfgen::initializeFreetype();
             m_fontHandle = msdfgen::loadFont(m_freeTypeHandle, m_fontFilePath.c_str());
-            if (nullptr != m_fontHandle) {
-                msdfgen::FontMetrics metrics = {0};
-                getFontMetrics(metrics, m_fontHandle);
-                m_fontSizeInPixel = metrics.lineHeight;
-            }
+        }
+        
+        if (0 == m_fontSizeInPixel) {
+            msdfgen::FontMetrics metrics = {0};
+            getFontMetrics(metrics, m_fontHandle);
+            m_fontSizeInPixel = metrics.lineHeight;
         }
         
         resetImageClips();
@@ -144,6 +140,9 @@ public:
     
     void renderString(const std::string &string, double left, double top, double lineHeight)
     {
+        if (0 == m_fontSizeInPixel)
+            return;
+        
         std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> utf16conv;
         std::u16string utf16String = utf16conv.from_bytes(string + "fg");
         addCharsToImageClips(utf16String);
@@ -257,8 +256,8 @@ private:
     int m_currentRow = 0;
     std::string m_fontFilePath;
     std::map<char16_t, ImageClip> m_imageClipMap;
-    msdfgen::FreetypeHandle *m_freeTypeHandle = nullptr;
-    msdfgen::FontHandle *m_fontHandle = nullptr;
+    static inline msdfgen::FreetypeHandle *m_freeTypeHandle = nullptr;
+    static inline msdfgen::FontHandle *m_fontHandle = nullptr;
     
     void resetImageClips()
     {

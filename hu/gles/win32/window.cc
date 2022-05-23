@@ -270,15 +270,31 @@ Window::Window(int width, int height, Type type, Window *parent):
         this->engine()->update();
     });
     addTimer(1000 / 60, [=]() {
-        eglMakeCurrent(this->eglDisplay(), this->eglSurface(), this->eglSurface(), this->eglContext());
-        while (!this->internal().pendingMessages.empty()) {
-            auto pending = this->internal().pendingMessages.front();
-            this->internal().pendingMessages.pop();
-            handlePendingMessage(this, pending.msg, pending.wparam, pending.lparam);
+        while (!this->m_selectSingleFileRequests.empty()) {
+            auto filterSurfixList = this->m_selectSingleFileRequests.front();
+            this->m_selectSingleFileRequests.pop();
+            this->m_selectSingleFileResults.push(this->selectSingleFileByUser(filterSurfixList));
         }
+        eglMakeCurrent(this->eglDisplay(), this->eglSurface(), this->eglSurface(), this->eglContext());
+        if (!this->m_internal.pendingMessages.empty())
+            this->engine()->dirty();
         this->engine()->renderScene();
         eglSwapBuffers(this->eglDisplay(), this->eglSurface());
     });
+}
+
+void Window::update()
+{
+    while (!m_internal.pendingMessages.empty()) {
+        auto pending = m_internal.pendingMessages.front();
+        m_internal.pendingMessages.pop();
+        handlePendingMessage(this, pending.msg, pending.wparam, pending.lparam);
+    }
+    while (!m_selectSingleFileResults.empty()) {
+        auto result = m_selectSingleFileResults.front();
+        m_selectSingleFileResults.pop();
+        fileSelected.emit(result);
+    }
 }
 
 void Window::setTitle(const std::string &string)
@@ -389,6 +405,11 @@ Window *Window::popupWindow() const
 Window *Window::parentWindow() const
 {
     return m_parentWindow;
+}
+
+void Window::requestToSelectSingleFile(const std::vector<std::string> &filterSurfixList)
+{
+    m_selectSingleFileRequests.push(filterSurfixList);
 }
 
 std::string Window::selectSingleFileByUser(const std::vector<std::string> &filterSurfixList) const

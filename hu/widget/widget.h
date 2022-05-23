@@ -77,6 +77,8 @@ public:
             return findWidget->second;
         }
         
+        virtual void update() = 0;
+        
     private:
         bool m_layoutChanged = false;
         bool m_appearanceChanged = false;

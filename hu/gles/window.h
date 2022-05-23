@@ -27,6 +27,7 @@
 #include <hu/widget/widget.h>
 #include <EGL/egl.h>
 #include <EGL/eglplatform.h>
+#include <hu/base/signal.h>
 
 namespace Hu
 {
@@ -41,6 +42,8 @@ public:
         Main,
         Popup
     };
+    
+    Signal<std::string> fileSelected;
 
     Window(int width, int height, Type type=Type::Main, Window *parent=nullptr);
     void setVisible(bool visible);
@@ -58,6 +61,8 @@ public:
     Window *popupWindow() const;
     Window *parentWindow() const;
     std::string selectSingleFileByUser(const std::vector<std::string> &filterSurfixList={}) const;
+    void requestToSelectSingleFile(const std::vector<std::string> &filterSurfixList={});
+    void update() override;
     static void mainLoop();
     static bool isKeyPressed(char key);
     static uint64_t getMilliseconds();
@@ -71,6 +76,8 @@ private:
     Type m_type = Type::Main;
     Window *m_popupWindow = nullptr;
     Window *m_parentWindow = nullptr;
+    std::queue<std::vector<std::string>> m_selectSingleFileRequests;
+    std::queue<std::string> m_selectSingleFileResults;
 };
     
 }

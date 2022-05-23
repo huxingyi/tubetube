@@ -87,11 +87,14 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     });
     loadImageButton->mouseReleased.connect([=]() {
         loadImageButton->setBackgroundColor(Color(Style::ButtonColor));
-        auto selectedFile = this->selectSingleFileByUser({"jpg", "jpeg", "png"});
-        if (selectedFile.empty())
-            return;
-        setImage(selectedFile);
+        this->requestToSelectSingleFile({"jpg", "jpeg", "png"});
+        //auto selectedFile = this->selectSingleFileByUser({"jpg", "jpeg", "png"});
+        //if (selectedFile.empty())
+        //    return;
+        //setImage(selectedFile);
     });
+    
+    fileSelected.connect(std::bind(&ReferenceImageEditWindow::setImage, this, std::placeholders::_1));
     
     auto loadImageButtonLayout = new Widget(this);
     loadImageButtonLayout->setName("loadImageButtonLayout");
@@ -510,6 +513,8 @@ const std::string &ReferenceImageEditWindow::referenceImagePreviewWidgetId() con
 
 void ReferenceImageEditWindow::setImage(const std::string &path)
 {
+    if (path.empty())
+        return;
     m_image = std::make_unique<Image>();
     m_image->load(path.c_str());
     engine()->run([=](void *) {

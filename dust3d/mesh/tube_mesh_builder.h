@@ -20,8 +20,8 @@
  *  SOFTWARE.
  */
 
-#ifndef HU_MESH_TUBE_MESH_BUILDER_H_
-#define HU_MESH_TUBE_MESH_BUILDER_H_
+#ifndef DUST3D_MESH_TUBE_MESH_BUILDER_H_
+#define DUST3D_MESH_TUBE_MESH_BUILDER_H_
 
 #include <memory>
 #include <algorithm>
@@ -29,7 +29,7 @@
 #include <hu/base/debug.h>
 #include <hu/base/vector2.h>
 
-namespace Hu
+namespace Dust3d
 {
     
 class TubeMeshBuilder
@@ -43,11 +43,11 @@ public:
 
     struct Section
     {
-        Vector3 origin;
+        Hu::Vector3 origin;
         double radius;
-        Vector3 normal;
-        Vector3 bitangent;
-        std::vector<Vector2> polygon;
+        Hu::Vector3 normal;
+        Hu::Vector3 bitangent;
+        std::vector<Hu::Vector2> polygon;
         std::vector<int> profilePoints;
     };
     
@@ -66,7 +66,7 @@ public:
         if (nullptr == m_sections)
             return false;
         
-        std::vector<std::vector<Vector3>> sectionPolygons(m_sections->size());
+        std::vector<std::vector<Hu::Vector3>> sectionPolygons(m_sections->size());
         
         for (size_t i = 0; i < m_sections->size(); ++i) {
             if (!makeSectionPolygon(m_sections->at(i), sectionPolygons[i])) {
@@ -76,7 +76,7 @@ public:
         }
         
         std::vector<std::vector<size_t>> meshVertexIndices(sectionPolygons.size());
-        m_meshVertices = std::make_unique<std::vector<Vector3>>();
+        m_meshVertices = std::make_unique<std::vector<Hu::Vector3>>();
         for (size_t i = 0; i < sectionPolygons.size(); ++i) {
             meshVertexIndices[i].resize(sectionPolygons[i].size());
             for (size_t j = 0; j < sectionPolygons[i].size(); ++j) {
@@ -123,7 +123,7 @@ public:
         return true;
     }
     
-    std::unique_ptr<std::vector<Vector3>> takeMeshVertices()
+    std::unique_ptr<std::vector<Hu::Vector3>> takeMeshVertices()
     {
         return std::move(m_meshVertices);
     }
@@ -153,7 +153,7 @@ public:
 private:
     SectionFillPattern m_sectionFillPattern = SectionFillPattern::Strips;
     std::unique_ptr<std::vector<Section>> m_sections;
-    std::unique_ptr<std::vector<Vector3>> m_meshVertices;
+    std::unique_ptr<std::vector<Hu::Vector3>> m_meshVertices;
     std::unique_ptr<std::vector<std::vector<size_t>>> m_meshQuads;
     std::unique_ptr<std::set<std::pair<size_t, size_t>>> m_meshProfileEdges;
     
@@ -189,7 +189,7 @@ private:
         return true;
     }
 
-    bool makeSectionPolygon(const Section &section, std::vector<Vector3> &polygon3d)
+    bool makeSectionPolygon(const Section &section, std::vector<Hu::Vector3> &polygon3d)
     {
         if (section.polygon.size() <= 2) {
             huDebug << "Polygon requires three points at least, current points:" << section.polygon.size();
@@ -211,13 +211,13 @@ private:
         
         polygon3d.resize(section.polygon.size());
         for (size_t i = 0; i < section.polygon.size(); ++i) {
-            double angle2d = Vector3::angle(
-                Vector3(0.0, 1.0, 0.0), // Up
-                Vector3(section.polygon[i]), 
-                Vector3(0.0, 0.0, 1.0) // Out
+            double angle2d = Hu::Vector3::angle(
+                Hu::Vector3(0.0, 1.0, 0.0), // Up
+                Hu::Vector3(section.polygon[i]), 
+                Hu::Vector3(0.0, 0.0, 1.0) // Out
             );
-            auto tangent = Vector3::crossProduct(section.bitangent, section.normal);
-            auto recalculatedBitangent = Vector3::crossProduct(section.normal, tangent).normalized();
+            auto tangent = Hu::Vector3::crossProduct(section.bitangent, section.normal);
+            auto recalculatedBitangent = Hu::Vector3::crossProduct(section.normal, tangent).normalized();
             polygon3d[i] = section.origin + 
                 recalculatedBitangent.rotated(section.normal, angle2d) * radiusList[i] * section.radius;
         }

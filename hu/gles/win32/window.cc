@@ -178,6 +178,8 @@ Window::~Window()
 {
     setVisible(false);
     SetWindowLongPtr(m_internal.handle, GWLP_USERDATA, (LONG_PTR)0);
+    eglDestroyContext(m_eglDisplay, m_eglContext);
+    eglDestroySurface(m_eglDisplay, m_eglSurface);
     eglTerminate(m_eglDisplay);
     DestroyWindow(m_internal.handle);
 }

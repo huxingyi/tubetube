@@ -20,10 +20,10 @@
  *  SOFTWARE.
  */
 
-#ifndef HU_MESH_MESH_UTILS_H_
-#define HU_MESH_MESH_UTILS_H_
+#ifndef DUST3D_MESH_MESH_UTILS_H_
+#define DUST3D_MESH_MESH_UTILS_H_
 
-namespace Hu
+namespace Dust3d
 {
 
 class MeshUtils

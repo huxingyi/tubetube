@@ -10,6 +10,7 @@ OBJ_FILES = \
 	$(OBJ_DIRECTORY)\dust3d\desktop\document_window.obj \
 	$(OBJ_DIRECTORY)\dust3d\desktop\reference_image_edit_window.obj \
 	$(OBJ_DIRECTORY)\dust3d\desktop\main.obj \
+    $(OBJ_DIRECTORY)\dust3d\files\ds3_file.obj \
 	$(OBJ_DIRECTORY)\dust3d\data\dust3d_vertical_png.obj
 
 INCLUDE_DIRECTORIES_OPTIONS = \
@@ -17,6 +18,7 @@ INCLUDE_DIRECTORIES_OPTIONS = \
 	/I "C:\\Users\\Jeremy\\Repositories\\angle\\include" \
 	/I "C:\\Users\\Jeremy\\Repositories\\msdfgen" \
 	/I "third_party\\nanosvg" \
+	/I "third_party\\rapidxml-1.13" \
 	/I "third_party" \
 	/I "."
 
@@ -54,6 +56,10 @@ LINK_OPTIONS = \
 {dust3d\data\}.cc{$(OBJ_DIRECTORY)\dust3d\data\}.obj::
 	@for %%a in ($(OBJ_DIRECTORY)\$<) do @if not exist "%~dpa" mkdir "%~dpa"
 	@cl /c /Fo$(OBJ_DIRECTORY)\dust3d\data\ $(COMPILE_OPTIONS) $<
+    
+{dust3d\files\}.cc{$(OBJ_DIRECTORY)\dust3d\files\}.obj::
+	@for %%a in ($(OBJ_DIRECTORY)\$<) do @if not exist "%~dpa" mkdir "%~dpa"
+	@cl /c /Fo$(OBJ_DIRECTORY)\dust3d\files\ $(COMPILE_OPTIONS) $<
 
 {dust3d\desktop\}.cc{$(OBJ_DIRECTORY)\dust3d\desktop\}.obj::
 	@for %%a in ($(OBJ_DIRECTORY)\$<) do @if not exist "%~dpa" mkdir "%~dpa"

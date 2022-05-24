@@ -45,6 +45,10 @@ public:
             return m_layoutChanged;
         }
         
+        virtual ~Window()
+        {
+        }
+        
         bool appearanceChanged() const
         {
             return m_appearanceChanged;

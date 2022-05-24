@@ -44,8 +44,10 @@ public:
     };
     
     Signal<std::string> fileSelected;
+    Signal<> closed;
 
     Window(int width, int height, Type type=Type::Main, Window *parent=nullptr);
+    ~Window();
     void setVisible(bool visible);
     void setEngine(IndieGameEngine *engine);
     IndieGameEngine *engine() const;

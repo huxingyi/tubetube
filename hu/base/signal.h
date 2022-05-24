@@ -47,6 +47,11 @@ public:
         }
     }
     
+    bool empty() const
+    {
+        return m_slots.empty();
+    }
+    
 private:
     std::map<int64_t, std::function<void (Args...)>> m_slots;
     int64_t m_nextSlotId = 1;

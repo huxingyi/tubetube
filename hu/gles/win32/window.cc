@@ -82,7 +82,10 @@ static LRESULT CALLBACK windowMessageHandler(HWND hwnd, unsigned int msg, WPARAM
         }
         break;
     case WM_CLOSE : {
-            DestroyWindow(hwnd);
+            if (window->closed.empty())
+                DestroyWindow(hwnd);
+            else
+                window->closed.emit();
             return 0;
         } 
         break;
@@ -169,6 +172,14 @@ static EGLint getContextRenderableType(EGLDisplay eglDisplay)
     }
 #endif
    return EGL_OPENGL_ES2_BIT;
+}
+
+Window::~Window()
+{
+    setVisible(false);
+    SetWindowLongPtr(m_internal.handle, GWLP_USERDATA, (LONG_PTR)0);
+    eglTerminate(m_eglDisplay);
+    DestroyWindow(m_internal.handle);
 }
 
 Window::Window(int width, int height, Type type, Window *parent):

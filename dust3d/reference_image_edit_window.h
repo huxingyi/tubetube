@@ -24,6 +24,7 @@
 #define DUST3D_REFERENCE_IMAGE_EDIT_WINDOW_H_
 
 #include <hu/base/image.h>
+#include <hu/base/signal.h>
 #include <hu/widget/radio_button.h>
 #include <hu/widget/canvas.h>
 #include <hu/gles/window.h>
@@ -35,6 +36,8 @@ using namespace Hu;
 class ReferenceImageEditWindow: public Window
 {
 public:
+    Signal<> confirmed;
+    
     ReferenceImageEditWindow();
     void setImage(const std::string &path);
     void updatePreviewImage();

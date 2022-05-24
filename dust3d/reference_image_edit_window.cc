@@ -175,6 +175,7 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     });
     saveButton->mouseReleased.connect([=]() {
         saveButton->setBackgroundColor(Color(Style::HighlightButtonColor));
+        this->confirmed.emit();
     });
     
     auto saveButtonLayout = new Widget(this);

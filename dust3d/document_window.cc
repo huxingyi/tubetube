@@ -251,6 +251,13 @@ void DocumentWindow::openReferenceImageEditWindow()
 {
     if (nullptr == m_referenceImageEditWindow) {
         m_referenceImageEditWindow = std::make_unique<ReferenceImageEditWindow>();
+        m_referenceImageEditWindow->confirmed.connect([=] {
+            if (nullptr != this->m_referenceImageEditWindow->referenceImage()) {
+                m_referenceImage = std::move(this->m_referenceImageEditWindow->referenceImage());
+                this->updateReferenceImage();
+            }
+            this->m_referenceImageEditWindow.reset();
+        });
         m_referenceImageEditWindow->closed.connect([=] {
             this->m_referenceImageEditWindow.reset();
         });

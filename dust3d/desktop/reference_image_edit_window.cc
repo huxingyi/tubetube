@@ -26,9 +26,9 @@
 #include <hu/widget/radio_button.h>
 #include <hu/widget/text.h>
 #include <hu/widget/canvas.h>
-#include <dust3d/reference_image_edit_window.h>
-#include <dust3d/document_window.h>
-#include <dust3d/style_constants.h>
+#include <dust3d/desktop/reference_image_edit_window.h>
+#include <dust3d/desktop/document_window.h>
+#include <dust3d/desktop/style_constants.h>
 
 ReferenceImageEditWindow::ReferenceImageEditWindow():
     Window(String::toInt(DocumentWindow::settings()->value("referenceImageEditWindow.width", 800)), String::toInt(DocumentWindow::settings()->value("referenceImageEditWindow.height", 360)))

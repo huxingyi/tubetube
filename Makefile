@@ -7,9 +7,9 @@ OBJ_FILES = \
 	$(OBJ_DIRECTORY)\hu\gles\icon_map.obj \
 	$(OBJ_DIRECTORY)\hu\gles\win32\window.obj \
 	$(OBJ_DIRECTORY)\hu\widget\widget.obj \
-	$(OBJ_DIRECTORY)\dust3d\document_window.obj \
-	$(OBJ_DIRECTORY)\dust3d\reference_image_edit_window.obj \
-	$(OBJ_DIRECTORY)\dust3d\main.obj \
+	$(OBJ_DIRECTORY)\dust3d\desktop\document_window.obj \
+	$(OBJ_DIRECTORY)\dust3d\desktop\reference_image_edit_window.obj \
+	$(OBJ_DIRECTORY)\dust3d\desktop\main.obj \
 	$(OBJ_DIRECTORY)\dust3d\data\dust3d_vertical_png.obj
 
 INCLUDE_DIRECTORIES_OPTIONS = \
@@ -55,9 +55,9 @@ LINK_OPTIONS = \
 	@for %%a in ($(OBJ_DIRECTORY)\$<) do @if not exist "%~dpa" mkdir "%~dpa"
 	@cl /c /Fo$(OBJ_DIRECTORY)\dust3d\data\ $(COMPILE_OPTIONS) $<
 
-{dust3d\}.cc{$(OBJ_DIRECTORY)\dust3d\}.obj::
+{dust3d\desktop\}.cc{$(OBJ_DIRECTORY)\dust3d\desktop\}.obj::
 	@for %%a in ($(OBJ_DIRECTORY)\$<) do @if not exist "%~dpa" mkdir "%~dpa"
-	@cl /c /Fo$(OBJ_DIRECTORY)\dust3d\ $(COMPILE_OPTIONS) $<
+	@cl /c /Fo$(OBJ_DIRECTORY)\dust3d\desktop\ $(COMPILE_OPTIONS) $<
 
 {hu\gles\}.cc{$(OBJ_DIRECTORY)\hu\gles\}.obj::
 	@for %%a in ($(OBJ_DIRECTORY)\$<) do @if not exist "%~dpa" mkdir "%~dpa"

@@ -20,16 +20,16 @@
  *  SOFTWARE.
  */
 
-#ifndef DUST3D_REFERENCE_IMAGE_EDIT_WINDOW_H_
-#define DUST3D_REFERENCE_IMAGE_EDIT_WINDOW_H_
+#ifndef DUST3D_DESKTOP_REFERENCE_IMAGE_EDIT_WINDOW_H_
+#define DUST3D_DESKTOP_REFERENCE_IMAGE_EDIT_WINDOW_H_
 
 #include <hu/base/image.h>
 #include <hu/base/signal.h>
 #include <hu/widget/radio_button.h>
 #include <hu/widget/canvas.h>
 #include <hu/gles/window.h>
-#include <dust3d/style_constants.h>
-#include <dust3d/dirty_flags.h>
+#include <dust3d/desktop/style_constants.h>
+#include <dust3d/desktop/dirty_flags.h>
 
 using namespace Hu;
 

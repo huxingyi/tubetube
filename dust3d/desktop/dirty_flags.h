@@ -20,15 +20,13 @@
  *  SOFTWARE.
  */
 
-#define NOMINMAX
-#include <dust3d/document_window.h>
-#include <dust3d/reference_image_edit_window.h>
+#ifndef DUST3D_DESKTOP_DIRTY_FLAGS_H_
+#define DUST3D_DESKTOP_DIRTY_FLAGS_H_
 
-int main(int argc, char* argv[])
+struct DirtyFlags
 {
-    new DocumentWindow();
-    
-    Window::mainLoop();
-    
-    return 0;
-}
+    uint64_t dirty: 1 = false;
+    uint64_t processing: 1 = false;
+};
+
+#endif

@@ -20,14 +20,14 @@
  *  SOFTWARE.
  */
 
-#ifndef DUST3D_DOCUMENT_WINDOW_H_
-#define DUST3D_DOCUMENT_WINDOW_H_
+#ifndef DUST3D_DESKTOP_DOCUMENT_WINDOW_H_
+#define DUST3D_DESKTOP_DOCUMENT_WINDOW_H_
 
 #include <hu/base/image.h>
 #include <hu/base/settings.h>
 #include <hu/gles/window.h>
-#include <dust3d/dirty_flags.h>
-#include <dust3d/reference_image_edit_window.h>
+#include <dust3d/desktop/dirty_flags.h>
+#include <dust3d/desktop/reference_image_edit_window.h>
 
 using namespace Hu;
 

@@ -26,10 +26,10 @@
 #include <hu/gles/indie_game_engine.h>
 #include <hu/widget/push_button.h>
 #include <hu/widget/widget.h>
-#include <dust3d/document_window.h>
-#include <dust3d/reference_image_edit_window.h>
+#include <dust3d/desktop/document_window.h>
+#include <dust3d/desktop/reference_image_edit_window.h>
 #include <dust3d/data/dust3d_vertical_png.h>
-#include <dust3d/style_constants.h>
+#include <dust3d/desktop/style_constants.h>
 
 Settings *DocumentWindow::settings()
 {

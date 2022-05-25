@@ -23,6 +23,8 @@
 #define NOMINMAX
 #include <hu/base/string.h>
 #include <hu/base/image.h>
+#include <hu/base/debug.h>
+#include <hu/base/uuid.h>
 #include <hu/gles/indie_game_engine.h>
 #include <hu/widget/push_button.h>
 #include <hu/widget/widget.h>

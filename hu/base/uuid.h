@@ -56,14 +56,32 @@ public:
 
     static inline RandomGenerator *m_generator = new RandomGenerator;
     
-    Uuid(const std::string &string):
-        m_uuid(string)
+    Uuid(const std::string &string)
     {
+        if (sizeof("{hhhhhhhh-hhhh-hhhh-hhhh-hhhhhhhhhhhh}") - 1 == string.length() &&
+                '{' == string[0] &&
+                validate(&string[1], string.length() - 2)) {
+            m_uuid = string.substr(1, string.length() - 2);
+            return;
+        }
+        if (sizeof("hhhhhhhh-hhhh-hhhh-hhhh-hhhhhhhhhhhh") - 1 == string.length() &&
+                validate(&string[0], string.length())) {
+            m_uuid = string;
+            return;
+        }
+    }
+    
+    static bool validate(const char *string, size_t length)
+    {
+        return '-' == string[8] && 
+            '-' == string[13] && 
+            '-' == string[18] && 
+            '-' == string[23];
     }
     
     static Uuid createUuid()
     {
-        std::stringstream ss;
+        std::ostringstream ss;
         ss << std::hex;
         ss << m_generator->generate();
         ss << m_generator->generate();
@@ -110,7 +128,41 @@ public:
     }
     
 private:
+    friend struct std::hash<Uuid>;
+    friend bool operator==(const Uuid &left, const Uuid &right);
+    friend bool operator!=(const Uuid &left, const Uuid &right);
+    friend bool operator<(const Uuid &left, const Uuid &right);
+    
     std::string m_uuid;
+};
+
+inline bool operator==(const Uuid &left, const Uuid &right)
+{
+    return left.m_uuid == right.m_uuid;
+}
+
+inline bool operator!=(const Uuid &left, const Uuid &right)
+{
+    return left.m_uuid != right.m_uuid;
+}
+
+inline bool operator<(const Uuid &left, const Uuid &right)
+{
+    return left.m_uuid < right.m_uuid;
+}
+
+}
+
+namespace std
+{
+    
+template<>
+struct hash<Hu::Uuid>
+{
+    size_t operator()(const Hu::Uuid &uuid) const
+    {
+        return std::hash<std::string>()(uuid.m_uuid);
+    }
 };
 
 }

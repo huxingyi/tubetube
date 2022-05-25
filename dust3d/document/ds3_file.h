@@ -20,8 +20,8 @@
  *  SOFTWARE.
  */
  
-#ifndef DUST3D_FILES_DS3_FILE_H_
-#define DUST3D_FILES_DS3_FILE_H_
+#ifndef DUST3D_DOCUMENT_DS3_FILE_H_
+#define DUST3D_DOCUMENT_DS3_FILE_H_
 
 #include <string>
 #include <map>

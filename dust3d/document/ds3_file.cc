@@ -25,7 +25,7 @@
 #include <rapidxml.hpp>
 #include <hu/base/debug.h>
 #include <hu/base/string.h>
-#include <dust3d/files/ds3_file.h>
+#include <dust3d/document/ds3_file.h>
 
 namespace Dust3d
 {

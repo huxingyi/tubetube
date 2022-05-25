@@ -82,7 +82,7 @@ static LRESULT CALLBACK windowMessageHandler(HWND hwnd, unsigned int msg, WPARAM
         }
         break;
     case WM_CLOSE : {
-            if (window->closed.empty())
+            if (window->closed.isEmpty())
                 DestroyWindow(hwnd);
             else
                 window->closed.emit();

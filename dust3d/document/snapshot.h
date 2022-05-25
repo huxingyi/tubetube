@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2022 Jeremy HU <jeremy-at-dust3d dot org>. All rights reserved. 
+ *  Copyright (c) 2016-2022 Jeremy HU <jeremy-at-dust3d dot org>. All rights reserved. 
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -19,42 +19,26 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *  SOFTWARE.
  */
- 
-#ifndef HU_BASE_SIGNAL_H_
-#define HU_BASE_SIGNAL_H_
+
+#ifndef DUST3D_DOCUMENT_SNAPSHOT_H_
+#define DUST3D_DOCUMENT_SNAPSHOT_H_
 
 #include <map>
-#include <functional>
+#include <hu/base/string.h>
 
-namespace Hu
+namespace Dust3d
 {
-
-template <typename... Args>
-class Signal
+    
+class Snapshot
 {
 public:
-    int64_t connect(const std::function<void (Args...)> &slot)
-    {
-        int64_t slotId = m_nextSlotId++;
-        m_slots.insert({slotId, slot});
-        return slotId;
-    }
-    
-    void emit(Args... parameters) 
-    {
-        for (const auto &it: m_slots) {
-            it.second(parameters...);
-        }
-    }
-    
-    bool isEmpty() const
-    {
-        return m_slots.empty();
-    }
-    
-private:
-    std::map<int64_t, std::function<void (Args...)>> m_slots;
-    int64_t m_nextSlotId = 1;
+    std::map<std::string, std::string> canvas;
+    std::map<std::string, std::map<std::string, std::string>> nodes;
+    std::map<std::string, std::map<std::string, std::string>> edges;
+    std::map<std::string, std::map<std::string, std::string>> parts;
+    std::map<std::string, std::map<std::string, std::string>> components;
+    std::map<std::string, std::string> rootComponent;
+    std::vector<std::pair<std::map<std::string, std::string>, std::vector<std::pair<std::map<std::string, std::string>, std::vector<std::map<std::string, std::string>>>>>> materials; // std::pair<Material attributes, layers>  layer: std::pair<Layer attributes, maps>
 };
     
 }

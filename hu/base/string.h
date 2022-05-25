@@ -53,9 +53,26 @@ inline std::string trimmed(std::string string)
     return std::move(string);
 }
 
+inline std::string join(std::vector<std::string> &strings, const std::string &separator)
+{
+    if (strings.empty())
+        return std::string();
+    
+    std::ostringstream ss;
+    ss << strings.front();
+    for (size_t i = 1; i < strings.size(); ++i)
+        ss << separator << strings[i];
+    return ss.str();
+}
+
 inline int toInt(const std::string &string)
 {
     return std::strtol(string.c_str(), nullptr, 10);
+}
+
+inline bool startsWith(const std::string &string, const std::string &searchItem)
+{
+    return string.find(searchItem, 0) == 0;
 }
 
 }

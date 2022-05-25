@@ -10,7 +10,8 @@ OBJ_FILES = \
 	$(OBJ_DIRECTORY)\dust3d\desktop\document_window.obj \
 	$(OBJ_DIRECTORY)\dust3d\desktop\reference_image_edit_window.obj \
 	$(OBJ_DIRECTORY)\dust3d\desktop\main.obj \
-    $(OBJ_DIRECTORY)\dust3d\files\ds3_file.obj \
+    $(OBJ_DIRECTORY)\dust3d\document\ds3_file.obj \
+    $(OBJ_DIRECTORY)\dust3d\document\snapshot_xml.obj \
 	$(OBJ_DIRECTORY)\dust3d\data\dust3d_vertical_png.obj
 
 INCLUDE_DIRECTORIES_OPTIONS = \
@@ -57,9 +58,9 @@ LINK_OPTIONS = \
 	@for %%a in ($(OBJ_DIRECTORY)\$<) do @if not exist "%~dpa" mkdir "%~dpa"
 	@cl /c /Fo$(OBJ_DIRECTORY)\dust3d\data\ $(COMPILE_OPTIONS) $<
     
-{dust3d\files\}.cc{$(OBJ_DIRECTORY)\dust3d\files\}.obj::
+{dust3d\document\}.cc{$(OBJ_DIRECTORY)\dust3d\document\}.obj::
 	@for %%a in ($(OBJ_DIRECTORY)\$<) do @if not exist "%~dpa" mkdir "%~dpa"
-	@cl /c /Fo$(OBJ_DIRECTORY)\dust3d\files\ $(COMPILE_OPTIONS) $<
+	@cl /c /Fo$(OBJ_DIRECTORY)\dust3d\document\ $(COMPILE_OPTIONS) $<
 
 {dust3d\desktop\}.cc{$(OBJ_DIRECTORY)\dust3d\desktop\}.obj::
 	@for %%a in ($(OBJ_DIRECTORY)\$<) do @if not exist "%~dpa" mkdir "%~dpa"

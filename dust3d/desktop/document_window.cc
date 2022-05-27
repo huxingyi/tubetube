@@ -240,6 +240,27 @@ DocumentWindow::DocumentWindow():
     
     setVisible(true);
     
+    {
+        std::ifstream is("test.ds3", std::ios::in | std::ios::binary);
+        std::vector<uint8_t> fileData((std::istreambuf_iterator<char>(is)), std::istreambuf_iterator<char>());
+        Dust3d::Ds3FileReader ds3Reader(&fileData[0], fileData.size());
+        for (int i = 0; i < ds3Reader.items().size(); ++i) {
+            const Dust3d::Ds3ReaderItem &item = ds3Reader.items()[i];
+            if (item.type == "asset") {
+                if (item.name == "canvas.png") {
+                    std::vector<std::uint8_t> data;
+                    ds3Reader.loadItem(item.name, &data);
+                    m_referenceImage = std::make_unique<Image>();
+                    m_referenceImage->load(data.data(), (int)data.size());
+                    engine()->run([=](void *) {
+                        this->updateReferenceImage();
+                    });
+                    break;
+                }
+            }
+        }
+    }
+    
     //setReferenceImage("reference-image.jpg");
 }
 
@@ -310,12 +331,12 @@ void DocumentWindow::updateReferenceImage()
             Image *resizedImage = (Image *)result;
             this->engine()->setImageResource("documentWindow.turnaround", resizedImage->width(), resizedImage->height(), resizedImage->data());
             
-            //{
-            //    auto testImage = std::make_unique<Image>(*resizedImage);
-            //    Dust3d::Document document;
-            //    document.setReferenceImage(std::move(testImage));
-            //    document.save("C:\\Users\\Jeremy\\Repositories\\tubetube\\bin\\test.ds3");
-            //}
+            {
+                auto testImage = std::make_unique<Image>(*resizedImage);
+                Dust3d::Document document;
+                document.setReferenceImage(std::move(testImage));
+                document.save("C:\\Users\\Jeremy\\Repositories\\tubetube\\bin\\test.ds3");
+            }
             
             delete resizedImage;
             this->getWidget("documentWindow.turnaround")->setBackgroundImageResourceName("documentWindow.turnaround");

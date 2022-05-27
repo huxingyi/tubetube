@@ -167,8 +167,10 @@ static std::string doubleQuoteEscapedForXml(const std::string &string)
 bool Ds3FileWriter::save(const std::string &filename)
 {
     std::ofstream file(filename, std::ios::out | std::ios::trunc | std::ios::binary);
-    if (!file.is_open())
+    if (!file.is_open()) {
+        huDebug << "Open file failed, path:" << filename;
         return false;
+    }
     
     std::ostringstream headerXmlStream;
     headerXmlStream << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" << std::endl;
@@ -202,6 +204,8 @@ bool Ds3FileWriter::save(const std::string &filename)
         Ds3WriterItem *writerItem = &m_items[i];
         file.write((char *)writerItem->byteArray.data(), writerItem->byteArray.size());
     }
+    
+    huDebug << "File saved:" << filename;
     
     return true;
 }

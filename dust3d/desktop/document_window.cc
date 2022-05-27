@@ -32,6 +32,7 @@
 #include <dust3d/desktop/reference_image_edit_window.h>
 #include <dust3d/desktop/style_constants.h>
 #include <dust3d/document/ds3_file.h>
+#include <dust3d/document/document.h>
 #include <dust3d/document/snapshot_xml.h>
 #include <dust3d/data/dust3d_vertical_png.h>
 
@@ -308,6 +309,14 @@ void DocumentWindow::updateReferenceImage()
         }, [=](void *result) {
             Image *resizedImage = (Image *)result;
             this->engine()->setImageResource("documentWindow.turnaround", resizedImage->width(), resizedImage->height(), resizedImage->data());
+            
+            //{
+            //    auto testImage = std::make_unique<Image>(*resizedImage);
+            //    Dust3d::Document document;
+            //    document.setReferenceImage(std::move(testImage));
+            //    document.save("C:\\Users\\Jeremy\\Repositories\\tubetube\\bin\\test.ds3");
+            //}
+            
             delete resizedImage;
             this->getWidget("documentWindow.turnaround")->setBackgroundImageResourceName("documentWindow.turnaround");
             this->referenceImageFlags().processing = false;

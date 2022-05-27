@@ -20,25 +20,25 @@
  *  SOFTWARE.
  */
 
-#include <hu/base/image.h>
-#define STB_IMAGE_IMPLEMENTATION
-#include <third_party/stb/stb_image.h>
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <third_party/stb/stb_image_write.h>
+#ifndef DUST3D_DOCUMENT_DOCUMENT_H_
+#define DUST3D_DOCUMENT_DOCUMENT_H_
 
-namespace Hu
+#include <hu/base/image.h>
+#include <dust3d/document/snapshot.h>
+
+namespace Dust3d
 {
     
-static void writePngToBuffer(void *context, void *data, int length)
+class Document
 {
-   std::vector<uint8_t> *buffer = (std::vector<uint8_t> *)context;
-   buffer->resize(length);
-   memcpy(&(*buffer)[0], data, length);
+public:
+    void save(const std::string &path);
+    void setReferenceImage(std::unique_ptr<Hu::Image> image);
+    
+private:
+    std::unique_ptr<Hu::Image> m_referenceImage;
+};
+    
 }
 
-void Image::saveAsPng(std::vector<uint8_t> *buffer)
-{
-    stbi_write_png_to_func(writePngToBuffer, buffer, m_width, m_height, 4, m_data, m_width * 4);
-}
-
-}
+#endif

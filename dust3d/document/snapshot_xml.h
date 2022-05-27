@@ -28,20 +28,21 @@
 
 namespace Dust3d
 {
-    
-#define kSnapshotItemCanvas        0x00000001
-#define kSnapshotItemComponent     0x00000002
-#define kSnapshotItemMaterial      0x00000004
-#define kSnapshotItemMotion        0x00000008
-#define kSnapshotItemAll          (                                \
-                                        kSnapshotItemCanvas |      \
-                                        kSnapshotItemComponent |   \
-                                        kSnapshotItemMaterial |    \
-                                        kSnapshotItemMotion        \
-                                    )
+
+enum class SnapshotItem
+{
+    Canvas        = 0x00000001,
+    Component     = 0x00000002,
+    Material      = 0x00000004,
+    Motion        = 0x00000008,
+    All           = SnapshotItem::Canvas |      \
+                    SnapshotItem::Component |   \
+                    SnapshotItem::Material |    \
+                    SnapshotItem::Motion
+};
 
 void loadSnapshotFromXmlString(Snapshot *snapshot, char *xmlString, 
-    uint32_t flags=kSnapshotItemAll);
+    uint32_t flags=(uint32_t)SnapshotItem::All);
 void saveSnapshotToXmlString(const Snapshot &snapshot, std::string &xmlString);
     
 }

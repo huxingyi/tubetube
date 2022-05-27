@@ -57,13 +57,13 @@ void loadSnapshotFromXmlString(Snapshot *snapshot, char *xmlString, uint32_t fla
         xml.parse<0>(xmlString);
         rapidxml::xml_node<> *canvas = xml.first_node("canvas");
         if (nullptr != canvas) {
-            if (flags & kSnapshotItemCanvas) {
+            if (flags & (uint32_t)SnapshotItem::Canvas) {
                 for (rapidxml::xml_attribute<> *attribute = canvas->first_attribute();
                         attribute; attribute = attribute->next_attribute()) {
                     snapshot->canvas[attribute->name()] = attribute->value();
                 }
             }
-            if (flags & kSnapshotItemComponent) {
+            if (flags & (uint32_t)SnapshotItem::Component) {
                 rapidxml::xml_node<> *nodes = canvas->first_node("nodes");
                 if (nullptr != nodes) {
                     for (rapidxml::xml_node<> *node = nodes->first_node(); nullptr != node; node = node->next_sibling()) {
@@ -78,7 +78,7 @@ void loadSnapshotFromXmlString(Snapshot *snapshot, char *xmlString, uint32_t fla
                     }
                 }
             }
-            if (flags & kSnapshotItemComponent) {
+            if (flags & (uint32_t)SnapshotItem::Component) {
                 rapidxml::xml_node<> *edges = canvas->first_node("edges");
                 if (nullptr != edges) {
                     for (rapidxml::xml_node<> *node = edges->first_node(); nullptr != node; node = node->next_sibling()) {
@@ -93,7 +93,7 @@ void loadSnapshotFromXmlString(Snapshot *snapshot, char *xmlString, uint32_t fla
                     }
                 }
             }
-            if (flags & kSnapshotItemComponent) {
+            if (flags & (uint32_t)SnapshotItem::Component) {
                 rapidxml::xml_node<> *parts = canvas->first_node("parts");
                 if (nullptr != parts) {
                     for (rapidxml::xml_node<> *node = parts->first_node(); nullptr != node; node = node->next_sibling()) {
@@ -108,7 +108,7 @@ void loadSnapshotFromXmlString(Snapshot *snapshot, char *xmlString, uint32_t fla
                     }
                 }
             }
-            if (flags & kSnapshotItemComponent) {
+            if (flags & (uint32_t)SnapshotItem::Component) {
                 rapidxml::xml_node<> *partIdList = canvas->first_node("partIdList");
                 if (nullptr != partIdList) {
                     for (rapidxml::xml_node<> *partId = partIdList->first_node(); nullptr != partId; partId = partId->next_sibling()) {
@@ -127,13 +127,13 @@ void loadSnapshotFromXmlString(Snapshot *snapshot, char *xmlString, uint32_t fla
                     }
                 }
             }
-            if (flags & kSnapshotItemComponent) {
+            if (flags & (uint32_t)SnapshotItem::Component) {
                 rapidxml::xml_node<> *components = canvas->first_node("components");
                 if (nullptr != components) {
                     snapshot->rootComponent["children"] = loadComponentReturnChildrenList(snapshot, components);
                 }
             }
-            if (flags & kSnapshotItemMaterial) {
+            if (flags & (uint32_t)SnapshotItem::Material) {
                 rapidxml::xml_node<> *materials = canvas->first_node("materials");
                 if (nullptr != materials) {
                     for (rapidxml::xml_node<> *material = materials->first_node(); nullptr != material; material = material->next_sibling()) {

@@ -21,24 +21,29 @@
  */
 
 #include <hu/base/image.h>
-#define STB_IMAGE_IMPLEMENTATION
-#include <third_party/stb/stb_image.h>
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <third_party/stb/stb_image_write.h>
+#include <dust3d/document/document.h>
+#include <dust3d/document/ds3_file.h>
 
-namespace Hu
+namespace Dust3d
 {
+
+void Document::save(const std::string &path)
+{
+    Ds3FileWriter ds3Writer;
     
-static void writePngToBuffer(void *context, void *data, int length)
-{
-   std::vector<uint8_t> *buffer = (std::vector<uint8_t> *)context;
-   buffer->resize(length);
-   memcpy(&(*buffer)[0], data, length);
+    if (nullptr != m_referenceImage) {
+        std::vector<uint8_t> pngBuffer;
+        m_referenceImage->saveAsPng(&pngBuffer);
+        std::cout << "pngBuffer:" << pngBuffer.size() << std::endl;
+        ds3Writer.add("canvas.png", "asset", &pngBuffer[0], pngBuffer.size());
+    }
+    
+    ds3Writer.save(path);
 }
 
-void Image::saveAsPng(std::vector<uint8_t> *buffer)
+void Document::setReferenceImage(std::unique_ptr<Hu::Image> image)
 {
-    stbi_write_png_to_func(writePngToBuffer, buffer, m_width, m_height, 4, m_data, m_width * 4);
+    m_referenceImage = std::move(image);
 }
 
 }

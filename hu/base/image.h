@@ -23,8 +23,10 @@
 #ifndef HU_BASE_IMAGE_H_
 #define HU_BASE_IMAGE_H_
 
+#include <vector>
 #include <hu/base/debug.h>
 #include <third_party/stb/stb_image.h>
+#include <third_party/stb/stb_image_write.h>
 
 namespace Hu
 {
@@ -152,7 +154,7 @@ public:
         
         return true;
     }
-    
+
     const unsigned char *data() const
     {
         return m_data;
@@ -172,6 +174,8 @@ public:
     {
         return m_height;
     }
+    
+    void saveAsPng(std::vector<uint8_t> *buffer);
     
 private:
     size_t m_width = 0;

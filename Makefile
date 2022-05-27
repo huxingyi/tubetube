@@ -11,6 +11,7 @@ OBJ_FILES = \
 	$(OBJ_DIRECTORY)\dust3d\desktop\reference_image_edit_window.obj \
 	$(OBJ_DIRECTORY)\dust3d\desktop\main.obj \
     $(OBJ_DIRECTORY)\dust3d\document\ds3_file.obj \
+    $(OBJ_DIRECTORY)\dust3d\document\document.obj \
     $(OBJ_DIRECTORY)\dust3d\document\snapshot_xml.obj \
 	$(OBJ_DIRECTORY)\dust3d\data\dust3d_vertical_png.obj
 

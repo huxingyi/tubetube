@@ -24,6 +24,7 @@
 #define DUST3D_DOCUMENT_DOCUMENT_H_
 
 #include <hu/base/image.h>
+#include <hu/base/signal.h>
 #include <dust3d/document/snapshot.h>
 
 namespace Dust3d
@@ -32,8 +33,12 @@ namespace Dust3d
 class Document
 {
 public:
+    Hu::Signal<> referenceImageChanged;
+    
+    void open(const std::string &path);
     void save(const std::string &path);
     void setReferenceImage(std::unique_ptr<Hu::Image> image);
+    Hu::Image *referenceImage();
     
 private:
     std::unique_ptr<Hu::Image> m_referenceImage;

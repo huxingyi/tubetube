@@ -45,6 +45,13 @@ public:
         memcpy(m_data, other.data(), dataSize);
     }
     
+    Image(Image &&other)
+    {
+        std::swap(m_width, other.m_width);
+        std::swap(m_height, other.m_height);
+        std::swap(m_data, other.m_data);
+    }
+    
     Image(size_t width, size_t height):
         m_width(width),
         m_height(height)

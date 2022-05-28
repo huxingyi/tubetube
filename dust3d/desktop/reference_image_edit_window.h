@@ -28,15 +28,16 @@
 #include <hu/widget/radio_button.h>
 #include <hu/widget/canvas.h>
 #include <hu/gles/window.h>
+#include <dust3d/document/dirty_flags.h>
 #include <dust3d/desktop/style_constants.h>
-#include <dust3d/desktop/dirty_flags.h>
 
-using namespace Hu;
+namespace Dust3d
+{
 
-class ReferenceImageEditWindow: public Window
+class ReferenceImageEditWindow: public Hu::Window
 {
 public:
-    Signal<> confirmed;
+    Hu::Signal<> confirmed;
     
     ReferenceImageEditWindow();
     void setImage(const std::string &path);
@@ -48,24 +49,24 @@ public:
     void copyClipToFront();
     void copyClipToSide();
     void updateReferenceImage();
-    std::unique_ptr<Image> &resizedImage();
-    std::unique_ptr<Image> &frontImage();
-    std::unique_ptr<Image> &sideImage();
-    std::unique_ptr<Image> &referenceImage();
+    std::unique_ptr<Hu::Image> &resizedImage();
+    std::unique_ptr<Hu::Image> &frontImage();
+    std::unique_ptr<Hu::Image> &sideImage();
+    std::unique_ptr<Hu::Image> &referenceImage();
     const std::string &sourceImageWidgetId() const;
     const std::string &referenceImagePreviewWidgetId() const;
     
     static inline const size_t m_targetReferenceWidth = 1024;
     static inline const size_t m_targetReferenceHeight = 512;
 private:
-    std::unique_ptr<Image> m_image;
-    std::unique_ptr<Image> m_resizedImage;
-    std::unique_ptr<Image> m_frontImage;
-    std::unique_ptr<Image> m_sideImage;
-    std::unique_ptr<Image> m_referenceImage;
+    std::unique_ptr<Hu::Image> m_image;
+    std::unique_ptr<Hu::Image> m_resizedImage;
+    std::unique_ptr<Hu::Image> m_frontImage;
+    std::unique_ptr<Hu::Image> m_sideImage;
+    std::unique_ptr<Hu::Image> m_referenceImage;
     std::string m_sourceImageWidgetId;
     std::string m_referenceImagePreviewWidgetId;
-    Canvas *m_canvas = nullptr;
+    Hu::Canvas *m_canvas = nullptr;
     double m_clipLeft = 0.25;
     double m_clipRight = 0.75;
     double m_clipTop = 0.05;
@@ -90,5 +91,7 @@ private:
     void setRightBottomHandleMouseHovering(bool hovering);
     void setLeftBottomHandleMouseHovering(bool hovering);
 };
+
+}
 
 #endif

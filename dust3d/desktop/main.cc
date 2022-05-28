@@ -26,9 +26,9 @@
 
 int main(int argc, char* argv[])
 {
-    new DocumentWindow();
+    new Dust3d::DocumentWindow();
     
-    Window::mainLoop();
+    Hu::Window::mainLoop();
     
     return 0;
 }

@@ -20,6 +20,7 @@
  *  SOFTWARE.
  */
 
+#include <fstream>
 #include <hu/base/image.h>
 #include <dust3d/document/document.h>
 #include <dust3d/document/ds3_file.h>
@@ -34,7 +35,6 @@ void Document::save(const std::string &path)
     if (nullptr != m_referenceImage) {
         std::vector<uint8_t> pngBuffer;
         m_referenceImage->saveAsPng(&pngBuffer);
-        std::cout << "pngBuffer:" << pngBuffer.size() << std::endl;
         ds3Writer.add("canvas.png", "asset", &pngBuffer[0], pngBuffer.size());
     }
     
@@ -44,6 +44,34 @@ void Document::save(const std::string &path)
 void Document::setReferenceImage(std::unique_ptr<Hu::Image> image)
 {
     m_referenceImage = std::move(image);
+    referenceImageChanged.emit();
+}
+
+void Document::open(const std::string &path)
+{
+    std::ifstream is(path, std::ios::in | std::ios::binary);
+    std::vector<uint8_t> fileData((std::istreambuf_iterator<char>(is)), std::istreambuf_iterator<char>());
+    
+    Dust3d::Ds3FileReader ds3Reader(&fileData[0], fileData.size());
+    for (int i = 0; i < ds3Reader.items().size(); ++i) {
+        const Dust3d::Ds3ReaderItem &item = ds3Reader.items()[i];
+        if (item.type == "asset") {
+            if (item.name == "canvas.png") {
+                std::vector<std::uint8_t> data;
+                ds3Reader.loadItem(item.name, &data);
+                auto image = std::make_unique<Hu::Image>();
+                image->load(data.data(), (int)data.size());
+                setReferenceImage(std::move(image));
+            }
+        }
+    }
+    
+    // TODO:
+}
+
+Hu::Image *Document::referenceImage()
+{
+    return m_referenceImage.get();
 }
 
 }

@@ -20,13 +20,18 @@
  *  SOFTWARE.
  */
 
-#ifndef DUST3D_DESKTOP_DIRTY_FLAGS_H_
-#define DUST3D_DESKTOP_DIRTY_FLAGS_H_
+#ifndef DUST3D_DOCUMENT_DIRTY_FLAGS_H_
+#define DUST3D_DOCUMENT_DIRTY_FLAGS_H_
+
+namespace Dust3d
+{
 
 struct DirtyFlags
 {
     uint64_t dirty: 1 = false;
     uint64_t processing: 1 = false;
 };
+
+}
 
 #endif

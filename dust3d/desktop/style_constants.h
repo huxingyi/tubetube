@@ -29,7 +29,7 @@ public:
     static inline const char *RedColor = "#fc6621";
     static inline const char *GreenColor = "#0da9f1";
     static inline const char *BlueColor = "#aaebc4";
-    static inline const char *WhiteColor = "#ffffff"; //"#f7d9c8";
+    static inline const char *WhiteColor = "#f7d9c8";
     static inline const char *MainColor = WhiteColor;
     static inline const char *MainFontColor = WhiteColor;
     static inline const char *HighlightButtonColor = RedColor;

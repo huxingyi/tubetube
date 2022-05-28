@@ -36,168 +36,172 @@
 #include <dust3d/document/snapshot_xml.h>
 #include <dust3d/data/dust3d_vertical_png.h>
 
-Settings *DocumentWindow::settings()
+namespace Dust3d
 {
-    static Settings *s_settings = new Settings("tubetube.ini");
+
+Hu::Settings *DocumentWindow::settings()
+{
+    static Hu::Settings *s_settings = new Hu::Settings("tubetube.ini");
     return s_settings;
 }
 
 DocumentWindow::DocumentWindow():
-    Window(String::toInt(settings()->value("mainWindow.width", 640)), String::toInt(settings()->value("mainWindow.height", 360)))
+    Window(Hu::String::toInt(settings()->value("mainWindow.width", 640)), Hu::String::toInt(settings()->value("mainWindow.height", 360))),
+    m_document(std::make_unique<Document>())
 {
     setTitle("Tubetube");
     
-    auto selectButton = new PushButton(this);
+    auto selectButton = new Hu::PushButton(this);
     selectButton->setName("selectButton");
     selectButton->setPadding(Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding);
-    selectButton->setWidth(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
-    selectButton->setHeight(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
-    selectButton->setBackgroundColor(Color(Style::ButtonColor));
-    selectButton->setColor(Color(Style::WhiteColor));
+    selectButton->setWidth(Style::ToolbarIconSize, Hu::Widget::SizePolicy::FixedSize);
+    selectButton->setHeight(Style::ToolbarIconSize, Hu::Widget::SizePolicy::FixedSize);
+    selectButton->setBackgroundColor(Hu::Color(Style::ButtonColor));
+    selectButton->setColor(Hu::Color(Style::WhiteColor));
     selectButton->setIcon("toolbar_pointer.svg");
     
-    auto addButton = new PushButton(this);
+    auto addButton = new Hu::PushButton(this);
     addButton->setName("addButton");
     addButton->setPadding(Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding);
-    addButton->setWidth(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
-    addButton->setHeight(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
-    //addButton->setBackgroundColor(Color(Style::ButtonColor));
-    addButton->setColor(Color(Style::WhiteColor));
+    addButton->setWidth(Style::ToolbarIconSize, Hu::Widget::SizePolicy::FixedSize);
+    addButton->setHeight(Style::ToolbarIconSize, Hu::Widget::SizePolicy::FixedSize);
+    //addButton->setBackgroundColor(Hu::Color(Style::ButtonColor));
+    addButton->setColor(Hu::Color(Style::WhiteColor));
     addButton->setIcon("toolbar_add.svg");
     
-    auto xButton = new PushButton(this);
+    auto xButton = new Hu::PushButton(this);
     xButton->setName("xButton");
     xButton->setPadding(Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding);
-    xButton->setWidth(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
-    xButton->setHeight(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
-    xButton->setBackgroundColor(Color(Style::ButtonColor));
-    xButton->setColor(Color(Style::RedColor));
+    xButton->setWidth(Style::ToolbarIconSize, Hu::Widget::SizePolicy::FixedSize);
+    xButton->setHeight(Style::ToolbarIconSize, Hu::Widget::SizePolicy::FixedSize);
+    xButton->setBackgroundColor(Hu::Color(Style::ButtonColor));
+    xButton->setColor(Hu::Color(Style::RedColor));
     xButton->setIcon("toolbar_x.svg");
     
-    auto yButton = new PushButton(this);
+    auto yButton = new Hu::PushButton(this);
     yButton->setName("yButton");
     yButton->setPadding(Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding);
-    yButton->setWidth(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
-    yButton->setHeight(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
-    yButton->setBackgroundColor(Color(Style::ButtonColor));
-    yButton->setColor(Color(Style::GreenColor));
+    yButton->setWidth(Style::ToolbarIconSize, Hu::Widget::SizePolicy::FixedSize);
+    yButton->setHeight(Style::ToolbarIconSize, Hu::Widget::SizePolicy::FixedSize);
+    yButton->setBackgroundColor(Hu::Color(Style::ButtonColor));
+    yButton->setColor(Hu::Color(Style::GreenColor));
     yButton->setIcon("toolbar_y.svg");
     
-    auto zButton = new PushButton(this);
+    auto zButton = new Hu::PushButton(this);
     zButton->setName("zButton");
     zButton->setPadding(Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding);
-    zButton->setWidth(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
-    zButton->setHeight(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
-    zButton->setBackgroundColor(Color(Style::ButtonColor));
-    zButton->setColor(Color(Style::BlueColor));
+    zButton->setWidth(Style::ToolbarIconSize, Hu::Widget::SizePolicy::FixedSize);
+    zButton->setHeight(Style::ToolbarIconSize, Hu::Widget::SizePolicy::FixedSize);
+    zButton->setBackgroundColor(Hu::Color(Style::ButtonColor));
+    zButton->setColor(Hu::Color(Style::BlueColor));
     zButton->setIcon("toolbar_z.svg");
     
-    auto radiusButton = new PushButton(this);
+    auto radiusButton = new Hu::PushButton(this);
     radiusButton->setName("radiusButton");
     radiusButton->setPadding(Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding);
-    radiusButton->setWidth(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
-    radiusButton->setHeight(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
-    radiusButton->setBackgroundColor(Color(Style::ButtonColor));
-    radiusButton->setColor(Color(Style::WhiteColor));
+    radiusButton->setWidth(Style::ToolbarIconSize, Hu::Widget::SizePolicy::FixedSize);
+    radiusButton->setHeight(Style::ToolbarIconSize, Hu::Widget::SizePolicy::FixedSize);
+    radiusButton->setBackgroundColor(Hu::Color(Style::ButtonColor));
+    radiusButton->setColor(Hu::Color(Style::WhiteColor));
     radiusButton->setIcon("toolbar_radius.svg");
     
-    auto imageButton = new PushButton(this);
+    auto imageButton = new Hu::PushButton(this);
     imageButton->setName("imageButton");
     imageButton->setPadding(Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding, Style::ToolbarIconPadding);
-    imageButton->setWidth(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
-    imageButton->setHeight(Style::ToolbarIconSize, Widget::SizePolicy::FixedSize);
-    //imageButton->setBackgroundColor(Color(Style::ButtonColor));
-    imageButton->setColor(Color(Style::WhiteColor));
+    imageButton->setWidth(Style::ToolbarIconSize, Hu::Widget::SizePolicy::FixedSize);
+    imageButton->setHeight(Style::ToolbarIconSize, Hu::Widget::SizePolicy::FixedSize);
+    //imageButton->setBackgroundColor(Hu::Color(Style::ButtonColor));
+    imageButton->setColor(Hu::Color(Style::WhiteColor));
     imageButton->setIcon("toolbar_image.svg");
     imageButton->mouseEntered.connect([=]() {
-        imageButton->setBackgroundColor(Color(Style::ButtonColor).lighted());
+        imageButton->setBackgroundColor(Hu::Color(Style::ButtonColor).lighted());
     });
     imageButton->mouseLeaved.connect([=]() {
-        imageButton->setBackgroundColor(Color(0.0, 0.0, 0.0, 0.0));
+        imageButton->setBackgroundColor(Hu::Color(0.0, 0.0, 0.0, 0.0));
     });
     imageButton->mousePressed.connect([=]() {
-        imageButton->setBackgroundColor(Color(Style::ButtonColor).darked());
+        imageButton->setBackgroundColor(Hu::Color(Style::ButtonColor).darked());
     });
     imageButton->mouseReleased.connect([=]() {
-        imageButton->setBackgroundColor(Color(Style::ButtonColor));
+        imageButton->setBackgroundColor(Hu::Color(Style::ButtonColor));
         openReferenceImageEditWindow();
     });
     
-    auto selectButtonLayout = new Widget(this);
+    auto selectButtonLayout = new Hu::Widget(this);
     selectButtonLayout->setName("selectButtonLayout");
-    selectButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
-    selectButtonLayout->setWidth(Style::ToolbarIconSize + Style::ToolbarSpacing * 2, Widget::SizePolicy::FixedSize);
+    selectButtonLayout->setLayoutDirection(Hu::Widget::LayoutDirection::LeftToRight);
+    selectButtonLayout->setWidth(Style::ToolbarIconSize + Style::ToolbarSpacing * 2, Hu::Widget::SizePolicy::FixedSize);
     selectButtonLayout->addSpacing(Style::ToolbarSpacing);
     selectButtonLayout->addWidget(selectButton);
     selectButtonLayout->addSpacing(Style::ToolbarSpacing);
     
-    auto addButtonLayout = new Widget(this);
+    auto addButtonLayout = new Hu::Widget(this);
     addButtonLayout->setName("addButtonLayout");
-    addButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
-    addButtonLayout->setWidth(Style::ToolbarIconSize + Style::ToolbarSpacing * 2, Widget::SizePolicy::FixedSize);
+    addButtonLayout->setLayoutDirection(Hu::Widget::LayoutDirection::LeftToRight);
+    addButtonLayout->setWidth(Style::ToolbarIconSize + Style::ToolbarSpacing * 2, Hu::Widget::SizePolicy::FixedSize);
     addButtonLayout->addSpacing(Style::ToolbarSpacing);
     addButtonLayout->addWidget(addButton);
     addButtonLayout->addSpacing(Style::ToolbarSpacing);
     
-    auto xButtonLayout = new Widget(this);
+    auto xButtonLayout = new Hu::Widget(this);
     xButtonLayout->setName("xButtonLayout");
-    xButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
-    xButtonLayout->setWidth(Style::ToolbarIconSize + Style::ToolbarSpacing * 2, Widget::SizePolicy::FixedSize);
+    xButtonLayout->setLayoutDirection(Hu::Widget::LayoutDirection::LeftToRight);
+    xButtonLayout->setWidth(Style::ToolbarIconSize + Style::ToolbarSpacing * 2, Hu::Widget::SizePolicy::FixedSize);
     xButtonLayout->addSpacing(Style::ToolbarSpacing);
     xButtonLayout->addWidget(xButton);
     xButtonLayout->addSpacing(Style::ToolbarSpacing);
     
-    auto yButtonLayout = new Widget(this);
+    auto yButtonLayout = new Hu::Widget(this);
     yButtonLayout->setName("yButtonLayout");
-    yButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
-    yButtonLayout->setWidth(Style::ToolbarIconSize + Style::ToolbarSpacing * 2, Widget::SizePolicy::FixedSize);
+    yButtonLayout->setLayoutDirection(Hu::Widget::LayoutDirection::LeftToRight);
+    yButtonLayout->setWidth(Style::ToolbarIconSize + Style::ToolbarSpacing * 2, Hu::Widget::SizePolicy::FixedSize);
     yButtonLayout->addSpacing(Style::ToolbarSpacing);
     yButtonLayout->addWidget(yButton);
     yButtonLayout->addSpacing(Style::ToolbarSpacing);
     
-    auto zButtonLayout = new Widget(this);
+    auto zButtonLayout = new Hu::Widget(this);
     zButtonLayout->setName("zButtonLayout");
-    zButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
-    zButtonLayout->setWidth(Style::ToolbarIconSize + Style::ToolbarSpacing * 2, Widget::SizePolicy::FixedSize);
+    zButtonLayout->setLayoutDirection(Hu::Widget::LayoutDirection::LeftToRight);
+    zButtonLayout->setWidth(Style::ToolbarIconSize + Style::ToolbarSpacing * 2, Hu::Widget::SizePolicy::FixedSize);
     zButtonLayout->addSpacing(Style::ToolbarSpacing);
     zButtonLayout->addWidget(zButton);
     zButtonLayout->addSpacing(Style::ToolbarSpacing);
     
-    auto radiusButtonLayout = new Widget(this);
+    auto radiusButtonLayout = new Hu::Widget(this);
     radiusButtonLayout->setName("radiusButtonLayout");
-    radiusButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
-    radiusButtonLayout->setWidth(Style::ToolbarIconSize + Style::ToolbarSpacing * 2, Widget::SizePolicy::FixedSize);
+    radiusButtonLayout->setLayoutDirection(Hu::Widget::LayoutDirection::LeftToRight);
+    radiusButtonLayout->setWidth(Style::ToolbarIconSize + Style::ToolbarSpacing * 2, Hu::Widget::SizePolicy::FixedSize);
     radiusButtonLayout->addSpacing(Style::ToolbarSpacing);
     radiusButtonLayout->addWidget(radiusButton);
     radiusButtonLayout->addSpacing(Style::ToolbarSpacing);
     
-    auto imageButtonLayout = new Widget(this);
+    auto imageButtonLayout = new Hu::Widget(this);
     imageButtonLayout->setName("imageButtonLayout");
-    imageButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
-    imageButtonLayout->setWidth(Style::ToolbarIconSize + Style::ToolbarSpacing * 2, Widget::SizePolicy::FixedSize);
+    imageButtonLayout->setLayoutDirection(Hu::Widget::LayoutDirection::LeftToRight);
+    imageButtonLayout->setWidth(Style::ToolbarIconSize + Style::ToolbarSpacing * 2, Hu::Widget::SizePolicy::FixedSize);
     imageButtonLayout->addSpacing(Style::ToolbarSpacing);
     imageButtonLayout->addWidget(imageButton);
     imageButtonLayout->addSpacing(Style::ToolbarSpacing);
     
-    auto backgroundImageWidget = new Widget(this, "documentWindow.turnaround");
+    auto backgroundImageWidget = new Hu::Widget(this, "documentWindow.turnaround");
     backgroundImageWidget->setName("backgroundImageWidget");
-    backgroundImageWidget->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
-    backgroundImageWidget->setHeight(1.0, Widget::SizePolicy::RelativeSize);
-    backgroundImageWidget->setWidth(1.0, Widget::SizePolicy::FlexibleSize);
-    backgroundImageWidget->setBackgroundColor(Color(Style::BackgroundColor));
+    backgroundImageWidget->setLayoutDirection(Hu::Widget::LayoutDirection::LeftToRight);
+    backgroundImageWidget->setHeight(1.0, Hu::Widget::SizePolicy::RelativeSize);
+    backgroundImageWidget->setWidth(1.0, Hu::Widget::SizePolicy::FlexibleSize);
+    backgroundImageWidget->setBackgroundColor(Hu::Color(Style::BackgroundColor));
     backgroundImageWidget->setBackgroundImageOpacity(0.25);
     
-    auto logoWidget = new Widget(this);
+    auto logoWidget = new Hu::Widget(this);
     logoWidget->setName("logoWidget");
-    logoWidget->setWidth(25.0, Widget::SizePolicy::FixedSize);
-    logoWidget->setHeight(71.0, Widget::SizePolicy::FixedSize);
+    logoWidget->setWidth(25.0, Hu::Widget::SizePolicy::FixedSize);
+    logoWidget->setHeight(71.0, Hu::Widget::SizePolicy::FixedSize);
     logoWidget->setBackgroundImageResourceName("dust3d/data/dust3d_vertical.png");
     
-    auto leftBarLayout = new Widget(this);
+    auto leftBarLayout = new Hu::Widget(this);
     leftBarLayout->setName("leftBarLayout");
-    leftBarLayout->setLayoutDirection(Widget::LayoutDirection::TopToBottom);
-    leftBarLayout->setWidth(1.0, Widget::SizePolicy::MinimalSize);
-    leftBarLayout->setHeight(1.0, Widget::SizePolicy::RelativeSize);
+    leftBarLayout->setLayoutDirection(Hu::Widget::LayoutDirection::TopToBottom);
+    leftBarLayout->setWidth(1.0, Hu::Widget::SizePolicy::MinimalSize);
+    leftBarLayout->setHeight(1.0, Hu::Widget::SizePolicy::RelativeSize);
     leftBarLayout->addSpacing(Style::ToolbarSpacing * 2.0);
     leftBarLayout->addWidget(selectButtonLayout);
     leftBarLayout->addSpacing(Style::ToolbarSpacing * 0.5);
@@ -213,61 +217,41 @@ DocumentWindow::DocumentWindow():
     leftBarLayout->addWidget(logoWidget);
     leftBarLayout->addSpacing(Style::ToolbarSpacing);
     
-    auto mainLayout = new Widget(this);
+    auto mainLayout = new Hu::Widget(this);
     mainLayout->setName("mainLayout");
-    mainLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
-    mainLayout->setHeight(1.0, Widget::SizePolicy::RelativeSize);
+    mainLayout->setLayoutDirection(Hu::Widget::LayoutDirection::LeftToRight);
+    mainLayout->setHeight(1.0, Hu::Widget::SizePolicy::RelativeSize);
     mainLayout->addWidget(leftBarLayout);
     mainLayout->addWidget(backgroundImageWidget);
     
-    engine()->rootWidget()->setBackgroundColor(Color(Style::FrameBackgroundColor));
+    engine()->rootWidget()->setBackgroundColor(Hu::Color(Style::FrameBackgroundColor));
     engine()->rootWidget()->setName("rootWidget");
     engine()->rootWidget()->addWidget(mainLayout);
     
     engine()->run([=]() {
-            Image *image = new Image;
+            Hu::Image *image = new Hu::Image;
             image->load(Data::dust3d_vertical_png, sizeof(Data::dust3d_vertical_png));
             return (void *)image;
         }, [=](void *result) {
-            Image *image = (Image *)result;
+            Hu::Image *image = (Hu::Image *)result;
             this->engine()->setImageResource("dust3d/data/dust3d_vertical.png", image->width(), image->height(), image->data());
             delete image;
         }
     );
     
-    engine()->windowSizeChanged.connect(std::bind(&DocumentWindow::updateReferenceImage, this));
+    engine()->windowSizeChanged.connect(std::bind(&DocumentWindow::updateReferenceImageView, this));
     engine()->shouldPopupMenu.connect(std::bind(&DocumentWindow::popupMenu, this));
     
+    m_document->referenceImageChanged.connect(std::bind(&DocumentWindow::updateReferenceImageView, this));
+    m_document->open("model-bicycle.ds3");
+    
     setVisible(true);
-    
-    {
-        std::ifstream is("test.ds3", std::ios::in | std::ios::binary);
-        std::vector<uint8_t> fileData((std::istreambuf_iterator<char>(is)), std::istreambuf_iterator<char>());
-        Dust3d::Ds3FileReader ds3Reader(&fileData[0], fileData.size());
-        for (int i = 0; i < ds3Reader.items().size(); ++i) {
-            const Dust3d::Ds3ReaderItem &item = ds3Reader.items()[i];
-            if (item.type == "asset") {
-                if (item.name == "canvas.png") {
-                    std::vector<std::uint8_t> data;
-                    ds3Reader.loadItem(item.name, &data);
-                    m_referenceImage = std::make_unique<Image>();
-                    m_referenceImage->load(data.data(), (int)data.size());
-                    engine()->run([=](void *) {
-                        this->updateReferenceImage();
-                    });
-                    break;
-                }
-            }
-        }
-    }
-    
-    //setReferenceImage("reference-image.jpg");
 }
 
 void DocumentWindow::popupMenu()
 {
     //Window *menu = openPopupWindow();
-    //menu->engine()->setBackgroundColor(Color("#efefef"));
+    //menu->engine()->setBackgroundColor(Hu::Color("#efefef"));
     //menu->setVisible(true);
     //ReferenceImageEditWindow *editWindow = new ReferenceImageEditWindow();
     //editWindow->setVisible(true);
@@ -279,8 +263,7 @@ void DocumentWindow::openReferenceImageEditWindow()
         m_referenceImageEditWindow = std::make_unique<ReferenceImageEditWindow>();
         m_referenceImageEditWindow->confirmed.connect([=] {
             if (nullptr != this->m_referenceImageEditWindow->referenceImage()) {
-                m_referenceImage = std::move(this->m_referenceImageEditWindow->referenceImage());
-                this->updateReferenceImage();
+                document()->setReferenceImage(std::move(this->m_referenceImageEditWindow->referenceImage()));
             }
             this->m_referenceImageEditWindow.reset();
         });
@@ -297,7 +280,7 @@ DirtyFlags &DocumentWindow::referenceImageFlags()
     return m_referenceImageFlags;
 }
 
-void DocumentWindow::updateReferenceImage()
+void DocumentWindow::updateReferenceImageView()
 {
     if (m_referenceImageFlags.processing) {
         m_referenceImageFlags.dirty = true;
@@ -306,15 +289,18 @@ void DocumentWindow::updateReferenceImage()
     
     m_referenceImageFlags.dirty = false;
     
-    if (nullptr == m_referenceImage)
+    if (nullptr == document()->referenceImage())
+        return;
+
+    Hu::Widget *turnaroundWidget = getWidget("documentWindow.turnaround");
+    size_t targetWidth = turnaroundWidget->layoutWidth();
+    size_t targetHeight = turnaroundWidget->layoutHeight();
+    
+    if (0 == targetWidth || 0 == targetHeight)
         return;
     
     m_referenceImageFlags.processing = true;
-    
-    Widget *turnaroundWidget = getWidget("documentWindow.turnaround");
-    size_t targetWidth = turnaroundWidget->layoutWidth();
-    size_t targetHeight = turnaroundWidget->layoutHeight();
-    Image *image = new Image(*m_referenceImage);
+    Hu::Image *image = new Hu::Image(*document()->referenceImage());
     engine()->run([=]() {
             size_t toWidth = image->width();
             size_t toHeight = toWidth * targetHeight / targetWidth;
@@ -322,36 +308,34 @@ void DocumentWindow::updateReferenceImage()
                 toHeight = image->height();
                 toWidth = toHeight * targetWidth / targetHeight;
             }
-            Image *resizedImage = new Image(toWidth, toHeight);
+            Hu::Image *resizedImage = new Hu::Image(toWidth, toHeight);
             resizedImage->clear(255, 255, 255, 0);
             resizedImage->copy(*image, 0, 0, (resizedImage->width() - image->width()) / 2, (resizedImage->height() - image->height()) / 2, image->width(), image->height());
             delete image;
             return (void *)resizedImage;
         }, [=](void *result) {
-            Image *resizedImage = (Image *)result;
+            Hu::Image *resizedImage = (Hu::Image *)result;
             this->engine()->setImageResource("documentWindow.turnaround", resizedImage->width(), resizedImage->height(), resizedImage->data());
             
-            {
-                auto testImage = std::make_unique<Image>(*resizedImage);
-                Dust3d::Document document;
-                document.setReferenceImage(std::move(testImage));
-                document.save("C:\\Users\\Jeremy\\Repositories\\tubetube\\bin\\test.ds3");
-            }
+            //{
+            //    auto testImage = std::make_unique<Hu::Image>(*resizedImage);
+            //    Document document;
+            //    document.setReferenceImage(std::move(testImage));
+            //    document.save("C:\\Users\\Jeremy\\Repositories\\tubetube\\bin\\test.ds3");
+            //}
             
             delete resizedImage;
             this->getWidget("documentWindow.turnaround")->setBackgroundImageResourceName("documentWindow.turnaround");
             this->referenceImageFlags().processing = false;
             if (this->referenceImageFlags().dirty)
-                this->updateReferenceImage();
+                this->updateReferenceImageView();
         }
     );
 }
 
-void DocumentWindow::setReferenceImage(const std::string &path)
+Document *DocumentWindow::document()
 {
-    m_referenceImage = std::make_unique<Image>();
-    m_referenceImage->load(path.c_str());
-    engine()->run([=](void *) {
-        this->updateReferenceImage();
-    });
+    return m_document.get();
+}
+
 }

@@ -26,25 +26,30 @@
 #include <hu/base/image.h>
 #include <hu/base/settings.h>
 #include <hu/gles/window.h>
-#include <dust3d/desktop/dirty_flags.h>
+#include <dust3d/document/dirty_flags.h>
+#include <dust3d/document/document.h>
 #include <dust3d/desktop/reference_image_edit_window.h>
 
-using namespace Hu;
+namespace Dust3d
+{
 
-class DocumentWindow: public Window
+class DocumentWindow: public Hu::Window
 {
 public:
     DocumentWindow();
-    void setReferenceImage(const std::string &path);
-    static Settings *settings();
-    void updateReferenceImage();
+    static Hu::Settings *settings();
+    void updateReferenceImageView();
     void openReferenceImageEditWindow();
     void popupMenu();
     DirtyFlags &referenceImageFlags();
+    Document *document();
 private:
-    std::unique_ptr<Image> m_referenceImage;
+    std::unique_ptr<Hu::Image> m_referenceImage;
     std::unique_ptr<ReferenceImageEditWindow> m_referenceImageEditWindow;
+    std::unique_ptr<Document> m_document;
     DirtyFlags m_referenceImageFlags;
 };
+
+}
 
 #endif

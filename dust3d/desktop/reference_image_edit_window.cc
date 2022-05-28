@@ -30,63 +30,66 @@
 #include <dust3d/desktop/document_window.h>
 #include <dust3d/desktop/style_constants.h>
 
+namespace Dust3d
+{
+
 ReferenceImageEditWindow::ReferenceImageEditWindow():
-    Window(String::toInt(DocumentWindow::settings()->value("referenceImageEditWindow.width", 800)), String::toInt(DocumentWindow::settings()->value("referenceImageEditWindow.height", 360)))
+    Window(Hu::String::toInt(DocumentWindow::settings()->value("referenceImageEditWindow.width", 800)), Hu::String::toInt(DocumentWindow::settings()->value("referenceImageEditWindow.height", 360)))
 {
     setTitle("Reference image edit");
-    engine()->setBackgroundColor(Color("#00000000"));
+    engine()->setBackgroundColor(Hu::Color("#00000000"));
     
-    auto sourceImageWidget = new Widget(this);
+    auto sourceImageWidget = new Hu::Widget(this);
     m_sourceImageWidgetId = sourceImageWidget->id();
     sourceImageWidget->setName("sourceImageWidget");
-    sourceImageWidget->setWidth(1.0, Widget::SizePolicy::FlexibleSize);
-    sourceImageWidget->setHeight(1.0, Widget::SizePolicy::RelativeSize);
-    sourceImageWidget->setBackgroundColor(Color(Style::BackgroundColor));
+    sourceImageWidget->setWidth(1.0, Hu::Widget::SizePolicy::FlexibleSize);
+    sourceImageWidget->setHeight(1.0, Hu::Widget::SizePolicy::RelativeSize);
+    sourceImageWidget->setBackgroundColor(Hu::Color(Style::BackgroundColor));
     
-    auto canvas = new Canvas(this);
+    auto canvas = new Hu::Canvas(this);
     m_canvas = canvas;
-    canvas->setWidth(1.0, Widget::SizePolicy::RelativeSize);
-    canvas->setHeight(1.0, Widget::SizePolicy::RelativeSize);
+    canvas->setWidth(1.0, Hu::Widget::SizePolicy::RelativeSize);
+    canvas->setHeight(1.0, Hu::Widget::SizePolicy::RelativeSize);
     sourceImageWidget->addWidget(canvas);
     
-    auto rightLayout = new Widget(this);
+    auto rightLayout = new Hu::Widget(this);
     rightLayout->setName("rightLayout");
-    rightLayout->setLayoutDirection(Widget::LayoutDirection::TopToBottom);
-    rightLayout->setWidth(Style::SidebarWidth, Widget::SizePolicy::FixedSize);
-    rightLayout->setHeight(1.0, Widget::SizePolicy::RelativeSize);
-    rightLayout->setBackgroundColor(Color(Style::FrameBackgroundColor));
+    rightLayout->setLayoutDirection(Hu::Widget::LayoutDirection::TopToBottom);
+    rightLayout->setWidth(Style::SidebarWidth, Hu::Widget::SizePolicy::FixedSize);
+    rightLayout->setHeight(1.0, Hu::Widget::SizePolicy::RelativeSize);
+    rightLayout->setBackgroundColor(Hu::Color(Style::FrameBackgroundColor));
     
-    auto referenceImagePreviewWidget = new Widget(this);
+    auto referenceImagePreviewWidget = new Hu::Widget(this);
     m_referenceImagePreviewWidgetId = referenceImagePreviewWidget->id();
     referenceImagePreviewWidget->setName("referenceImagePreviewWidget");
     double referenceImageWidth = Style::SidebarWidth - Style::BorderSize * 2.0;
-    referenceImagePreviewWidget->setWidth(referenceImageWidth, Widget::SizePolicy::FixedSize);
-    referenceImagePreviewWidget->setHeight(referenceImageWidth * 0.5, Widget::SizePolicy::FixedSize);
-    referenceImagePreviewWidget->setBackgroundColor(Color(Style::BackgroundColor));
+    referenceImagePreviewWidget->setWidth(referenceImageWidth, Hu::Widget::SizePolicy::FixedSize);
+    referenceImagePreviewWidget->setHeight(referenceImageWidth * 0.5, Hu::Widget::SizePolicy::FixedSize);
+    referenceImagePreviewWidget->setBackgroundColor(Hu::Color(Style::BackgroundColor));
     
-    auto referenceImagePreviewLayout = new Widget(this);
+    auto referenceImagePreviewLayout = new Hu::Widget(this);
     referenceImagePreviewLayout->addSpacing(Style::BorderSize);
     referenceImagePreviewLayout->addWidget(referenceImagePreviewWidget);
 
-    auto loadImageButton = new PushButton(this);
-    loadImageButton->setHeight(Style::NormalFontLineHeight + loadImageButton->paddingHeight(), Widget::SizePolicy::FixedSize);
+    auto loadImageButton = new Hu::PushButton(this);
+    loadImageButton->setHeight(Style::NormalFontLineHeight + loadImageButton->paddingHeight(), Hu::Widget::SizePolicy::FixedSize);
     loadImageButton->setText("Load source image");
-    loadImageButton->setBackgroundColor(Color(Style::ButtonColor));
-    loadImageButton->setColor(Color(Style::ButtonFontColor));
+    loadImageButton->setBackgroundColor(Hu::Color(Style::ButtonColor));
+    loadImageButton->setColor(Hu::Color(Style::ButtonFontColor));
     engine()->windowSizeChanged.connect([=]() {
-        loadImageButton->setWidth(engine()->measureFontWidth(loadImageButton->text(), loadImageButton->layoutHeight() - loadImageButton->paddingHeight()) + loadImageButton->paddingWidth(), Widget::SizePolicy::FixedSize);
+        loadImageButton->setWidth(engine()->measureFontWidth(loadImageButton->text(), loadImageButton->layoutHeight() - loadImageButton->paddingHeight()) + loadImageButton->paddingWidth(), Hu::Widget::SizePolicy::FixedSize);
     });
     loadImageButton->mouseEntered.connect([=]() {
-        loadImageButton->setBackgroundColor(Color(Style::ButtonColor).lighted());
+        loadImageButton->setBackgroundColor(Hu::Color(Style::ButtonColor).lighted());
     });
     loadImageButton->mouseLeaved.connect([=]() {
-        loadImageButton->setBackgroundColor(Color(Style::ButtonColor));
+        loadImageButton->setBackgroundColor(Hu::Color(Style::ButtonColor));
     });
     loadImageButton->mousePressed.connect([=]() {
-        loadImageButton->setBackgroundColor(Color(Style::ButtonColor).darked());
+        loadImageButton->setBackgroundColor(Hu::Color(Style::ButtonColor).darked());
     });
     loadImageButton->mouseReleased.connect([=]() {
-        loadImageButton->setBackgroundColor(Color(Style::ButtonColor));
+        loadImageButton->setBackgroundColor(Hu::Color(Style::ButtonColor));
         this->requestToSelectSingleFile({"jpg", "jpeg", "png"});
         //auto selectedFile = this->selectSingleFileByUser({"jpg", "jpeg", "png"});
         //if (selectedFile.empty())
@@ -96,91 +99,91 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     
     fileSelected.connect(std::bind(&ReferenceImageEditWindow::setImage, this, std::placeholders::_1));
     
-    auto loadImageButtonLayout = new Widget(this);
+    auto loadImageButtonLayout = new Hu::Widget(this);
     loadImageButtonLayout->setName("loadImageButtonLayout");
-    loadImageButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
+    loadImageButtonLayout->setLayoutDirection(Hu::Widget::LayoutDirection::LeftToRight);
     loadImageButtonLayout->addExpanding();
     loadImageButtonLayout->addWidget(loadImageButton);
     loadImageButtonLayout->addExpanding();
     
-    auto copyToFrontButton = new PushButton(this);
-    copyToFrontButton->setHeight(Style::NormalFontLineHeight + copyToFrontButton->paddingHeight(), Widget::SizePolicy::FixedSize);
+    auto copyToFrontButton = new Hu::PushButton(this);
+    copyToFrontButton->setHeight(Style::NormalFontLineHeight + copyToFrontButton->paddingHeight(), Hu::Widget::SizePolicy::FixedSize);
     copyToFrontButton->setText("Copy to front");
-    copyToFrontButton->setBackgroundColor(Color(Style::ButtonColor));
-    copyToFrontButton->setColor(Color(Style::ButtonFontColor));
+    copyToFrontButton->setBackgroundColor(Hu::Color(Style::ButtonColor));
+    copyToFrontButton->setColor(Hu::Color(Style::ButtonFontColor));
     engine()->windowSizeChanged.connect([=]() {
-        copyToFrontButton->setWidth(engine()->measureFontWidth(copyToFrontButton->text(), copyToFrontButton->layoutHeight() - copyToFrontButton->paddingHeight()) + copyToFrontButton->paddingWidth(), Widget::SizePolicy::FixedSize);
+        copyToFrontButton->setWidth(engine()->measureFontWidth(copyToFrontButton->text(), copyToFrontButton->layoutHeight() - copyToFrontButton->paddingHeight()) + copyToFrontButton->paddingWidth(), Hu::Widget::SizePolicy::FixedSize);
     });
     copyToFrontButton->mouseEntered.connect([=]() {
-        copyToFrontButton->setBackgroundColor(Color(Style::ButtonColor).lighted());
+        copyToFrontButton->setBackgroundColor(Hu::Color(Style::ButtonColor).lighted());
     });
     copyToFrontButton->mouseLeaved.connect([=]() {
-        copyToFrontButton->setBackgroundColor(Color(Style::ButtonColor));
+        copyToFrontButton->setBackgroundColor(Hu::Color(Style::ButtonColor));
     });
     copyToFrontButton->mousePressed.connect([=]() {
-        copyToFrontButton->setBackgroundColor(Color(Style::ButtonColor).darked());
+        copyToFrontButton->setBackgroundColor(Hu::Color(Style::ButtonColor).darked());
     });
     copyToFrontButton->mouseReleased.connect([=]() {
-        copyToFrontButton->setBackgroundColor(Color(Style::ButtonColor));
+        copyToFrontButton->setBackgroundColor(Hu::Color(Style::ButtonColor));
         this->copyClipToFront();
     });
     
-    auto copyToSideButton = new PushButton(this);
-    copyToSideButton->setHeight(Style::NormalFontLineHeight + copyToSideButton->paddingHeight(), Widget::SizePolicy::FixedSize);
+    auto copyToSideButton = new Hu::PushButton(this);
+    copyToSideButton->setHeight(Style::NormalFontLineHeight + copyToSideButton->paddingHeight(), Hu::Widget::SizePolicy::FixedSize);
     copyToSideButton->setText("Copy to side");
-    copyToSideButton->setBackgroundColor(Color(Style::ButtonColor));
-    copyToSideButton->setColor(Color(Style::ButtonFontColor));
+    copyToSideButton->setBackgroundColor(Hu::Color(Style::ButtonColor));
+    copyToSideButton->setColor(Hu::Color(Style::ButtonFontColor));
     engine()->windowSizeChanged.connect([=]() {
-        copyToSideButton->setWidth(engine()->measureFontWidth(copyToSideButton->text(), copyToSideButton->layoutHeight() - copyToSideButton->paddingHeight()) + copyToSideButton->paddingWidth(), Widget::SizePolicy::FixedSize);
+        copyToSideButton->setWidth(engine()->measureFontWidth(copyToSideButton->text(), copyToSideButton->layoutHeight() - copyToSideButton->paddingHeight()) + copyToSideButton->paddingWidth(), Hu::Widget::SizePolicy::FixedSize);
     });
     copyToSideButton->mouseEntered.connect([=]() {
-        copyToSideButton->setBackgroundColor(Color(Style::ButtonColor).lighted());
+        copyToSideButton->setBackgroundColor(Hu::Color(Style::ButtonColor).lighted());
     });
     copyToSideButton->mouseLeaved.connect([=]() {
-        copyToSideButton->setBackgroundColor(Color(Style::ButtonColor));
+        copyToSideButton->setBackgroundColor(Hu::Color(Style::ButtonColor));
     });
     copyToSideButton->mousePressed.connect([=]() {
-        copyToSideButton->setBackgroundColor(Color(Style::ButtonColor).darked());
+        copyToSideButton->setBackgroundColor(Hu::Color(Style::ButtonColor).darked());
     });
     copyToSideButton->mouseReleased.connect([=]() {
-        copyToSideButton->setBackgroundColor(Color(Style::ButtonColor));
+        copyToSideButton->setBackgroundColor(Hu::Color(Style::ButtonColor));
         this->copyClipToSide();
     });
     
-    auto copyButtonsLayout = new Widget(this);
+    auto copyButtonsLayout = new Hu::Widget(this);
     copyButtonsLayout->setName("copyButtonsLayout");
-    copyButtonsLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
+    copyButtonsLayout->setLayoutDirection(Hu::Widget::LayoutDirection::LeftToRight);
     copyButtonsLayout->addSpacing(Style::SidebarHorizontalSpacing);
     copyButtonsLayout->addWidget(copyToFrontButton);
     copyButtonsLayout->addExpanding();
     copyButtonsLayout->addWidget(copyToSideButton);
     copyButtonsLayout->addSpacing(Style::SidebarHorizontalSpacing);
     
-    auto saveButton = new PushButton(this);
-    saveButton->setHeight(Style::NormalFontLineHeight + saveButton->paddingHeight(), Widget::SizePolicy::FixedSize);
+    auto saveButton = new Hu::PushButton(this);
+    saveButton->setHeight(Style::NormalFontLineHeight + saveButton->paddingHeight(), Hu::Widget::SizePolicy::FixedSize);
     saveButton->setText("Save");
-    saveButton->setBackgroundColor(Color(Style::HighlightButtonColor));
-    saveButton->setColor(Color(Style::HighlightButtonFontColor));
+    saveButton->setBackgroundColor(Hu::Color(Style::HighlightButtonColor));
+    saveButton->setColor(Hu::Color(Style::HighlightButtonFontColor));
     engine()->windowSizeChanged.connect([=]() {
-        saveButton->setWidth(engine()->measureFontWidth(saveButton->text(), saveButton->layoutHeight() - saveButton->paddingHeight()) + saveButton->paddingWidth(), Widget::SizePolicy::FixedSize);
+        saveButton->setWidth(engine()->measureFontWidth(saveButton->text(), saveButton->layoutHeight() - saveButton->paddingHeight()) + saveButton->paddingWidth(), Hu::Widget::SizePolicy::FixedSize);
     });
     saveButton->mouseEntered.connect([=]() {
-        saveButton->setBackgroundColor(Color(Style::HighlightButtonColor).lighted());
+        saveButton->setBackgroundColor(Hu::Color(Style::HighlightButtonColor).lighted());
     });
     saveButton->mouseLeaved.connect([=]() {
-        saveButton->setBackgroundColor(Color(Style::HighlightButtonColor));
+        saveButton->setBackgroundColor(Hu::Color(Style::HighlightButtonColor));
     });
     saveButton->mousePressed.connect([=]() {
-        saveButton->setBackgroundColor(Color(Style::HighlightButtonColor).darked());
+        saveButton->setBackgroundColor(Hu::Color(Style::HighlightButtonColor).darked());
     });
     saveButton->mouseReleased.connect([=]() {
-        saveButton->setBackgroundColor(Color(Style::HighlightButtonColor));
+        saveButton->setBackgroundColor(Hu::Color(Style::HighlightButtonColor));
         this->confirmed.emit();
     });
     
-    auto saveButtonLayout = new Widget(this);
+    auto saveButtonLayout = new Hu::Widget(this);
     saveButtonLayout->setName("saveButtonLayout");
-    saveButtonLayout->setLayoutDirection(Widget::LayoutDirection::LeftToRight);
+    saveButtonLayout->setLayoutDirection(Hu::Widget::LayoutDirection::LeftToRight);
     saveButtonLayout->addExpanding();
     saveButtonLayout->addWidget(saveButton);
     saveButtonLayout->addSpacing(Style::SidebarHorizontalSpacing);
@@ -196,10 +199,10 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     rightLayout->addWidget(saveButtonLayout);
     rightLayout->addSpacing(Style::SidebarVerticalSpacing);
     
-    auto mainLayout = new Widget(this);
+    auto mainLayout = new Hu::Widget(this);
     mainLayout->setName("mainLayout");
-    mainLayout->setHeight(1.0, Widget::SizePolicy::RelativeSize);
-    mainLayout->setWidth(1.0, Widget::SizePolicy::RelativeSize);
+    mainLayout->setHeight(1.0, Hu::Widget::SizePolicy::RelativeSize);
+    mainLayout->setWidth(1.0, Hu::Widget::SizePolicy::RelativeSize);
     mainLayout->addWidget(sourceImageWidget);
     mainLayout->addWidget(rightLayout);
     
@@ -267,7 +270,7 @@ void ReferenceImageEditWindow::handleCanvasMouseReleased()
 
 void ReferenceImageEditWindow::handleCanvasMouseMove(double x, double y)
 {
-    Widget *sourceImageWidget = getWidget(m_sourceImageWidgetId);
+    Hu::Widget *sourceImageWidget = getWidget(m_sourceImageWidgetId);
     double realX = (x - sourceImageWidget->layoutLeft()) / sourceImageWidget->layoutWidth();
     double realY = (y - sourceImageWidget->layoutTop()) / sourceImageWidget->layoutHeight();
     double handleHalfWidth = 0.75 * m_handleSize / sourceImageWidget->layoutWidth();
@@ -336,44 +339,44 @@ void ReferenceImageEditWindow::updateClip()
 {
     m_canvas->clear();
     
-    m_canvas->addLine(m_clipLeft, m_clipTop, m_clipRight, m_clipTop, Color(Style::HighlightColor));
-    m_canvas->addLine(m_clipRight, m_clipTop, m_clipRight, m_clipBottom, Color(Style::HighlightColor));
-    m_canvas->addLine(m_clipRight, m_clipBottom, m_clipLeft, m_clipBottom, Color(Style::HighlightColor));
-    m_canvas->addLine(m_clipLeft, m_clipBottom, m_clipLeft, m_clipTop, Color(Style::HighlightColor));
+    m_canvas->addLine(m_clipLeft, m_clipTop, m_clipRight, m_clipTop, Hu::Color(Style::HighlightColor));
+    m_canvas->addLine(m_clipRight, m_clipTop, m_clipRight, m_clipBottom, Hu::Color(Style::HighlightColor));
+    m_canvas->addLine(m_clipRight, m_clipBottom, m_clipLeft, m_clipBottom, Hu::Color(Style::HighlightColor));
+    m_canvas->addLine(m_clipLeft, m_clipBottom, m_clipLeft, m_clipTop, Hu::Color(Style::HighlightColor));
     
-    Color maskColor = Color(Style::HighlightColor);
+    Hu::Color maskColor = Hu::Color(Style::HighlightColor);
     maskColor.alpha() = 0.2;
     m_canvas->addRectangle(0.0, 0.0, m_clipLeft, 1.0, maskColor);
     m_canvas->addRectangle(m_clipRight, 0.0, 1.0, 1.0, maskColor);
     m_canvas->addRectangle(m_clipLeft, 0.0, m_clipRight, m_clipTop, maskColor);
     m_canvas->addRectangle(m_clipLeft, m_clipBottom, m_clipRight, 1.0, maskColor);
     
-    Widget *sourceImageWidget = getWidget(m_sourceImageWidgetId);
+    Hu::Widget *sourceImageWidget = getWidget(m_sourceImageWidgetId);
     
     double handleHalfWidth = 0.5 * m_handleSize / sourceImageWidget->layoutWidth();
     double handleHalfHeight = 0.5 * m_handleSize / sourceImageWidget->layoutHeight();
-    m_canvas->addRectangle(m_clipLeft - handleHalfWidth, m_clipTop - handleHalfHeight, m_clipLeft + handleHalfWidth, m_clipTop + handleHalfHeight, m_leftTopHandleMouseHovering ? Color(Style::HighlightColor).lighted() : Color(Style::HighlightColor));
-    m_canvas->addRectangle(m_clipRight - handleHalfWidth, m_clipTop - handleHalfHeight, m_clipRight + handleHalfWidth, m_clipTop + handleHalfHeight, m_rightTopHandleMouseHovering ? Color(Style::HighlightColor).lighted() : Color(Style::HighlightColor));
-    m_canvas->addRectangle(m_clipRight - handleHalfWidth, m_clipBottom - handleHalfHeight, m_clipRight + handleHalfWidth, m_clipBottom + handleHalfHeight, m_rightBottomHandleMouseHovering ? Color(Style::HighlightColor).lighted() : Color(Style::HighlightColor));
-    m_canvas->addRectangle(m_clipLeft - handleHalfWidth, m_clipBottom - handleHalfHeight, m_clipLeft + handleHalfWidth, m_clipBottom + handleHalfHeight, m_leftBottomHandleMouseHovering ? Color(Style::HighlightColor).lighted() : Color(Style::HighlightColor));
+    m_canvas->addRectangle(m_clipLeft - handleHalfWidth, m_clipTop - handleHalfHeight, m_clipLeft + handleHalfWidth, m_clipTop + handleHalfHeight, m_leftTopHandleMouseHovering ? Hu::Color(Style::HighlightColor).lighted() : Hu::Color(Style::HighlightColor));
+    m_canvas->addRectangle(m_clipRight - handleHalfWidth, m_clipTop - handleHalfHeight, m_clipRight + handleHalfWidth, m_clipTop + handleHalfHeight, m_rightTopHandleMouseHovering ? Hu::Color(Style::HighlightColor).lighted() : Hu::Color(Style::HighlightColor));
+    m_canvas->addRectangle(m_clipRight - handleHalfWidth, m_clipBottom - handleHalfHeight, m_clipRight + handleHalfWidth, m_clipBottom + handleHalfHeight, m_rightBottomHandleMouseHovering ? Hu::Color(Style::HighlightColor).lighted() : Hu::Color(Style::HighlightColor));
+    m_canvas->addRectangle(m_clipLeft - handleHalfWidth, m_clipBottom - handleHalfHeight, m_clipLeft + handleHalfWidth, m_clipBottom + handleHalfHeight, m_leftBottomHandleMouseHovering ? Hu::Color(Style::HighlightColor).lighted() : Hu::Color(Style::HighlightColor));
 }
 
-std::unique_ptr<Image> &ReferenceImageEditWindow::resizedImage()
+std::unique_ptr<Hu::Image> &ReferenceImageEditWindow::resizedImage()
 {
     return m_resizedImage;
 }
 
-std::unique_ptr<Image> &ReferenceImageEditWindow::frontImage()
+std::unique_ptr<Hu::Image> &ReferenceImageEditWindow::frontImage()
 {
     return m_frontImage;
 }
 
-std::unique_ptr<Image> &ReferenceImageEditWindow::sideImage()
+std::unique_ptr<Hu::Image> &ReferenceImageEditWindow::sideImage()
 {
     return m_sideImage;
 }
 
-std::unique_ptr<Image> &ReferenceImageEditWindow::referenceImage()
+std::unique_ptr<Hu::Image> &ReferenceImageEditWindow::referenceImage()
 {
     return m_referenceImage;
 }
@@ -388,15 +391,15 @@ void ReferenceImageEditWindow::updateReferenceImage()
     m_referenceImageFlags.dirty = false;
     m_referenceImageFlags.processing = true;
     
-    Image *frontImage = nullptr != m_frontImage ? new Image(*m_frontImage) : nullptr;
-    Image *sideImage = nullptr != m_sideImage ? new Image(*m_sideImage) : nullptr;
+    Hu::Image *frontImage = nullptr != m_frontImage ? new Hu::Image(*m_frontImage) : nullptr;
+    Hu::Image *sideImage = nullptr != m_sideImage ? new Hu::Image(*m_sideImage) : nullptr;
     engine()->run([=]() {
-            Image *frontScaledImage = nullptr != frontImage ? frontImage->scaledToHeight(ReferenceImageEditWindow::m_targetReferenceHeight) : nullptr;
-            Image *sideScaledImage = nullptr != sideImage ? sideImage->scaledToHeight(ReferenceImageEditWindow::m_targetReferenceHeight) : nullptr;
+            Hu::Image *frontScaledImage = nullptr != frontImage ? frontImage->scaledToHeight(ReferenceImageEditWindow::m_targetReferenceHeight) : nullptr;
+            Hu::Image *sideScaledImage = nullptr != sideImage ? sideImage->scaledToHeight(ReferenceImageEditWindow::m_targetReferenceHeight) : nullptr;
             size_t frontScaledImageWidth = nullptr != frontScaledImage ? frontScaledImage->width() : 0;
             size_t sideScaledImageWidth = nullptr != sideScaledImage ? sideScaledImage->width() : 0;
             size_t targetWidth = std::max(frontScaledImageWidth + sideScaledImageWidth, ReferenceImageEditWindow::m_targetReferenceWidth);
-            Image *referenceImage = new Image(targetWidth, ReferenceImageEditWindow::m_targetReferenceHeight);
+            Hu::Image *referenceImage = new Hu::Image(targetWidth, ReferenceImageEditWindow::m_targetReferenceHeight);
             referenceImage->clear(255, 255, 255, 255);
             size_t left = (targetWidth - (frontScaledImageWidth + sideScaledImageWidth)) / 2;
             if (nullptr != frontScaledImage)
@@ -409,7 +412,7 @@ void ReferenceImageEditWindow::updateReferenceImage()
             delete sideScaledImage;
             return (void *)referenceImage;
         }, [=](void *result) {
-            Image *referenceImage = (Image *)result;
+            Hu::Image *referenceImage = (Hu::Image *)result;
             this->engine()->setImageResource("referenceImageEditWindow.referenceImagePreview", referenceImage->width(), referenceImage->height(), referenceImage->data());
             this->referenceImage().reset(referenceImage);
             this->getWidget(this->referenceImagePreviewWidgetId())->setBackgroundImageResourceName("referenceImageEditWindow.referenceImagePreview");
@@ -429,16 +432,16 @@ void ReferenceImageEditWindow::copyClipToFront()
     double clipRight = m_clipRight * m_resizedImage->width();
     double clipTop = m_clipTop * m_resizedImage->height();
     double clipBottom = m_clipBottom * m_resizedImage->height();
-    Image *image = new Image(*m_resizedImage);
+    Hu::Image *image = new Hu::Image(*m_resizedImage);
     engine()->run([=]() {
-            Color clearColor(Style::BackgroundColor);
-            Image *clipImage = new Image(clipRight - clipLeft, clipBottom - clipTop);
+            Hu::Color clearColor(Style::BackgroundColor);
+            Hu::Image *clipImage = new Hu::Image(clipRight - clipLeft, clipBottom - clipTop);
             clipImage->clear(clearColor.red() * 255.0, clearColor.green() * 255.0, clearColor.blue() * 255.0, clearColor.alpha() * 255.0);
             clipImage->copy(*image, clipLeft, clipTop, 0, 0, clipImage->width(), clipImage->height());
             delete image;
             return (void *)clipImage;
         }, [=](void *result) {
-            Image *clipImage = (Image *)result;
+            Hu::Image *clipImage = (Hu::Image *)result;
             this->frontImage().reset(clipImage);
             this->updateReferenceImage();
         }
@@ -454,16 +457,16 @@ void ReferenceImageEditWindow::copyClipToSide()
     double clipRight = m_clipRight * m_resizedImage->width();
     double clipTop = m_clipTop * m_resizedImage->height();
     double clipBottom = m_clipBottom * m_resizedImage->height();
-    Image *image = new Image(*m_resizedImage);
+    Hu::Image *image = new Hu::Image(*m_resizedImage);
     engine()->run([=]() {
-            Color clearColor(Style::BackgroundColor);
-            Image *clipImage = new Image(clipRight - clipLeft, clipBottom - clipTop);
+            Hu::Color clearColor(Style::BackgroundColor);
+            Hu::Image *clipImage = new Hu::Image(clipRight - clipLeft, clipBottom - clipTop);
             clipImage->clear(clearColor.red() * 255.0, clearColor.green() * 255.0, clearColor.blue() * 255.0, clearColor.alpha() * 255.0);
             clipImage->copy(*image, clipLeft, clipTop, 0, 0, clipImage->width(), clipImage->height());
             delete image;
             return (void *)clipImage;
         }, [=](void *result) {
-            Image *clipImage = (Image *)result;
+            Hu::Image *clipImage = (Hu::Image *)result;
             this->sideImage().reset(clipImage);
             this->updateReferenceImage();
         }
@@ -475,10 +478,10 @@ void ReferenceImageEditWindow::updatePreviewImage()
     if (nullptr == m_image)
         return;
     
-    Widget *sourceImageWidget = getWidget(m_sourceImageWidgetId);
+    Hu::Widget *sourceImageWidget = getWidget(m_sourceImageWidgetId);
     size_t targetWidth = sourceImageWidget->layoutWidth();
     size_t targetHeight = sourceImageWidget->layoutHeight();
-    Image *image = new Image(*m_image);
+    Hu::Image *image = new Hu::Image(*m_image);
     engine()->run([=]() {
             size_t toWidth = image->width();
             size_t toHeight = toWidth * targetHeight / targetWidth;
@@ -487,14 +490,14 @@ void ReferenceImageEditWindow::updatePreviewImage()
                 toWidth = toHeight * targetWidth / targetHeight;
             }
             // FIXME: limit the image size to avoid texture error(OpenGL Error : 1281)
-            Color clearColor(Style::BackgroundColor);
-            Image *resizedImage = new Image(toWidth, toHeight);
+            Hu::Color clearColor(Style::BackgroundColor);
+            Hu::Image *resizedImage = new Hu::Image(toWidth, toHeight);
             resizedImage->clear(clearColor.red() * 255.0, clearColor.green() * 255.0, clearColor.blue() * 255.0, clearColor.alpha() * 255.0);
             resizedImage->copy(*image, 0, 0, (resizedImage->width() - image->width()) / 2, (resizedImage->height() - image->height()) / 2, image->width(), image->height());
             delete image;
             return (void *)resizedImage;
         }, [=](void *result) {
-            Image *resizedImage = (Image *)result;
+            Hu::Image *resizedImage = (Hu::Image *)result;
             this->engine()->setImageResource("referenceImageEditWindow.sourceImage", resizedImage->width(), resizedImage->height(), resizedImage->data());
             this->resizedImage().reset(resizedImage);
             this->getWidget(this->sourceImageWidgetId())->setBackgroundImageResourceName("referenceImageEditWindow.sourceImage");
@@ -516,9 +519,11 @@ void ReferenceImageEditWindow::setImage(const std::string &path)
 {
     if (path.empty())
         return;
-    m_image = std::make_unique<Image>();
+    m_image = std::make_unique<Hu::Image>();
     m_image->load(path.c_str());
     engine()->run([=](void *) {
         this->updatePreviewImage();
     });
+}
+
 }

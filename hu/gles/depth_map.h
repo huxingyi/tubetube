@@ -92,7 +92,7 @@ public:
         const GLchar *fragmentShaderSource = 
             #include <hu/gles/shaders/depth.frag>
             ;
-        m_shader = std::unique_ptr<Shader>(new Shader(vertexShaderSource, fragmentShaderSource));
+        m_shader = std::unique_ptr<Shader>(new Shader(vertexShaderSource, fragmentShaderSource, "DepthMap.m_shader"));
     }
     
     bool begin()
@@ -160,7 +160,7 @@ private:
     bool m_sizeChanged = false;
     GLuint m_textureId = 0;
     GLuint m_frameBufferId = 0;
-    PFNGLDRAWBUFFERSEXTPROC m_drawBuffers = nullptr;
+    static inline PFNGLDRAWBUFFERSEXTPROC m_drawBuffers = nullptr;
     GLint m_lastFramebufferId = 0;
     std::unique_ptr<Shader> m_shader;
 };

@@ -74,7 +74,7 @@ public:
         const GLchar *fragmentShaderSource = 
             #include <hu/gles/shaders/particle.frag>
             ;
-        m_shader = std::unique_ptr<Shader>(new Shader(vertexShaderSource, fragmentShaderSource));
+        m_shader = std::unique_ptr<Shader>(new Shader(vertexShaderSource, fragmentShaderSource, "Particles.m_shader"));
     }
     
     void addElement(const Element &element)

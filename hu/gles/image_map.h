@@ -46,7 +46,7 @@ public:
             const GLchar *fragmentShaderSource = 
                 #include <hu/gles/shaders/image.frag>
                 ;
-            m_shader = std::unique_ptr<Shader>(new Shader(vertexShaderSource, fragmentShaderSource));
+            m_shader = std::unique_ptr<Shader>(new Shader(vertexShaderSource, fragmentShaderSource, "ImageMap.m_shader"));
         }
     }
     

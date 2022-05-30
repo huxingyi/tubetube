@@ -304,7 +304,7 @@ public:
             const GLchar *fragmentShaderSource = 
                 #include <hu/gles/shaders/blinn-phong.frag>
                 ;
-            m_modelShader = Shader(vertexShaderSource, fragmentShaderSource);
+            m_modelShader = Shader(vertexShaderSource, fragmentShaderSource, m_window->name() + ":m_modelShader");
         }
         {
             const GLchar *vertexShaderSource =
@@ -313,7 +313,7 @@ public:
             const GLchar *fragmentShaderSource = 
                 #include <hu/gles/shaders/light.frag>
                 ;
-            m_lightShader = Shader(vertexShaderSource, fragmentShaderSource);
+            m_lightShader = Shader(vertexShaderSource, fragmentShaderSource, m_window->name() + ":m_lightShader");
         }
         {
             const GLchar *vertexShaderSource =
@@ -322,7 +322,7 @@ public:
             const GLchar *fragmentShaderSource = 
                 #include <hu/gles/shaders/quad.frag>
                 ;
-            m_quadShader = Shader(vertexShaderSource, fragmentShaderSource);
+            m_quadShader = Shader(vertexShaderSource, fragmentShaderSource, m_window->name() + ":m_quadShader");
         }
         {
             const GLchar *vertexShaderSource =
@@ -331,7 +331,7 @@ public:
             const GLchar *fragmentShaderSource = 
                 #include <hu/gles/shaders/single-color.frag>
                 ;
-            m_singleColorShader = Shader(vertexShaderSource, fragmentShaderSource);
+            m_singleColorShader = Shader(vertexShaderSource, fragmentShaderSource, m_window->name() + ":m_singleColorShader");
         }
         {
             const GLchar *vertexShaderSource =
@@ -340,7 +340,7 @@ public:
             const GLchar *fragmentShaderSource = 
                 #include <hu/gles/shaders/post-processing.frag>
                 ;
-            m_postProcessingShader = Shader(vertexShaderSource, fragmentShaderSource);
+            m_postProcessingShader = Shader(vertexShaderSource, fragmentShaderSource, m_window->name() + ":m_postProcessingShader");
         }
         {
             const GLchar *vertexShaderSource =
@@ -349,7 +349,7 @@ public:
             const GLchar *fragmentShaderSource = 
                 #include <hu/gles/shaders/position.frag>
                 ;
-            m_positionShader = Shader(vertexShaderSource, fragmentShaderSource);
+            m_positionShader = Shader(vertexShaderSource, fragmentShaderSource, m_window->name() + ":m_positionShader");
         }
         {
             const GLchar *vertexShaderSource =
@@ -358,7 +358,7 @@ public:
             const GLchar *fragmentShaderSource = 
                 #include <hu/gles/shaders/id.frag>
                 ;
-            m_idShader = Shader(vertexShaderSource, fragmentShaderSource);
+            m_idShader = Shader(vertexShaderSource, fragmentShaderSource, m_window->name() + ":m_idShader");
         }
         {
             const GLchar *vertexShaderSource =
@@ -367,7 +367,7 @@ public:
             const GLchar *fragmentShaderSource = 
                 #include <hu/gles/shaders/frame.frag>
                 ;
-            m_frameShader = Shader(vertexShaderSource, fragmentShaderSource);
+            m_frameShader = Shader(vertexShaderSource, fragmentShaderSource, m_window->name() + ":m_frameShader");
         }
         {
             const GLchar *vertexShaderSource =
@@ -376,7 +376,7 @@ public:
             const GLchar *fragmentShaderSource = 
                 #include <hu/gles/shaders/canvas.frag>
                 ;
-            m_canvasShader = Shader(vertexShaderSource, fragmentShaderSource);
+            m_canvasShader = Shader(vertexShaderSource, fragmentShaderSource, m_window->name() + ":m_canvasShader");
         }
         
         std::unique_ptr<std::vector<GLfloat>> quadVertices = std::unique_ptr<std::vector<GLfloat>>(new std::vector<GLfloat> {

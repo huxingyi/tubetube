@@ -49,6 +49,7 @@ DocumentWindow::DocumentWindow():
     Window(Hu::String::toInt(settings()->value("mainWindow.width", 640)), Hu::String::toInt(settings()->value("mainWindow.height", 360))),
     m_document(std::make_unique<Document>())
 {
+    setName("DocumentWindow");
     setTitle("Tubetube");
     
     auto selectButton = new Hu::PushButton(this);

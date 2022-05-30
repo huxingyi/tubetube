@@ -53,7 +53,7 @@ public:
             const GLchar *fragmentShaderSource = 
                 #include <hu/gles/shaders/icon.frag>
                 ;
-            m_shader = std::unique_ptr<Shader>(new Shader(vertexShaderSource, fragmentShaderSource));
+            m_shader = std::unique_ptr<Shader>(new Shader(vertexShaderSource, fragmentShaderSource, "IconMap.m_shader"));
         }
         
         if (0 == m_textureId) {

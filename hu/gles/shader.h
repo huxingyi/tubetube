@@ -35,11 +35,37 @@ namespace Hu
 class Shader
 {
 public:
+    Shader(const Shader &) = delete;
+    
+    Shader(Shader &&other)
+    {
+        std::swap(m_name, other.m_name);
+        std::swap(m_program, other.m_program);
+        std::swap(m_uniformLocationMap, other.m_uniformLocationMap);
+    }
+    
+    Shader &operator=(Shader &&other)
+    {
+        //std::cout << "[" << name() << "] move from other:" << other.name() << std::endl;
+        std::swap(m_name, other.m_name);
+        std::swap(m_program, other.m_program);
+        std::swap(m_uniformLocationMap, other.m_uniformLocationMap);
+        return *this;
+    }
+
     Shader()
     {
     }
     
-    Shader(const char *vertexShaderSource, const char *fragmentShaderSource)
+    ~Shader()
+    {
+        //std::cout << "[" << name() << "] delete program:" << m_program << std::endl;
+        glDeleteProgram(m_program);
+        m_program = 0;
+    }
+    
+    Shader(const char *vertexShaderSource, const char *fragmentShaderSource, const std::string &name=std::string()):
+        m_name(name)
     {
         GLuint vertexShader(glCreateShader(GL_VERTEX_SHADER));
         glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
@@ -52,6 +78,7 @@ public:
         checkCompileError(fragmentShader);
         
         m_program = glCreateProgram();
+        //std::cout << "[" << m_name << "] create program:" << m_program << std::endl;
         glAttachShader(m_program, vertexShader);
         glAttachShader(m_program, fragmentShader);
         glLinkProgram(m_program);
@@ -63,6 +90,7 @@ public:
     
     void use()
     {
+        //std::cout << "[" << name() << "] use program:" << m_program << std::endl;
         glUseProgram(m_program);
     }
 
@@ -89,7 +117,13 @@ public:
         glUniform4f(getUniformLocation(name), color[0], color[1], color[2], color[3]);
     }
     
+    const std::string &name() const
+    {
+        return m_name;
+    }
+    
 private:
+    std::string m_name;
     GLuint m_program = 0;
     std::map<std::string, GLuint> m_uniformLocationMap;
     

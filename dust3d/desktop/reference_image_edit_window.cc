@@ -36,6 +36,7 @@ namespace Dust3d
 ReferenceImageEditWindow::ReferenceImageEditWindow():
     Window(Hu::String::toInt(DocumentWindow::settings()->value("referenceImageEditWindow.width", 800)), Hu::String::toInt(DocumentWindow::settings()->value("referenceImageEditWindow.height", 360)))
 {
+    setName("ReferenceImageEditWindow");
     setTitle("Reference image edit");
     engine()->setBackgroundColor(Hu::Color("#00000000"));
     

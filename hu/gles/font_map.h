@@ -66,7 +66,7 @@ public:
             const GLchar *fragmentShaderSource = 
                 #include <hu/gles/shaders/font.frag>
                 ;
-            m_shader = std::unique_ptr<Shader>(new Shader(vertexShaderSource, fragmentShaderSource));
+            m_shader = std::unique_ptr<Shader>(new Shader(vertexShaderSource, fragmentShaderSource, "FontMap.m_shader"));
         }
         
         if (0 == m_textureId) {

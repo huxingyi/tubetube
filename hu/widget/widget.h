@@ -68,6 +68,13 @@ public:
             m_appearanceChanged = changed;
         }
         
+        void setName(const std::string &name)
+        {
+            if (m_name == name)
+                return;
+            m_name = name;
+        }
+        
         std::map<std::string, Widget *> &widgets()
         {
             return m_widgets;
@@ -81,12 +88,18 @@ public:
             return findWidget->second;
         }
         
+        const std::string &name() const
+        {
+            return m_name;
+        }
+        
         virtual void update() = 0;
         
     private:
         bool m_layoutChanged = false;
         bool m_appearanceChanged = false;
         std::map<std::string, Widget *> m_widgets;
+        std::string m_name;
     };
 
     Signal<double, double> mouseMoved;

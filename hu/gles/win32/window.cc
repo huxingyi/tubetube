@@ -178,9 +178,17 @@ Window::~Window()
 {
     setVisible(false);
     SetWindowLongPtr(m_internal.handle, GWLP_USERDATA, (LONG_PTR)0);
+    
+    eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+   
+    delete m_engine;
+    m_engine = nullptr;
+    
     eglDestroyContext(m_eglDisplay, m_eglContext);
     eglDestroySurface(m_eglDisplay, m_eglSurface);
+    
     eglTerminate(m_eglDisplay);
+    
     DestroyWindow(m_internal.handle);
 }
 
@@ -283,16 +291,16 @@ Window::Window(int width, int height, Type type, Window *parent):
         this->engine()->update();
     });
     addTimer(1000 / 60, [=]() {
-        while (!this->m_selectSingleFileRequests.empty()) {
-            auto filterSurfixList = this->m_selectSingleFileRequests.front();
-            this->m_selectSingleFileRequests.pop();
-            this->m_selectSingleFileResults.push(this->selectSingleFileByUser(filterSurfixList));
-        }
         eglMakeCurrent(this->eglDisplay(), this->eglSurface(), this->eglSurface(), this->eglContext());
         if (!this->m_internal.pendingMessages.empty())
             this->engine()->dirty();
         this->engine()->renderScene();
         eglSwapBuffers(this->eglDisplay(), this->eglSurface());
+        while (!this->m_selectSingleFileRequests.empty()) {
+            auto filterSurfixList = this->m_selectSingleFileRequests.front();
+            this->m_selectSingleFileRequests.pop();
+            this->m_selectSingleFileResults.push(this->selectSingleFileByUser(filterSurfixList));
+        }
     });
 }
 

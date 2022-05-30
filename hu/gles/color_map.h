@@ -182,8 +182,8 @@ private:
     GLuint m_sampleDepthStencilRenderBufferId = 0;
     GLint m_lastFramebufferId = 0;
     GLsizei m_numSamples = 4;
-    PFNGLRENDERBUFFERSTORAGEMULTISAMPLEANGLEPROC m_renderbufferStorageMultisample = nullptr;
-    PFNGLBLITFRAMEBUFFERANGLEPROC m_blitFramebuffer = nullptr;
+    static inline PFNGLRENDERBUFFERSTORAGEMULTISAMPLEANGLEPROC m_renderbufferStorageMultisample = nullptr;
+    static inline PFNGLBLITFRAMEBUFFERANGLEPROC m_blitFramebuffer = nullptr;
 };
     
 };

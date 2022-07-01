@@ -485,7 +485,7 @@ public:
     {
         if (rectangles.empty())
             return;
-        
+
         std::vector<GLfloat> vertices(36 * rectangles.size());
         size_t targetIndex = 0;
         
@@ -921,6 +921,7 @@ public:
                     m_canvasShader.setUniformMatrix("projectionMatrix", m_screenProjectionMatrix);
                     if (m_window->layoutChanged()) {
                         m_rootWidget->layout();
+                        m_window->setLayoutChanged(false);
                         windowSizeChanged.emit();
                     }
                     renderWidget(m_rootWidget.get());

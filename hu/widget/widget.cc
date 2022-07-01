@@ -26,6 +26,7 @@ namespace Hu
 {
 
 uint64_t Widget::m_nextWidgetId = 1;
+const bool Widget::m_debugLayoutEnabled = false;
 
 }
 

@@ -103,16 +103,16 @@ public:
             (GLfloat)top
         };
         std::pair<GLfloat, GLfloat> rightBottom = {
-            (GLfloat)left + width, 
+            (GLfloat)(left + width), 
             (GLfloat)top
         };
         std::pair<GLfloat, GLfloat> rightTop = {
-            (GLfloat)left + width, 
-            (GLfloat)top + height
+            (GLfloat)(left + width), 
+            (GLfloat)(top + height)
         };
         std::pair<GLfloat, GLfloat> leftTop = {
             (GLfloat)left, 
-            (GLfloat)top + height
+            (GLfloat)(top + height)
         };
         
         std::array<GLfloat, 16> vertices;

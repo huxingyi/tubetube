@@ -23,6 +23,7 @@
 #ifndef HU_GLES_VERTEX_BUFFER_H_
 #define HU_GLES_VERTEX_BUFFER_H_
 
+#include <memory>
 #include <vector>
 #include <GLES2/gl2.h>
 
@@ -32,11 +33,18 @@ namespace Hu
 class VertexBuffer
 {
 public:
+    VertexBuffer(const VertexBuffer &) = delete;
+    
     VertexBuffer() = default;
     
     VertexBuffer(std::unique_ptr<std::vector<GLfloat>> vertices, size_t numbersPerVertex, size_t vertexCount, uint32_t drawHint=0)
     {
         update(std::move(vertices), numbersPerVertex, vertexCount, drawHint);
+    }
+    
+    ~VertexBuffer()
+    {
+        release();
     }
     
     bool begin()

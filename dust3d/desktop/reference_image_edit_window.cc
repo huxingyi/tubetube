@@ -49,6 +49,7 @@ ReferenceImageEditWindow::ReferenceImageEditWindow():
     
     auto canvas = new Hu::Canvas(this);
     m_canvas = canvas;
+    canvas->setName("Canvas");
     canvas->setWidth(1.0, Hu::Widget::SizePolicy::RelativeSize);
     canvas->setHeight(1.0, Hu::Widget::SizePolicy::RelativeSize);
     sourceImageWidget->addWidget(canvas);
@@ -271,7 +272,7 @@ void ReferenceImageEditWindow::handleCanvasMouseReleased()
 
 void ReferenceImageEditWindow::handleCanvasMouseMove(double x, double y)
 {
-    Hu::Widget *sourceImageWidget = getWidget(m_sourceImageWidgetId);
+    Hu::Widget *sourceImageWidget = getWidget(sourceImageWidgetId());
     double realX = (x - sourceImageWidget->layoutLeft()) / sourceImageWidget->layoutWidth();
     double realY = (y - sourceImageWidget->layoutTop()) / sourceImageWidget->layoutHeight();
     double handleHalfWidth = 0.75 * m_handleSize / sourceImageWidget->layoutWidth();
@@ -352,8 +353,8 @@ void ReferenceImageEditWindow::updateClip()
     m_canvas->addRectangle(m_clipLeft, 0.0, m_clipRight, m_clipTop, maskColor);
     m_canvas->addRectangle(m_clipLeft, m_clipBottom, m_clipRight, 1.0, maskColor);
     
-    Hu::Widget *sourceImageWidget = getWidget(m_sourceImageWidgetId);
-    
+    Hu::Widget *sourceImageWidget = getWidget(sourceImageWidgetId());
+
     double handleHalfWidth = 0.5 * m_handleSize / sourceImageWidget->layoutWidth();
     double handleHalfHeight = 0.5 * m_handleSize / sourceImageWidget->layoutHeight();
     m_canvas->addRectangle(m_clipLeft - handleHalfWidth, m_clipTop - handleHalfHeight, m_clipLeft + handleHalfWidth, m_clipTop + handleHalfHeight, m_leftTopHandleMouseHovering ? Hu::Color(Style::HighlightColor).lighted() : Hu::Color(Style::HighlightColor));
@@ -479,7 +480,7 @@ void ReferenceImageEditWindow::updatePreviewImage()
     if (nullptr == m_image)
         return;
     
-    Hu::Widget *sourceImageWidget = getWidget(m_sourceImageWidgetId);
+    Hu::Widget *sourceImageWidget = getWidget(sourceImageWidgetId());
     size_t targetWidth = sourceImageWidget->layoutWidth();
     size_t targetHeight = sourceImageWidget->layoutHeight();
     Hu::Image *image = new Hu::Image(*m_image);
